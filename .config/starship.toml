@@ -1,0 +1,237 @@
+# *****************************************************************************
+# STARSHIP.TOML
+# *****************************************************************************
+
+# *****************************************************************************
+# GENERAL
+# *****************************************************************************
+
+#-------------------------------------------------------
+# PROMPT LAYOUT
+#-------------------------------------------------------
+# pill order, left to right: red (os/shell/sudo) -> orange (language
+# & runtime versions) -> yellow (docker/conda/pixi) -> blue (folder
+# icon + directory), then a line break and the prompt character.
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = """
+[╭─](fg:color_red)\
+[](color_red)\
+$os\
+$shell\
+$sudo\
+[](bg:color_orange fg:color_red)\
+$c\
+$cpp\
+$rust\
+$golang\
+$nodejs\
+$bun\
+$php\
+$java\
+$kotlin\
+$haskell\
+$python\
+[](fg:color_orange bg:color_yellow)\
+$docker_context\
+$conda\
+$pixi\
+[](fg:color_yellow bg:color_blue)\
+$directory\
+[](fg:color_blue)\
+$line_break[ ](fg:color_red)$line_break$character"""
+
+right_format = """$git_branch$cmd_duration"""
+
+#-------------------------------------------------------
+# PALETTE SELECTION
+#-------------------------------------------------------
+palette = 'catppuccin_mocha'
+
+# *****************************************************************************
+# THEME — CATPPUCCIN PALETTE
+# *****************************************************************************
+
+[palettes.catppuccin_mocha]
+color_fg0 = '#11111b'
+color_fg_light = '#cdd6f4'
+color_bg1 = '#313244'
+color_blue = '#89b4fa'
+color_green = '#a6e3a1'
+color_grey = '#7f849c'
+color_orange = '#fab387'
+color_purple = '#cba6f7'
+color_red = '#f38ba8'
+color_yellow = '#f9e2af'
+
+# *****************************************************************************
+# LEFT PILL — OS / SHELL / SUDO
+# *****************************************************************************
+
+[os]
+disabled = false
+style = "bg:color_red fg:color_fg0"
+
+[os.symbols]
+Windows = "󰍲"
+Ubuntu = "󰕈"
+SUSE = ""
+Raspbian = "󰐿"
+Mint = "󰣭"
+Macos = "󰀵"
+Manjaro = ""
+Linux = "󰌽"
+Gentoo = "󰣨"
+Fedora = "󰣛"
+Alpine = ""
+Amazon = ""
+Android = ""
+AOSC = ""
+Arch = "󰣇"
+Artix = "󰣇"
+EndeavourOS = ""
+CentOS = ""
+Debian = "󰣚"
+Redhat = "󱄛"
+RedHatEnterprise = "󱄛"
+Pop = ""
+
+[shell]
+disabled = false
+style = "bg:color_red fg:color_fg0"
+format = '[ $indicator ]($style)'
+zsh_indicator = "zsh"
+bash_indicator = "bash"
+fish_indicator = "fish"
+powershell_indicator = "pwsh"
+unknown_indicator = "shell"
+
+[sudo]
+disabled = false
+symbol = "󰒃"
+style = "bg:color_red fg:color_fg0"
+format = '[ $symbol ]($style)'
+
+# *****************************************************************************
+# LANGUAGE & RUNTIME VERSIONS
+# *****************************************************************************
+
+[nodejs]
+symbol = ""
+style = "bg:color_orange"
+format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_orange)]($style)'
+
+[bun]
+symbol = ""
+style = "bg:color_orange"
+format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_orange)]($style)'
+
+[c]
+symbol = " "
+style = "bg:color_orange"
+format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_orange)]($style)'
+
+[cpp]
+symbol = " "
+style = "bg:color_orange"
+format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_orange)]($style)'
+
+[rust]
+symbol = ""
+style = "bg:color_orange"
+format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_orange)]($style)'
+
+[golang]
+symbol = ""
+style = "bg:color_orange"
+format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_orange)]($style)'
+
+[php]
+symbol = ""
+style = "bg:color_orange"
+format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_orange)]($style)'
+
+[java]
+symbol = ""
+style = "bg:color_orange"
+format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_orange)]($style)'
+
+[kotlin]
+symbol = ""
+style = "bg:color_orange"
+format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_orange)]($style)'
+
+[haskell]
+symbol = ""
+style = "bg:color_orange"
+format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_orange)]($style)'
+
+[python]
+symbol = ""
+style = "bg:color_orange"
+format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_orange)]($style)'
+
+# *****************************************************************************
+# ENVIRONMENT — DOCKER / CONDA / PIXI
+# *****************************************************************************
+
+[docker_context]
+symbol = ""
+style = "bg:color_yellow"
+format = '[[ $symbol( $context) ](fg:color_fg0 bg:color_yellow)]($style)'
+
+[conda]
+style = "bg:color_yellow"
+format = '[[ $symbol( $environment) ](fg:color_fg0 bg:color_yellow)]($style)'
+
+[pixi]
+style = "bg:color_yellow"
+format = '[[ $symbol( $version)( $environment) ](fg:color_fg0 bg:color_yellow)]($style)'
+
+# *****************************************************************************
+# DIRECTORY PILL
+# *****************************************************************************
+
+[directory]
+style = "fg:color_fg0 bg:color_blue"
+format = "[ 󰉋 $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = "󰝚 "
+"Pictures" = " "
+"Developer" = "󰲋 "
+
+# *****************************************************************************
+# RIGHT PROMPT — GIT BRANCH / CMD DURATION
+# *****************************************************************************
+
+[git_branch]
+symbol = " "
+style = "fg:color_grey"
+format = '[$symbol$branch]($style) '
+
+[cmd_duration]
+min_time = 500
+style = "fg:color_green"
+format = '[󱦟 $duration]($style)'
+
+# *****************************************************************************
+# PROMPT CHARACTER
+# *****************************************************************************
+
+[line_break]
+disabled = false
+
+[character]
+disabled = false
+success_symbol = '[╰─](bold fg:color_green)[](bold fg:color_green)'
+error_symbol = '[╰─](bold fg:color_red)[](bold fg:color_red)'
+vimcmd_symbol = '[╰─](bold fg:color_green)[](bold fg:color_green)'
+vimcmd_replace_one_symbol = '[╰─](bold fg:color_purple)[](bold fg:color_purple)'
+vimcmd_replace_symbol = '[╰─](bold fg:color_purple)[](bold fg:color_purple)'
+vimcmd_visual_symbol = '[╰─](bold fg:color_yellow)[](bold fg:color_yellow)'
+

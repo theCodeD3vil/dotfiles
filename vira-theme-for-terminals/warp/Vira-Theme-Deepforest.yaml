@@ -1,0 +1,25 @@
+name: Vira-Theme-Deepforest
+details: darker
+accent: '#80CBC4'
+# cursor: '#95D886'
+background: '#111816'
+foreground: '#CAE5D5'
+terminal_colors:
+  bright:
+    black: '#3B544D'
+    blue: '#95BBBD'
+    cyan: '#74C9DE'
+    green: '#C3E88D'
+    magenta: '#A68DCD'
+    red: '#CC8868'
+    white: '#ffffff'
+    yellow: '#FFCB6B'
+  normal:
+    black: '#3B544D'
+    blue: '#6FA0DE'
+    cyan: '#74C9DE'
+    green: '#C3E88D'
+    magenta: '#A68DCD'
+    red: '#f07178'
+    white: '#CAE5D5'
+    yellow: '#FFCB6B'

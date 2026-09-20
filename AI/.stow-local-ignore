@@ -1,0 +1,12 @@
+# Comments and blank lines are allowed.
+\.DS_Store
+
+# Multiple Stow Directories marker (see info stow, §9) — declares this a
+# protected, cooperating stow directory. Not itself something to symlink.
+^/\.stow$
+
+# .claude/settings.json is a trimmed reference snapshot (prefs only — hooks,
+# permissions.allow and autoMode.environment stripped, since those are
+# tool-managed/accumulated and must stay live-only). Never symlink it over
+# the real ~/.claude/settings.json, which needs its hooks intact.
+^/\.claude$

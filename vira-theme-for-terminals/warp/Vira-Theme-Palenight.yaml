@@ -1,0 +1,25 @@
+name: Vira-Theme-Palenight
+details: darker
+accent: '#80CBC4'
+# cursor: '#95D886'
+background: '#292D3E'
+foreground: '#CED1E3'
+terminal_colors:
+  bright:
+    black: '#676E95'
+    blue: '#B2CCD6'
+    cyan: '#89DDFF'
+    green: '#C3E88D'
+    magenta: '#C792EA'
+    red: '#F78C6C'
+    white: '#ffffff'
+    yellow: '#FFCB6B'
+  normal:
+    black: '#676E95'
+    blue: '#82AAFF'
+    cyan: '#89DDFF'
+    green: '#C3E88D'
+    magenta: '#C792EA'
+    red: '#f07178'
+    white: '#CED1E3'
+    yellow: '#FFCB6B'

@@ -1,0 +1,25 @@
+name: Vira-Theme-Teal
+details: darker
+accent: '#80CBC4'
+# cursor: '#95D886'
+background: '#263238'
+foreground: '#D8DFDF'
+terminal_colors:
+  bright:
+    black: '#546E7A'
+    blue: '#B2CCD6'
+    cyan: '#89DDFF'
+    green: '#C3E88D'
+    magenta: '#C792EA'
+    red: '#F78C6C'
+    white: '#ffffff'
+    yellow: '#FFCB6B'
+  normal:
+    black: '#546E7A'
+    blue: '#82AAFF'
+    cyan: '#89DDFF'
+    green: '#C3E88D'
+    magenta: '#C792EA'
+    red: '#f07178'
+    white: '#D8DFDF'
+    yellow: '#FFCB6B'

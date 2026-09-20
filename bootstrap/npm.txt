@@ -1,0 +1,12 @@
+# Global npm packages, one per line. Blank lines and # comments are ignored.
+# Generated from `npm ls -g` on 2026-09-20; prune by hand.
+#
+# Also symlinked to ~/.nvm/default-packages: nvm installs everything here after
+# every `nvm install`. nvm's format applies: one package per line, no versions.
+#
+# Left out on purpose: npm itself, and any package that is `npm link`ed to a
+# local project. A registry install would fetch a different package with the
+# same name.
+@dwmkerr/terminal-ai
+@earendil-works/pi-coding-agent
+fallow

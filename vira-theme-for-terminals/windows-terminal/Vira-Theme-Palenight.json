@@ -1,0 +1,23 @@
+{
+  "name": "Vira-Theme-Palenight",
+  "background": "#292D3E",
+  "foreground": "#CED1E3",
+  "cursorColor": "#FFCC00",
+  "selectionBackground": "#555C82",
+  "black": "#676E95",
+  "blue": "#82AAFF",
+  "brightBlack": "#676E95",
+  "brightBlue": "#B2CCD6",
+  "brightCyan": "#89DDFF",
+  "brightGreen": "#C3E88D",
+  "brightPurple": "#C792EA",
+  "brightRed": "#F78C6C",
+  "brightWhite": "#ffffff",
+  "brightYellow": "#FFCB6B",
+  "cyan": "#89DDFF",
+  "green": "#C3E88D",
+  "purple": "#C792EA",
+  "red": "#f07178",
+  "white": "#CED1E3",
+  "yellow": "#FFCB6B"
+}

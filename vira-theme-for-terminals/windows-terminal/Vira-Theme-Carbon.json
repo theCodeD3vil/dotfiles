@@ -1,0 +1,23 @@
+{
+  "name": "Vira-Theme-Carbon",
+  "background": "#0A0A0A",
+  "foreground": "#D9D9D9",
+  "cursorColor": "#FFCC00",
+  "selectionBackground": "#474747",
+  "black": "#45454A",
+  "blue": "#6a90d0",
+  "brightBlack": "#45454A",
+  "brightBlue": "#90a9bc",
+  "brightCyan": "#6ebad7",
+  "brightGreen": "#a3c679",
+  "brightPurple": "#a178c4",
+  "brightRed": "#cd775c",
+  "brightWhite": "#ffffff",
+  "brightYellow": "#d5b05f",
+  "cyan": "#6ebad7",
+  "green": "#a3c679",
+  "purple": "#a178c4",
+  "red": "#c85e60",
+  "white": "#D9D9D9",
+  "yellow": "#d5b05f"
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "icm": {
+      "type": "local",
+      "command": [
+        "icm",
+        "serve"
+      ],
+      "enabled": true
+    }
+  },
+  "shell": "zsh"
+}

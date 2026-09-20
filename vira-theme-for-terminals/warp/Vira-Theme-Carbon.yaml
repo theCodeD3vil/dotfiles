@@ -1,0 +1,25 @@
+name: Vira-Theme-Carbon
+details: darker
+accent: '#80CBC4'
+# cursor: '#95D886'
+background: '#0A0A0A'
+foreground: '#D9D9D9'
+terminal_colors:
+  bright:
+    black: '#45454A'
+    blue: '#90a9bc'
+    cyan: '#6ebad7'
+    green: '#a3c679'
+    magenta: '#a178c4'
+    red: '#cd775c'
+    white: '#ffffff'
+    yellow: '#d5b05f'
+  normal:
+    black: '#45454A'
+    blue: '#6a90d0'
+    cyan: '#6ebad7'
+    green: '#a3c679'
+    magenta: '#a178c4'
+    red: '#c85e60'
+    white: '#D9D9D9'
+    yellow: '#d5b05f'

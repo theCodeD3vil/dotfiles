@@ -1,0 +1,8 @@
+# Global bun packages, one per line. Blank lines and # comments are ignored.
+# Generated from ~/.bun/install/global/package.json on 2026-09-20; prune by hand.
+#
+# @cod3vil/trunk is also npm-linked from ~/Projects/trunk; keep it here or
+# there, not both.
+@cod3vil/kount-cli
+@cod3vil/trunk
+vercel

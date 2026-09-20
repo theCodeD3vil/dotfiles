@@ -1,0 +1,25 @@
+name: Vira-Theme-Graphene
+details: darker
+accent: '#80CBC4'
+# cursor: '#95D886'
+background: '#212121'
+foreground: '#D9D9D9'
+terminal_colors:
+  bright:
+    black: '#545454'
+    blue: '#B2CCD6'
+    cyan: '#89DDFF'
+    green: '#C3E88D'
+    magenta: '#C792EA'
+    red: '#F78C6C'
+    white: '#ffffff'
+    yellow: '#FFCB6B'
+  normal:
+    black: '#545454'
+    blue: '#82AAFF'
+    cyan: '#89DDFF'
+    green: '#C3E88D'
+    magenta: '#C792EA'
+    red: '#f07178'
+    white: '#D9D9D9'
+    yellow: '#FFCB6B'

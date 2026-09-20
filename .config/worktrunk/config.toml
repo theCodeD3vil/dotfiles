@@ -1,0 +1,13 @@
+[commit.generation]
+command = "MAX_THINKING_TOKENS=0 claude -p --no-session-persistence --model=haiku --tools='' --safe-mode --setting-sources='user' --system-prompt=''"
+
+[projects]
+
+[projects."github.com-work/theCodeD3vil/trunk"]
+worktree-path = "{{ repo_path }}/../{{ branch | sanitize }}"
+
+[projects."github.com-work/theCodeD3vil/go-projects"]
+worktree-path = "{{ repo_path }}/../{{ branch | sanitize }}"
+
+[list]
+summary=true

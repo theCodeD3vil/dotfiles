@@ -1,0 +1,30 @@
+# Catppuccin Mocha, the same palette as tmux (see "Palette" in the dotfiles README).
+#
+# `background` is left out on purpose. tv then draws on the terminal's default
+# background, so the sesh popup stays translucent and blurred like the rest of the
+# terminal. Setting it (tv's built-in `catppuccin` theme does) makes it opaque.
+
+# general
+border_fg = '#6c7086'              # overlay0
+text_fg = '#cdd6f4'                # text
+dimmed_text_fg = '#9399b2'         # overlay2
+# input
+input_text_fg = '#94e2d5'          # teal
+result_count_fg = '#9399b2'        # overlay2
+# results
+result_name_fg = '#cdd6f4'         # text
+result_line_number_fg = '#9399b2'  # overlay2
+result_value_fg = '#9399b2'        # overlay2
+selection_fg = '#94e2d5'           # teal
+selection_bg = '#313244'           # surface0
+match_fg = '#cba6f7'               # mauve
+# preview
+preview_title_fg = '#b4befe'       # lavender
+# modes: crust text on an accent, like the tmux pills
+channel_mode_fg = '#11111b'        # crust
+channel_mode_bg = '#cba6f7'        # mauve
+remote_control_mode_fg = '#11111b'
+remote_control_mode_bg = '#94e2d5' # teal
+action_picker_mode_fg = '#11111b'
+action_picker_mode_bg = '#b4befe'  # lavender
+send_to_channel_mode_fg = '#94e2d5'

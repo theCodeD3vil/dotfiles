@@ -1,0 +1,33 @@
+# Comments and blank lines are allowed.
+
+RCS
+.+,v
+
+CVS
+\.\#.+       # CVS conflict files / emacs lock files
+\.cvsignore
+
+\.svn
+_darcs
+\.hg
+
+\.git
+\.gitignore
+\.gitmodules
+
+.+~          # emacs backup files
+\#.*\#       # emacs autosave files
+
+^/README.*
+^/LICENSE.*
+^/COPYING
+^/notes\.txt$
+\.DS_Store
+
+# AI/ is its own stow package (category folder, not a mirror of $HOME).
+# Package "." must skip it or `stow .` folds it into a literal ~/AI.
+# Stow it explicitly: `stow . AI`
+^/AI$
+
+# bootstrap/ holds the machine-setup lists and script; it is not a $HOME mirror.
+^/bootstrap$

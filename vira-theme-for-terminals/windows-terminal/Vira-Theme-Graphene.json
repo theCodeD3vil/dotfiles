@@ -1,0 +1,23 @@
+{
+  "name": "Vira-Theme-Graphene",
+  "background": "#212121",
+  "foreground": "#D9D9D9",
+  "cursorColor": "#FFCC00",
+  "selectionBackground": "#474747",
+  "black": "#545454",
+  "blue": "#82AAFF",
+  "brightBlack": "#545454",
+  "brightBlue": "#B2CCD6",
+  "brightCyan": "#89DDFF",
+  "brightGreen": "#C3E88D",
+  "brightPurple": "#C792EA",
+  "brightRed": "#F78C6C",
+  "brightWhite": "#ffffff",
+  "brightYellow": "#FFCB6B",
+  "cyan": "#89DDFF",
+  "green": "#C3E88D",
+  "purple": "#C792EA",
+  "red": "#f07178",
+  "white": "#D9D9D9",
+  "yellow": "#FFCB6B"
+}

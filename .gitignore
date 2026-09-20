@@ -1,0 +1,10 @@
+.DS_Store
+
+**/**/.DS_Store
+
+# atuin's installer receipt: it bakes in this machine's home path
+.config/atuin/atuin-receipt.json
+
+# worktrunk keeps per-machine state (command approvals, lock files) next to its config
+.config/worktrunk/approvals.toml
+.config/worktrunk/*.lock

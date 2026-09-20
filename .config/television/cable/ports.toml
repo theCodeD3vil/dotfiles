@@ -1,0 +1,22 @@
+[metadata]
+name = "ports"
+description = "List listening TCP ports and associated processes (macOS, lsof)"
+requirements = ["lsof", "awk"]
+
+[source]
+command = "lsof -nP -iTCP -sTCP:LISTEN 2>/dev/null | awk 'NR>1{n=$9; sub(/.*:/,\"\",n); print n, $1, $2}' | sort -n | uniq"
+display = "{split: :0}  {split: :1} (pid {split: :2})"
+
+[preview]
+command = "lsof -nP -iTCP:{split: :0} -sTCP:LISTEN 2>/dev/null; echo; ps -o pid=,ppid=,etime=,command= -p {split: :2}"
+
+[ui.preview_panel]
+size = 50
+
+[keybindings]
+ctrl-k = ["actions:kill", "reload_source"]
+
+[actions.kill]
+description = "Kill the process listening on the selected port (SIGTERM)"
+command = "kill {split: :2}"
+mode = "fork"

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Caddy for worktrunk worktree URLs (http://<branch>.<repo>.localhost:8080).
+  Routes are added at runtime through the admin API by each repo's
+  .config/wt.toml; `caddy run` with the resume flag reloads them from Caddy's
+  autosave, so they survive logout and reboot. (`caddy start`, the hooks'
+  fallback, has no resume flag.)
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>dev.worktrunk.caddy</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/caddy</string>
+    <string>run</string>
+    <string>--resume</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/michaelnji/Library/Logs/caddy-worktrunk.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/michaelnji/Library/Logs/caddy-worktrunk.log</string>
+</dict>
+</plist>

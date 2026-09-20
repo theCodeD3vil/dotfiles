@@ -1,0 +1,114 @@
+# Portable half of the Brewfile: taps, formulae and go tools that install on both
+# macOS and Linux (Homebrew or Linuxbrew). Everything Mac-only is in Brewfile.mac.
+#   brew bundle --file bootstrap/Brewfile
+tap "adembc/tap", "https://github.com/Adembc/homebrew-tap", trusted: true
+tap "amjaradat01/awesome-lazy-zsh", trusted: true
+tap "dart-lang/dart", trusted: true
+tap "hudochenkov/sshpass", trusted: true
+tap "rtk-ai/tap", trusted: true
+# Browser automation CLI for AI agents
+brew "agent-browser"
+# Download with resuming and segmented downloading
+brew "aria2"
+# Improved shell history for zsh, bash, fish and nushell
+brew "atuin"
+# Clone of cat(1) with syntax highlighting and Git integration
+brew "bat"
+# Resource monitor. C++ version and continuation of bashtop and bpytop
+brew "btop"
+# Powerful, enterprise-ready, open source web server with automatic HTTPS
+brew "caddy"
+# Multi-shell multi-command argument completer
+brew "carapace"
+# Cloudflare Tunnel client (formerly Argo Tunnel)
+brew "cloudflared"
+# Terminal user interface client for Discord
+brew "concord"
+# Modern, maintained replacement for ls
+brew "eza"
+# Simple, fast and user-friendly alternative to find
+brew "fd"
+# Play, record, convert, and stream select audio and video codecs
+brew "ffmpeg"
+# Banner-like program prints strings as ASCII art
+brew "figlet"
+# Text editor for your terminal: easy, powerful and fast
+brew "fresh-editor"
+# Command-line fuzzy finder written in Go
+brew "fzf"
+# GNU compiler collection
+brew "gcc"
+# GitHub command-line tool
+brew "gh"
+# Distributed revision control system
+brew "git"
+# Syntax-highlighting pager for git and diff output
+brew "git-delta"
+# Terminal multiplexer
+brew "tmux"
+# Git status in tmux status bar
+brew "gitmux"
+# Review-first terminal diff viewer for agent-authored changesets
+brew "hunk"
+# Simple terminal UI for git commands
+brew "lazygit"
+# Package manager for the Lua programming language
+brew "luarocks"
+# Remote terminal application
+brew "mosh"
+# Incremental parsing library
+brew "tree-sitter"
+# Ambitious Vim-fork focused on extensibility and agility
+brew "neovim"
+# Interpreted, interactive, object-oriented programming language
+brew "python@3.14"
+# Execute binaries from Python packages in isolated environments
+brew "pipx"
+# PDF rendering library (based on the xpdf-3.0 code base)
+brew "poppler"
+# Generic syntax highlighter
+brew "pygments"
+# Search tool like grep and The Silver Searcher
+brew "ripgrep"
+# CLI proxy to minimize LLM token consumption
+brew "rtk"
+# Rust toolchain installer
+brew "rustup"
+# Smart session manager for the terminal
+brew "sesh"
+# Static analysis and lint tool, for (ba)sh scripts
+brew "shellcheck"
+# Cross-shell prompt for astronauts
+brew "starship"
+# Organize software neatly under a single directory tree (e.g. /usr/local)
+brew "stow"
+# General purpose fuzzy finder TUI
+brew "television"
+# Programmatically correct mistyped console commands
+brew "thefuck"
+# Upgrade all the things
+brew "topgrade"
+# Parser generator tool
+brew "tree-sitter-cli"
+# Language Server Protocol implementation for TypeScript wrapping tsserver
+brew "typescript-language-server"
+# CLI for Git worktree management, designed for parallel AI agent workflows
+brew "worktrunk"
+# Blazing fast terminal file manager written in Rust, based on async I/O
+brew "yazi"
+# Shell extension to navigate your filesystem faster
+brew "zoxide"
+# Fish shell like syntax highlighting for zsh
+brew "zsh-syntax-highlighting"
+# A simple terminal UI for managing SSH connections.  
+brew "adembc/tap/lazyssh", trusted: true
+# Comprehensive Zsh environment manager with 40+ plugins, themes, and profiles
+brew "amjaradat01/awesome-lazy-zsh/awesome-lazy-zsh"
+# SDK
+brew "dart-lang/dart/dart"
+brew "hudochenkov/sshpass/sshpass", trusted: true
+# Permanent memory for AI agents — MCP server with hybrid search
+brew "rtk-ai/tap/icm"
+go "golang.org/x/tools/gopls"
+go "mvdan.cc/sh/v3/cmd/shfmt"
+go "github.com/wailsapp/wails/v2/cmd/wails"

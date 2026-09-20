@@ -1,0 +1,3 @@
+# Global pnpm packages, one per line. Blank lines and # comments are ignored.
+# Generated from `pnpm ls -g` on 2026-09-20; prune by hand.
+supabase

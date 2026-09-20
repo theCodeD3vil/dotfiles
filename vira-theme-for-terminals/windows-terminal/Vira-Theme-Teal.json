@@ -1,0 +1,23 @@
+{
+  "name": "Vira-Theme-Teal",
+  "background": "#263238",
+  "foreground": "#D8DFDF",
+  "cursorColor": "#FFCC00",
+  "selectionBackground": "#2C5450",
+  "black": "#546E7A",
+  "blue": "#82AAFF",
+  "brightBlack": "#546E7A",
+  "brightBlue": "#B2CCD6",
+  "brightCyan": "#89DDFF",
+  "brightGreen": "#C3E88D",
+  "brightPurple": "#C792EA",
+  "brightRed": "#F78C6C",
+  "brightWhite": "#ffffff",
+  "brightYellow": "#FFCB6B",
+  "cyan": "#89DDFF",
+  "green": "#C3E88D",
+  "purple": "#C792EA",
+  "red": "#f07178",
+  "white": "#D8DFDF",
+  "yellow": "#FFCB6B"
+}

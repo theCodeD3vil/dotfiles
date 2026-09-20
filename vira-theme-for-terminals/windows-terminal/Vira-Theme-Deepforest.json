@@ -1,0 +1,23 @@
+{
+  "name": "Vira-Theme-Deepforest",
+  "background": "#111816",
+  "foreground": "#CAE5D5",
+  "cursorColor": "#FFCC00",
+  "selectionBackground": "#4B7253",
+  "black": "#3B544D",
+  "blue": "#6FA0DE",
+  "brightBlack": "#3B544D",
+  "brightBlue": "#95BBBD",
+  "brightCyan": "#74C9DE",
+  "brightGreen": "#C3E88D",
+  "brightPurple": "#A68DCD",
+  "brightRed": "#CC8868",
+  "brightWhite": "#ffffff",
+  "brightYellow": "#FFCB6B",
+  "cyan": "#74C9DE",
+  "green": "#C3E88D",
+  "purple": "#A68DCD",
+  "red": "#f07178",
+  "white": "#CAE5D5",
+  "yellow": "#FFCB6B"
+}
