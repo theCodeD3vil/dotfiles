@@ -57,7 +57,7 @@ export PATH="$PATH:$HOME/.lmstudio/bin"
 export PATH="$HOME/.local/bin:$PATH"
 
 # Vite+ bin (https://viteplus.dev)
-. "$HOME/.vite-plus/env"
+[ -f "$HOME/.vite-plus/env" ] && . "$HOME/.vite-plus/env"
 
 # Added by Antigravity IDE
 export PATH="$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
