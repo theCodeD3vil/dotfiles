@@ -18,9 +18,41 @@ into `~`. `.stow-local-ignore` keeps this README, `notes.txt`, `AI/` and
 | `.config/{atuin,bat,television,topgrade.toml,worktrunk,sketchybar}` | the matching tools |
 | `Library/` | iTerm2 and Terminal preferences, the Caddy launch agent |
 | `vira-theme-for-terminals/` | vendored upstream pack of terminal colour schemes (see [Palette](#palette)) |
+| `bootstrap/` | package lists and `install.sh` for setting up a new machine (see [New machine](#new-machine)) |
 | `AI/` | opencode config (`opencode.json`, `tui.json`), stowed separately (has its own `.stow-local-ignore`) |
 
-`notes.txt` holds the install-script TODO.
+`notes.txt` holds the design notes for `bootstrap/install.sh`.
+
+## New machine
+
+The repo is public, so a fresh Mac or Ubuntu box needs no credentials to start:
+
+```sh
+git clone https://github.com/theCodeD3vil/dotfiles ~/dotfiles
+~/dotfiles/bootstrap/install.sh --dry-run    # preview, changes nothing
+~/dotfiles/bootstrap/install.sh
+```
+
+A minimal Ubuntu install needs `git` first: `sudo apt-get install -y git`.
+
+`install.sh` is re-runnable and install-only: it adds what is missing and never
+upgrades or deletes anything. See `--help` for `--upgrade`, `--check-cleanup` and
+`--skip STEP`. In order it:
+
+1. installs the prerequisites and Homebrew (Xcode tools on a Mac, `apt.txt` on Ubuntu)
+2. runs `brew bundle` on `bootstrap/Brewfile`, plus `Brewfile.mac` on a Mac
+3. installs bun, pnpm and nvm (Node LTS plus the packages in `npm.txt`)
+4. installs the Claude Code and opencode CLIs
+5. installs the packages in `bun.txt` and `pnpm.txt`
+6. clones oh-my-zsh and the plugins in `omz-plugins.txt`
+7. stows the dotfiles, moving any file that is in the way to `~/.dotfiles-backup/<timestamp>/`
+8. runs the `rtk` and `icm` inits
+
+Still manual: logging in to `claude` and `opencode`, `gh auth login`, SSH keys,
+and on a Mac signing in to the App Store for the `mas` apps.
+
+The Mac path is tested. The Ubuntu path (apt, Linuxbrew) has not been run on a
+real machine yet, so run it with `--dry-run` first.
 
 ## tmux busy spinner
 

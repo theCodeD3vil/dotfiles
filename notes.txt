@@ -1,5 +1,5 @@
-TODO: install script
-=====================
+install.sh notes
+================
 
 Claude Code's config is not tracked (decided 2026-09-20), and AI/.config/opencode
 carries only opencode.json and tui.json. rtk's and icm's generated files (RTK.md,
@@ -7,7 +7,7 @@ CLAUDE.md, commands, plugins/{icm,rtk}.ts, settings.json hooks) are regenerated 
 each tool's own init command, tied to the machine's binary paths and version, so
 dotfiling a frozen copy would go stale and conflict with the real thing.
 
-Add these steps to the install script so a fresh machine gets them back:
+bootstrap/install.sh runs these steps. Notes on each:
 
   rtk init --global --opencode --auto-patch
                                      # writes RTK.md and an @RTK.md line in
@@ -113,34 +113,52 @@ Add these steps to the install script so a fresh machine gets them back:
                                      # also puts vp's node/npm shims on PATH; nvm
                                      # shadows them while its block stays last.
 
-Decided order for install.sh (2026-09-20, from the install-script interview)
+install.sh as built (2026-09-20). Steps run in this order; --skip NAME skips one.
 ================================================================================
 
-  1  preflight: OS, not root, sudo works
-  2  prerequisites: Mac = Xcode command line tools + brew; Ubuntu = apt basics + Linuxbrew
-  3  brew bundle --no-upgrade: Brewfile, then Brewfile.mac on a Mac
-  4  toolchains: bun, pnpm, nvm (default-packages symlink, nvm install --lts)
-  5  globals: bun.txt, pnpm.txt (npm.txt arrives through nvm default-packages)
-  6  oh-my-zsh clone + bootstrap/omz-plugins.txt
-  7  mkdir -p ~/.config ~/.config/opencode. Real dirs BEFORE stow, so stow links the
-     files instead of folding the whole dir into the repo; folded, rtk/icm would
-     write plugins/ and skills/ into the repo (tested in a throwaway HOME).
-  8  stow. Files that conflict are moved to ~/.dotfiles-backup/<timestamp>/ first;
-     never --adopt.
-  9  Linux only: /opt/homebrew symlink, iterm2 stub, stow --ignore list
- 10  agent CLIs: Claude Code and opencode from the vendors' official installers,
-     every run, skipped when already on PATH (verify the URLs against vendor docs)
- 11  mkdir -p ~/.claude; ~/.local/bin and ~/.opencode/bin on PATH; then rtk init,
-     icm init, wt config shell install zsh
- 12  Linux: chsh to zsh. Print the manual checklist: claude and opencode login,
-     gh auth login, SSH keys.
+  preflight       OS, not root, sudo, git
+  prerequisites   Mac: Xcode command line tools, Homebrew. Ubuntu: bootstrap/apt.txt, Linuxbrew
+  brew            brew bundle --no-upgrade: Brewfile, then Brewfile.mac on a Mac
+  toolchains      bun, pnpm, nvm v0.40.7 (default-packages -> npm.txt, nvm install --lts)
+  agents          Claude Code and opencode from the vendors' installers, skipped if present
+  globals         bun.txt, pnpm.txt (npm.txt arrives through nvm default-packages)
+  omz             oh-my-zsh clone + omz-plugins.txt
+  stow            real ~/.config and ~/.config/opencode, back up conflicts, stow . AI
+  linux           Ubuntu only, UNTESTED: /opt/homebrew symlink, iterm2 stub
+  inits           mkdir ~/.claude; rtk init; icm init; wt config shell install zsh
+  finish          chsh to zsh (Ubuntu), repo-dirty warning, the manual checklist
 
-  Re-runs only add what's missing: brew bundle --no-upgrade, never delete.
-  Flags: --dry-run, --upgrade, --check-cleanup (prints, never removes), --skip <step>.
-  Claude Code's settings.json is not managed. Opencode's opencode.json and tui.json
-  are stowed from AI/.
-  Testing: --dry-run and a real no-op re-run on the Mac; the Linux path is tested by
-  hand on a VPS (no Docker).
+  Flags: --dry-run, --upgrade, --check-cleanup (prints, never removes), --skip NAME.
+  Re-runs only add what is missing. Claude Code's settings.json is not managed;
+  opencode.json and tui.json are stowed from AI/.
+
+Why this order
+  - toolchains and agents run BEFORE stow: bun's and pnpm's installers append to
+    ~/.zshrc with no opt-out, and Claude's installer sets up "shell integration".
+    ~/.zshrc is stowed from the repo, so after stow they would edit the repo. Before
+    stow the edits land in a file stow then backs up. (opencode has
+    --no-modify-path, nvm has PROFILE=/dev/null.)
+  - a real ~/.config/opencode BEFORE stow: otherwise stow folds it into the repo and
+    rtk/icm write plugins/ and skills/ into it (tested in a throwaway HOME).
+  - inits AFTER the agent CLIs: icm finds agents by binary on PATH.
+
+Facts found while building it (stow 2.4.1)
+  - conflicts are reported as "cannot stow <src> over existing target <path> since
+    neither a link nor a directory". They are moved to ~/.dotfiles-backup/<timestamp>/;
+    never --adopt.
+  - command-line --ignore is matched against the whole relative path, unanchored at
+    the start, and ^/path forms are silently ignored. Top-level names use ^name$,
+    nested ones a plain suffix (ghostty, sketchybar, \.aerospace\.toml). Verified.
+  - a symlink in stow's way that stow does not own is a hard stow error, not a
+    conflict, so the step reports it and fails.
+  - installers are downloaded to a temp file and then run; `curl | bash` reports
+    success on a failed download.
+
+Tested on the Mac: syntax under bash 3.2, shellcheck, --dry-run, and the conflict
+backup + stow in a throwaway HOME (files moved, links made, second run a no-op).
+NOT tested: the whole Ubuntu path (apt, Linuxbrew, the /opt/homebrew symlink, the
+iterm2 stub, chsh, the vendor installers on Linux) and a first run on a machine with
+nothing installed. Run --dry-run first on the VPS.
 
 Linux/VPS (Ubuntu) requirements found by the 2026-09-20 config audit
 =====================================================================
