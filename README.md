@@ -48,6 +48,12 @@ upgrades or deletes anything. See `--help` for `--upgrade`, `--check-cleanup` an
 7. stows the dotfiles, moving any file that is in the way to `~/.dotfiles-backup/<timestamp>/`
 8. runs the `rtk` and `icm` inits
 
+While it runs you get a spinner and elapsed time for every long task, a progress
+bar for `brew bundle`, and a summary at the end (colours are your Catppuccin
+palette). Piped or CI runs, `NO_COLOR` and `--plain` get plain lines instead, and
+`--demo` previews the display with fake tasks. Every real run is logged to
+`~/.cache/dotfiles-install/`.
+
 Still manual: logging in to `claude` and `opencode`, `gh auth login`, SSH keys,
 and on a Mac signing in to the App Store for the `mas` apps.
 

@@ -128,7 +128,8 @@ install.sh as built (2026-09-20). Steps run in this order; --skip NAME skips one
   inits           mkdir ~/.claude; rtk init; icm init; wt config shell install zsh
   finish          chsh to zsh (Ubuntu), repo-dirty warning, the manual checklist
 
-  Flags: --dry-run, --upgrade, --check-cleanup (prints, never removes), --skip NAME.
+  Flags: --dry-run, --upgrade, --check-cleanup (prints, never removes), --skip NAME,
+  --plain, --demo. Every real run is logged to ~/.cache/dotfiles-install/<timestamp>.log.
   Re-runs only add what is missing. Claude Code's settings.json is not managed;
   opencode.json and tui.json are stowed from AI/.
 
@@ -153,6 +154,18 @@ Facts found while building it (stow 2.4.1)
     conflict, so the step reports it and fails.
   - installers are downloaded to a temp file and then run; `curl | bash` reports
     success on a failed download.
+  - progress display: a long task runs in a background subshell with stdin from
+    /dev/null, output captured, and a spinner + elapsed + latest line drawn over it;
+    brew bundle also gets a bar (it prints one "Using|Installing <name>" line per
+    Brewfile entry, counted against the entries in the file). Fancy mode needs a
+    terminal; otherwise (pipe, NO_COLOR, --plain, TERM=dumb) output is plain ASCII.
+  - sudo is asked for up front, in the foreground, and kept alive in the background:
+    a password prompt behind a spinner would look like a hang.
+  - background jobs in a non-interactive bash ignore Ctrl-C, so the interrupt trap
+    kills the whole process tree itself and restores the cursor.
+  - the display was tested in a pseudo-terminal (fixed width, truecolor / 256-colour,
+    UTF-8 / C locale, Ctrl-C mid-task) by reconstructing the final screen from the
+    raw output. --demo is the way to look at it.
 
 Tested on the Mac: syntax under bash 3.2, shellcheck, --dry-run, and the conflict
 backup + stow in a throwaway HOME (files moved, links made, second run a no-op).

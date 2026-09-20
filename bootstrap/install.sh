@@ -13,7 +13,12 @@
 #   --skip STEP      skip a step; repeat for several. Steps:
 #                    preflight prerequisites brew toolchains agents globals omz
 #                    stow linux inits finish
+#   --plain          no colour, spinners or bars. Chosen automatically when the
+#                    output is not a terminal or NO_COLOR is set.
+#   --demo           show the progress display with fake tasks; changes nothing
 #   -h, --help
+#
+# Every real run is logged to ~/.cache/dotfiles-install/<timestamp>.log
 #
 # Must run under bash and work on macOS's bash 3.2, so: no associative arrays,
 # no mapfile, no ${var,,}.
@@ -24,6 +29,8 @@
 DRY_RUN=0
 UPGRADE=0
 CHECK_CLEANUP=0
+PLAIN=0
+DEMO=0
 SKIP=" "
 STEPS="preflight prerequisites brew toolchains agents globals omz stow linux inits finish"
 
@@ -33,25 +40,361 @@ NVM_VERSION="v0.40.7"
 BOOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 DOTFILES_DIR=$(cd "$BOOT_DIR/.." && pwd)
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
+LOG_DIR="$HOME/.cache/dotfiles-install"
+LOG_FILE=/dev/null
 OS=""
 STOW_IGNORES=()
 BACKED_UP=0
 
-# ---------------------------------------------------------------- helpers ---
+# UI state. Everything is empty until init_ui decides between fancy and plain.
+UI_FANCY=0
+COLS=80
+ESC=""
+C_RESET="" C_BOLD="" C_TEAL="" C_GREEN="" C_RED="" C_YELLOW="" C_MAUVE="" C_GREY=""
+CLR="" CURSOR_HIDE="" CURSOR_SHOW=""
+FILL="#" EMPTY="-" OK="ok" FAIL="x" SKIPPED="-" ARROW=">" WARN="!" DOT="-" ELL="..."
+BOX_TL="+" BOX_BL="+" BOX_H="-" BOX_V="|"
+FRAMES=("|" "/" "-" "\\")
+BG_PID=""
+SUDO_KEEPALIVE_PID=""
+SPIN_TOTAL=""
+SPIN_REGEX=""
+RUN_START=$SECONDS
+SUMMARY=""
 
-say()  { printf '%s\n' "$*"; }
-step() { printf '\n==> %s\n' "$*"; }
-info() { printf '    %s\n' "$*"; }
-warn() { printf '    WARN: %s\n' "$*" >&2; }
-die()  { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+# `brew bundle` prints one "Using <name>" or "Installing <name>" line per entry.
+BREW_PROGRESS_REGEX='^(Using|Installing|Upgrading|Tapping|Skipping) [^ ]+$'
+
+# ------------------------------------------------------------------- ui ---
+
+init_ui() {
+  local cs
+  UI_FANCY=0
+  if [ "$PLAIN" != 1 ] && [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-dumb}" != dumb ]; then
+    UI_FANCY=1
+  fi
+  [ "$UI_FANCY" = 1 ] || return 0
+
+  ESC=$'\033'
+  C_RESET="${ESC}[0m"
+  C_BOLD="${ESC}[1m"
+  CLR="${ESC}[2K"
+  CURSOR_HIDE="${ESC}[?25l"
+  CURSOR_SHOW="${ESC}[?25h"
+  case "${COLORTERM:-}" in
+    *truecolor*|*24bit*)
+      # Catppuccin Mocha: the palette the rest of these dotfiles use.
+      C_TEAL="${ESC}[38;2;148;226;213m"
+      C_GREEN="${ESC}[38;2;166;227;161m"
+      C_RED="${ESC}[38;2;243;139;168m"
+      C_YELLOW="${ESC}[38;2;249;226;175m"
+      C_MAUVE="${ESC}[38;2;203;166;247m"
+      C_GREY="${ESC}[38;2;108;112;134m"
+      ;;
+    *)
+      C_TEAL="${ESC}[38;5;115m"
+      C_GREEN="${ESC}[38;5;114m"
+      C_RED="${ESC}[38;5;211m"
+      C_YELLOW="${ESC}[38;5;223m"
+      C_MAUVE="${ESC}[38;5;183m"
+      C_GREY="${ESC}[38;5;244m"
+      ;;
+  esac
+
+  cs="${LC_ALL:-${LC_CTYPE:-${LANG:-}}}"
+  case "$cs" in
+    *[Uu][Tt][Ff]-8*|*[Uu][Tt][Ff]8*)
+      FILL="█" EMPTY="░" OK="✔" FAIL="✘" SKIPPED="○" ARROW="▸" WARN="⚠" DOT="·" ELL="…"
+      BOX_TL="┏" BOX_BL="┗" BOX_H="━" BOX_V="┃"
+      FRAMES=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+      ;;
+  esac
+
+  # $COLUMNS is not exported to scripts, and tput can't see the terminal from
+  # inside $( ), so ask the tty directly.
+  COLS=${COLUMNS:-}
+  if [ -z "$COLS" ]; then
+    COLS=$(stty size 2>/dev/null </dev/tty | awk '{print $2}')
+  fi
+  case "$COLS" in ''|*[!0-9]*) COLS=80 ;; esac
+  [ "$COLS" -lt 60 ] && COLS=60
+  [ "$COLS" -gt 110 ] && COLS=110
+  return 0
+}
+
+log_plain() { printf '%s\n' "$*" >> "$LOG_FILE"; }
+say()  { printf '%s\n' "$*"; log_plain "$*"; }
+info() { printf '    %s%s%s %s\n' "$C_GREY" "$DOT" "$C_RESET" "$*"; log_plain "    $*"; }
+warn() { printf '    %s%s %s%s\n' "$C_YELLOW" "$WARN" "$*" "$C_RESET" >&2; log_plain "    WARN: $*"; }
+dry()  { printf '    %s[dry-run]%s %s\n' "$C_TEAL" "$C_RESET" "$*"; }
+die()  { cleanup_ui; printf '\n  %s%s %s%s\n' "$C_RED" "$FAIL" "$*" "$C_RESET" >&2; log_plain "ERROR: $*"; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
-usage() { sed -n '3,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() {
+  awk 'NR >= 3 { if ($0 ~ /^# Must run under bash/) exit; print }' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+}
 
-# Run a command, or only print it under --dry-run.
-run() {
+# Progress bar: bar PERCENT WIDTH
+bar() {
+  local pct=$1 w=$2 filled i f="" e=""
+  filled=$((pct * w / 100))
+  i=0
+  while [ "$i" -lt "$w" ]; do
+    if [ "$i" -lt "$filled" ]; then f="$f$FILL"; else e="$e$EMPTY"; fi
+    i=$((i + 1))
+  done
+  printf '%s%s%s%s%s' "$C_TEAL" "$f" "$C_GREY" "$e" "$C_RESET"
+}
+
+fmt_secs() {
+  local s=$1
+  if [ "$s" -ge 3600 ]; then
+    printf '%dh%02dm' $((s / 3600)) $((s % 3600 / 60))
+  elif [ "$s" -ge 60 ]; then
+    printf '%dm%02ds' $((s / 60)) $((s % 60))
+  else
+    printf '%ds' "$s"
+  fi
+}
+
+# Shorten TEXT to at most N columns.
+trunc() {
+  local s=$1 n=$2
+  if [ "$n" -lt 4 ]; then return 0; fi
+  if [ "${#s}" -gt "$n" ]; then
+    printf '%s%s' "${s:0:$((n - 1))}" "$ELL"
+  else
+    printf '%s' "$s"
+  fi
+}
+
+# Last non-empty line of a growing log, with ANSI codes and carriage returns
+# (curl progress meters) stripped. Reads only the tail, so it stays cheap.
+last_line() {
+  tail -c 600 "$1" 2>/dev/null | tr '\r' '\n' | sed "s/${ESC}\[[0-9;?]*[A-Za-z]//g" | grep -v '^[[:space:]]*$' | tail -n 1
+}
+
+kill_tree() {
+  local p=$1 c
+  for c in $(pgrep -P "$p" 2>/dev/null); do
+    kill_tree "$c"
+  done
+  kill "$p" 2>/dev/null
+  return 0
+}
+
+cleanup_ui() {
+  if [ -n "$BG_PID" ]; then
+    kill_tree "$BG_PID"
+    BG_PID=""
+  fi
+  if [ -n "$SUDO_KEEPALIVE_PID" ]; then
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
+    SUDO_KEEPALIVE_PID=""
+  fi
+  if [ "$UI_FANCY" = 1 ]; then
+    printf '%s' "$CURSOR_SHOW"
+  fi
+  return 0
+}
+
+on_interrupt() {
+  cleanup_ui
+  printf '\n  %s%s interrupted%s\n' "$C_YELLOW" "$WARN" "$C_RESET"
+  exit 130
+}
+
+# Run a command with a spinner, its elapsed time and its latest output line. Output
+# is captured (and appended to the log); on failure the last lines are shown.
+# With SPIN_TOTAL and SPIN_REGEX set, also draws a bar of matching lines / total.
+# Plain mode just streams the output. Returns the command's exit status.
+spin() {
+  local label=$1 log start rc i=0 n=0 frame elapsed last line pct used avail label_t
+  shift
+  start=$SECONDS
+
+  if [ "$UI_FANCY" != 1 ]; then
+    printf '    %s ...\n' "$label"
+    ( "$@" ) 2>&1 | tee -a "$LOG_FILE" | sed 's/^/        /'
+    rc=${PIPESTATUS[0]}
+    if [ "$rc" = 0 ]; then
+      printf '    %s %s (%s)\n' "$OK" "$label" "$(fmt_secs $((SECONDS - start)))"
+    else
+      printf '    %s %s failed (exit %s)\n' "$FAIL" "$label" "$rc"
+    fi
+    return "$rc"
+  fi
+
+  log=$(mktemp) || return 1
+  label_t=$(trunc "$label" 44)
+  # stdin from /dev/null: nothing behind the spinner may wait for the keyboard.
+  ( "$@" ) >"$log" 2>&1 </dev/null &
+  BG_PID=$!
+  printf '%s' "$CURSOR_HIDE"
+
+  while kill -0 "$BG_PID" 2>/dev/null; do
+    frame=${FRAMES[$((i % ${#FRAMES[@]}))]}
+    elapsed=$(fmt_secs $((SECONDS - start)))
+    used=$((4 + 2 + ${#label_t} + 2 + ${#elapsed}))
+    line="    ${C_TEAL}${frame}${C_RESET} ${label_t}  ${C_GREY}${elapsed}${C_RESET}"
+    if [ -n "$SPIN_TOTAL" ] && [ "$SPIN_TOTAL" -gt 0 ] 2>/dev/null; then
+      n=$(grep -cE "$SPIN_REGEX" "$log" 2>/dev/null)
+      n=${n:-0}
+      if [ "$n" -gt "$SPIN_TOTAL" ]; then n=$SPIN_TOTAL; fi
+      pct=$((n * 100 / SPIN_TOTAL))
+      line="$line  $(bar "$pct" 20) ${C_GREY}${n}/${SPIN_TOTAL}${C_RESET}"
+      used=$((used + 2 + 20 + 1 + ${#n} + 1 + ${#SPIN_TOTAL}))
+    fi
+    avail=$((COLS - used - 4))
+    if [ "$avail" -ge 10 ]; then
+      last=$(last_line "$log")
+      if [ -n "$last" ]; then
+        line="$line  ${C_GREY}$(trunc "$last" "$avail")${C_RESET}"
+      fi
+    fi
+    printf '\r%s%s' "$CLR" "$line"
+    i=$((i + 1))
+    sleep 0.1
+  done
+
+  wait "$BG_PID"
+  rc=$?
+  BG_PID=""
+  elapsed=$(fmt_secs $((SECONDS - start)))
+  printf '\r%s' "$CLR"
+  if [ "$rc" = 0 ]; then
+    printf '    %s%s%s %s  %s%s%s\n' "$C_GREEN" "$OK" "$C_RESET" "$label_t" "$C_GREY" "$elapsed" "$C_RESET"
+  else
+    printf '    %s%s%s %s  %s%s%s\n' "$C_RED" "$FAIL" "$C_RESET" "$label_t" "$C_GREY" "$elapsed" "$C_RESET"
+    tail -n 40 "$log" | tr '\r' '\n' | sed "s/${ESC}\[[0-9;?]*[A-Za-z]//g" | grep -v '^[[:space:]]*$' | tail -n 15 |
+      while IFS= read -r last; do
+        printf '        %s%s%s\n' "$C_GREY" "$(trunc "$last" $((COLS - 10)))" "$C_RESET"
+      done
+    if [ "$LOG_FILE" != /dev/null ]; then
+      printf '        %sfull output: %s%s\n' "$C_GREY" "$LOG_FILE" "$C_RESET"
+    fi
+  fi
+  { printf '=== %s (exit %s)\n' "$label" "$rc"; cat "$log"; } >> "$LOG_FILE"
+  rm -f "$log"
+  printf '%s' "$CURSOR_SHOW"
+  return "$rc"
+}
+
+# spin with a progress bar: spin_progress TOTAL REGEX LABEL CMD...
+spin_progress() {
+  local rc
+  SPIN_TOTAL=$1
+  SPIN_REGEX=$2
+  shift 2
+  spin "$@"
+  rc=$?
+  SPIN_TOTAL=""
+  SPIN_REGEX=""
+  return "$rc"
+}
+
+step_desc() {
+  case "$1" in
+    preflight)     echo "check the OS, sudo and this checkout" ;;
+    prerequisites) echo "Xcode tools or apt basics, then Homebrew" ;;
+    brew)          echo "install everything in the Brewfiles" ;;
+    toolchains)    echo "bun, pnpm and nvm (Node LTS plus npm.txt)" ;;
+    agents)        echo "the Claude Code and opencode CLIs" ;;
+    globals)       echo "global bun and pnpm packages" ;;
+    omz)           echo "oh-my-zsh and its plugins" ;;
+    stow)          echo "link the dotfiles into your home directory" ;;
+    linux)         echo "Ubuntu-only shell fixes" ;;
+    inits)         echo "rtk, icm and worktrunk setup" ;;
+    finish)        echo "login shell and a last check" ;;
+  esac
+}
+
+step_header() {
+  local name=$1 idx=$2 total=$3 pct
+  pct=$(((idx - 1) * 100 / total))
+  printf '\n  %s%s%s %s%-14s%s %s%2d/%d%s  ' "$C_MAUVE" "$ARROW" "$C_RESET" "$C_BOLD" "$name" "$C_RESET" "$C_GREY" "$idx" "$total" "$C_RESET"
+  bar "$pct" 24
+  printf ' %s%3d%%%s\n' "$C_GREY" "$pct" "$C_RESET"
+  printf '      %s%s%s\n' "$C_GREY" "$(step_desc "$name")" "$C_RESET"
+  log_plain ""
+  log_plain "== [$idx/$total] $name"
+}
+
+print_banner() {
+  local osname mode="live"
+  if [ "$OS" = mac ]; then
+    osname="macOS $(sw_vers -productVersion 2>/dev/null)"
+  elif [ -r /etc/os-release ]; then
+    # shellcheck source=/dev/null
+    osname=$(. /etc/os-release && printf '%s' "${PRETTY_NAME:-Linux}")
+  else
+    osname="${OS:-unknown}"
+  fi
+  [ "$DRY_RUN" = 1 ] && mode="dry run (changes nothing)"
+  printf '\n  %s%s%s%s%s %sdotfiles bootstrap%s\n' "$C_MAUVE" "$BOX_TL" "$BOX_H" "$BOX_H" "$C_RESET" "$C_BOLD" "$C_RESET"
+  printf '  %s%s%s  %s\n' "$C_MAUVE" "$BOX_V" "$C_RESET" "$osname"
+  printf '  %s%s%s  %s%s%s\n' "$C_MAUVE" "$BOX_V" "$C_RESET" "$C_GREY" "$DOTFILES_DIR" "$C_RESET"
+  printf '  %s%s%s  %s%s%s\n' "$C_MAUVE" "$BOX_V" "$C_RESET" "$C_GREY" "$mode" "$C_RESET"
+  printf '  %s%s%s%s%s%s\n' "$C_MAUVE" "$BOX_BL" "$BOX_H" "$BOX_H" "$BOX_H" "$C_RESET"
+  log_plain "dotfiles bootstrap: $osname, $DOTFILES_DIR, $mode"
+}
+
+# SUMMARY holds one "status|name|seconds" line per step.
+record() { SUMMARY="$SUMMARY${SUMMARY:+$'\n'}$1|$2|$3"; }
+
+print_summary() {
+  local status name secs ndone=0 nfail=0 nskip=0 icon color note total pad
+  total=$((SECONDS - RUN_START))
+  printf '\n  %s%s%s%s%s %ssummary%s\n' "$C_MAUVE" "$BOX_TL" "$BOX_H" "$BOX_H" "$C_RESET" "$C_BOLD" "$C_RESET"
+  while IFS='|' read -r status name secs; do
+    [ -n "$status" ] || continue
+    case "$status" in
+      done)    icon=$OK;      color=$C_GREEN;  note=$(fmt_secs "$secs"); ndone=$((ndone + 1)) ;;
+      failed)  icon=$FAIL;    color=$C_RED;    note="failed after $(fmt_secs "$secs")"; nfail=$((nfail + 1)) ;;
+      *)       icon=$SKIPPED; color=$C_GREY;   note="skipped"; nskip=$((nskip + 1)) ;;
+    esac
+    pad=""
+    if [ "${#icon}" -lt 2 ]; then pad=" "; fi
+    printf '  %s%s%s  %s%s%s%s %s%-14s%s %s%s%s\n' "$C_MAUVE" "$BOX_V" "$C_RESET" "$color" "$icon" "$C_RESET" "$pad" "$C_RESET" "$name" "$C_RESET" "$C_GREY" "$note" "$C_RESET"
+  done <<EOF
+$SUMMARY
+EOF
+  printf '  %s%s%s%s%s ' "$C_MAUVE" "$BOX_BL" "$BOX_H" "$BOX_H" "$C_RESET"
+  bar 100 16
+  printf '  %s%d done, %d failed, %d skipped in %s%s\n' "$C_GREY" "$ndone" "$nfail" "$nskip" "$(fmt_secs "$total")" "$C_RESET"
+  log_plain "summary: $ndone done, $nfail failed, $nskip skipped in $(fmt_secs "$total")"
+  if [ "$LOG_FILE" != /dev/null ]; then
+    printf '  %s  log: %s%s\n' "$C_GREY" "$LOG_FILE" "$C_RESET"
+  fi
+}
+
+print_next_steps() {
+  printf '\n  %s%s next steps%s  %s(none of these can be scripted)%s\n' "$C_MAUVE" "$ARROW" "$C_RESET" "$C_GREY" "$C_RESET"
+  printf '      %s%s%s log in to %sclaude%s and %sopencode%s\n' "$C_TEAL" "$DOT" "$C_RESET" "$C_BOLD" "$C_RESET" "$C_BOLD" "$C_RESET"
+  printf '      %s%s%s GitHub: %sgh auth login%s\n' "$C_TEAL" "$DOT" "$C_RESET" "$C_BOLD" "$C_RESET"
+  printf '      %s%s%s SSH keys and the SSH agent\n' "$C_TEAL" "$DOT" "$C_RESET"
+  printf '      %s%s%s macOS only: sign in to the App Store, then re-run for the mas apps\n' "$C_TEAL" "$DOT" "$C_RESET"
+  printf '      %s%s%s open a new terminal (or run %sexec zsh%s) so the new PATH and shell config load\n\n' "$C_TEAL" "$DOT" "$C_RESET" "$C_BOLD" "$C_RESET"
+}
+
+# ---------------------------------------------------------------- helpers ---
+
+# A long-running command: spinner in a real run, printed in a dry run.
+# run_as LABEL CMD...
+run_as() {
+  local label=$1
+  shift
   if [ "$DRY_RUN" = 1 ]; then
-    printf '    [dry-run] %s\n' "$*"
+    dry "$*"
+    return 0
+  fi
+  spin "$label" "$@"
+}
+
+# A quick command that needs no spinner (mkdir, ln, touch).
+quiet() {
+  if [ "$DRY_RUN" = 1 ]; then
+    dry "$*"
     return 0
   fi
   "$@"
@@ -59,18 +402,13 @@ run() {
 
 # Download an installer to a temp file, then run it. Piping curl into bash would
 # report success on a failed download, because bash just gets empty input.
-# usage: fetch_run "VAR=1 VAR2=x" INTERPRETER URL [args...]   (env may be "")
-fetch_run() {
+_fetch_and_run() {
   local envs=$1 interp=$2 url=$3 tmp rc
   shift 3
-  if [ "$DRY_RUN" = 1 ]; then
-    printf '    [dry-run] download %s and run: %s %s %s\n' "$url" "${envs:+$envs }" "$interp" "$*"
-    return 0
-  fi
   tmp=$(mktemp) || return 1
   if ! curl -fsSL "$url" -o "$tmp"; then
     rm -f "$tmp"
-    warn "could not download $url"
+    echo "could not download $url" >&2
     return 1
   fi
   # shellcheck disable=SC2086  # $envs is intentionally split into VAR=value words
@@ -80,8 +418,21 @@ fetch_run() {
   return "$rc"
 }
 
+# usage: fetch_run LABEL "VAR=1 VAR2=x" INTERPRETER URL [args...]   (env may be "")
+fetch_run() {
+  local label=$1 envs=$2 interp=$3 url=$4
+  shift 4
+  if [ "$DRY_RUN" = 1 ]; then
+    dry "download $url and run: ${envs:+$envs }$interp $*"
+    return 0
+  fi
+  spin "$label" _fetch_and_run "$envs" "$interp" "$url" "$@"
+}
+
 # Non-comment, non-blank lines of a list file.
 list_items() { grep -v '^[[:space:]]*\(#\|$\)' "$1" 2>/dev/null; }
+
+count_entries() { grep -cE '^(tap|brew|cask|mas|vscode|go|uv|cargo|npm) ' "$1" 2>/dev/null; }
 
 detect_os() {
   case "$(uname -s)" in
@@ -114,11 +465,24 @@ load_brew_env() {
   eval "$("$b" shellenv)"
 }
 
+# Ask for sudo up front, in the foreground, and keep the ticket alive: a password
+# prompt behind a spinner would look like a hang.
 need_sudo() {
   [ "$DRY_RUN" = 1 ] && return 0
-  sudo -n true 2>/dev/null && return 0
-  info "sudo password needed"
-  sudo -v || die "could not get sudo"
+  if ! sudo -n true 2>/dev/null; then
+    info "sudo password needed"
+    sudo -v || die "could not get sudo"
+  fi
+  if [ -z "$SUDO_KEEPALIVE_PID" ]; then
+    (
+      while :; do
+        sudo -n -v 2>/dev/null
+        sleep 50
+        kill -0 "$$" 2>/dev/null || exit 0
+      done
+    ) >/dev/null 2>&1 &
+    SUDO_KEEPALIVE_PID=$!
+  fi
 }
 
 pnpm_home_dir() {
@@ -162,11 +526,13 @@ step_prerequisites() {
   if [ "$OS" = mac ]; then
     if ! xcode-select -p >/dev/null 2>&1; then
       if [ "$DRY_RUN" = 1 ]; then
-        info "[dry-run] would run xcode-select --install and stop until it finishes"
+        dry "xcode-select --install, then stop until it finishes"
       else
         xcode-select --install >/dev/null 2>&1
         die "finish the Xcode Command Line Tools installer that just opened, then re-run this script"
       fi
+    else
+      info "Xcode command line tools present"
     fi
   else
     pkgs=$(list_items "$BOOT_DIR/apt.txt" | tr '\n' ' ')
@@ -176,9 +542,9 @@ step_prerequisites() {
     done
     if [ -n "$missing" ]; then
       need_sudo
-      run sudo apt-get update
+      run_as "apt-get update" sudo apt-get update
       # shellcheck disable=SC2086  # $missing is a list of package names
-      run sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y $missing
+      run_as "apt-get install$missing" sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y $missing
     else
       info "apt prerequisites already installed"
     fi
@@ -188,7 +554,7 @@ step_prerequisites() {
     info "Homebrew already installed"
   else
     need_sudo
-    fetch_run "NONINTERACTIVE=1" bash https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh || return 1
+    fetch_run "install Homebrew" "NONINTERACTIVE=1" bash https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh || return 1
   fi
   if [ "$DRY_RUN" != 1 ]; then
     load_brew_env || die "Homebrew is not usable after the install"
@@ -203,7 +569,7 @@ step_brew() {
   fi
   if ! load_brew_env 2>/dev/null; then
     if [ "$DRY_RUN" = 1 ]; then
-      info "[dry-run] would run brew bundle (Homebrew is not installed yet)"
+      dry "brew bundle (Homebrew is not installed yet)"
       return 0
     fi
     warn "Homebrew not found"
@@ -212,19 +578,20 @@ step_brew() {
   for f in Brewfile Brewfile.mac; do
     [ "$f" = Brewfile.mac ] && [ "$OS" != mac ] && continue
     if [ "$DRY_RUN" = 1 ]; then
+      info "checking $f ..."
       # No auto-update: a dry run must not touch Homebrew's own index either.
       # shellcheck disable=SC2086  # $upflag is empty or one option
       out=$(HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 brew bundle check $upflag --verbose --file "$BOOT_DIR/$f" 2>&1 | grep '^→' | sed 's/^→ /        /')
       if [ -n "$out" ]; then
-        info "[dry-run] $f: brew would $verb:"
+        dry "$f: brew would $verb:"
         printf '%s\n' "$out"
       else
-        info "[dry-run] $f: nothing to $verb"
+        dry "$f: nothing to $verb"
       fi
     elif [ "$UPGRADE" = 1 ]; then
-      brew bundle --file "$BOOT_DIR/$f" || rc=1
+      spin_progress "$(count_entries "$BOOT_DIR/$f")" "$BREW_PROGRESS_REGEX" "brew bundle $f" brew bundle --file "$BOOT_DIR/$f" || rc=1
     else
-      brew bundle --no-upgrade --file "$BOOT_DIR/$f" || rc=1
+      spin_progress "$(count_entries "$BOOT_DIR/$f")" "$BREW_PROGRESS_REGEX" "brew bundle $f" brew bundle --no-upgrade --file "$BOOT_DIR/$f" || rc=1
     fi
   done
   if [ "$rc" != 0 ]; then
@@ -241,38 +608,38 @@ step_toolchains() {
   if have bun || [ -x "$HOME/.bun/bin/bun" ]; then
     info "bun already installed"
   else
-    fetch_run "" bash https://bun.sh/install || rc=1
+    fetch_run "install bun" "" bash https://bun.sh/install || rc=1
   fi
 
   if have pnpm || [ -x "$(pnpm_home_dir)/pnpm" ]; then
     info "pnpm already installed"
   else
-    fetch_run "" sh https://get.pnpm.io/install.sh || rc=1
+    fetch_run "install pnpm" "" sh https://get.pnpm.io/install.sh || rc=1
   fi
 
   # nvm: PROFILE=/dev/null stops its installer appending to ~/.zshrc.
   if [ -s "$NVM_DIR/nvm.sh" ]; then
     info "nvm already installed"
   else
-    fetch_run "PROFILE=/dev/null" bash "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_VERSION/install.sh" || rc=1
+    fetch_run "install nvm $NVM_VERSION" "PROFILE=/dev/null" bash "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_VERSION/install.sh" || rc=1
   fi
   # default-packages must be linked AFTER the installer: it git-clones into ~/.nvm
   # and fails if that directory already exists. nvm installs everything listed in
   # it after every `nvm install`, which is how npm.txt gets applied.
   if [ -d "$NVM_DIR" ] || [ "$DRY_RUN" = 1 ]; then
-    run ln -sfn "$BOOT_DIR/npm.txt" "$NVM_DIR/default-packages"
+    quiet ln -sfn "$BOOT_DIR/npm.txt" "$NVM_DIR/default-packages"
   fi
   if [ "$DRY_RUN" != 1 ] && [ -s "$NVM_DIR/nvm.sh" ]; then
     # shellcheck source=/dev/null
     . "$NVM_DIR/nvm.sh"
     if [ "$(nvm version 'lts/*' 2>/dev/null)" = "N/A" ]; then
-      nvm install --lts || rc=1
+      spin "nvm install --lts (and npm.txt)" nvm install --lts || rc=1
     else
       info "an LTS node is already installed"
     fi
     nvm alias default 'lts/*' >/dev/null 2>&1 || true
   elif [ "$DRY_RUN" = 1 ]; then
-    info "[dry-run] would run: nvm install --lts (if no LTS node is installed), nvm alias default 'lts/*'"
+    dry "nvm install --lts (if no LTS node is installed), then nvm alias default 'lts/*'"
   fi
   return "$rc"
 }
@@ -284,12 +651,12 @@ step_agents() {
   if have claude || [ -x "$HOME/.local/bin/claude" ]; then
     info "claude already installed"
   else
-    fetch_run "" bash https://claude.ai/install.sh || rc=1
+    fetch_run "install Claude Code" "" bash https://claude.ai/install.sh || rc=1
   fi
   if have opencode || [ -x "$HOME/.opencode/bin/opencode" ]; then
     info "opencode already installed"
   else
-    fetch_run "" bash https://opencode.ai/install --no-modify-path || rc=1
+    fetch_run "install opencode" "" bash https://opencode.ai/install --no-modify-path || rc=1
   fi
   return "$rc"
 }
@@ -302,7 +669,7 @@ step_globals() {
       if grep -qF "\"$pkg\"" "$HOME/.bun/install/global/package.json" 2>/dev/null; then
         info "bun: $pkg already installed"
       else
-        run bun add -g "$pkg" || { warn "bun add -g $pkg failed"; rc=1; }
+        run_as "bun add -g $pkg" bun add -g "$pkg" || { warn "bun add -g $pkg failed"; rc=1; }
       fi
     done
   else
@@ -315,7 +682,7 @@ step_globals() {
       if pnpm ls -g --depth=0 2>/dev/null | awk '{print $1}' | grep -Fxq "$pkg"; then
         info "pnpm: $pkg already installed"
       else
-        run pnpm add -g "$pkg" || { warn "pnpm add -g $pkg failed"; rc=1; }
+        run_as "pnpm add -g $pkg" pnpm add -g "$pkg" || { warn "pnpm add -g $pkg failed"; rc=1; }
       fi
     done
   else
@@ -331,7 +698,7 @@ step_omz() {
     info "oh-my-zsh already installed"
   else
     # A plain clone, not its installer: the installer replaces ~/.zshrc.
-    run git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$zdir" || return 1
+    run_as "clone oh-my-zsh" git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$zdir" || return 1
   fi
   while read -r name url; do
     [ -n "$name" ] || continue
@@ -339,7 +706,7 @@ step_omz() {
     if [ -d "$dest" ]; then
       info "omz plugin $name already installed"
     else
-      run git clone --depth=1 "$url" "$dest" || { warn "could not clone $name"; rc=1; }
+      run_as "clone plugin $name" git clone --depth=1 "$url" "$dest" || { warn "could not clone $name"; rc=1; }
     fi
   done < <(list_items "$BOOT_DIR/omz-plugins.txt")
   return "$rc"
@@ -371,11 +738,11 @@ resolve_conflicts() {
     while IFS= read -r p; do
       [ -n "$p" ] || continue
       if [ "$DRY_RUN" = 1 ]; then
-        info "[dry-run] would move ~/$p to $BACKUP_DIR/$p"
+        dry "move ~/$p to $BACKUP_DIR/$p"
       else
         mkdir -p "$(dirname "$BACKUP_DIR/$p")" && mv "$HOME/$p" "$BACKUP_DIR/$p" || return 1
         BACKED_UP=1
-        info "backed up ~/$p -> $BACKUP_DIR/$p"
+        info "backed up ~/$p"
       fi
     done <<EOF
 $paths
@@ -391,7 +758,7 @@ step_stow() {
   local out
   if ! have stow; then
     if [ "$DRY_RUN" = 1 ]; then
-      info "[dry-run] stow is not installed yet, so the link plan can't be simulated"
+      dry "stow is not installed yet, so the link plan can't be simulated"
       return 0
     fi
     warn "stow not found (did brew bundle fail?)"
@@ -413,11 +780,11 @@ step_stow() {
   # Real directories BEFORE stow. If ~/.config/opencode does not exist, stow folds it
   # into one symlink to the repo, and rtk/icm would then write plugins/ and skills/
   # into the repo. With a real directory only the two tracked files get linked.
-  run mkdir -p "$HOME/.config" "$HOME/.config/opencode"
+  quiet mkdir -p "$HOME/.config" "$HOME/.config/opencode"
 
   resolve_conflicts || return 1
   if [ "$DRY_RUN" = 1 ]; then
-    info "[dry-run] stow simulation reports no other problems"
+    dry "stow simulation reports no other problems"
     return 0
   fi
   out=$(stow_run real) || { printf '%s\n' "$out" | sed 's/^/      /' >&2; return 1; }
@@ -436,23 +803,23 @@ step_linux() {
   # tool and hardcodes /opt/homebrew, so point that path at Linuxbrew.
   if [ ! -e /opt/homebrew ]; then
     need_sudo
-    run sudo ln -s /home/linuxbrew/.linuxbrew /opt/homebrew
+    quiet sudo ln -s /home/linuxbrew/.linuxbrew /opt/homebrew
   fi
   # UNTESTED: the same block sources this iTerm file unguarded.
   if [ ! -e "$HOME/.iterm2_shell_integration.zsh" ]; then
-    run touch "$HOME/.iterm2_shell_integration.zsh"
+    quiet touch "$HOME/.iterm2_shell_integration.zsh"
   fi
 }
 
 step_inits() {
   local rc=0
-  run mkdir -p "$HOME/.claude"    # rtk init exits 1 without it
+  quiet mkdir -p "$HOME/.claude"    # rtk init exits 1 without it
 
   if have rtk; then
     if [ -f "$HOME/.claude/RTK.md" ] && [ -f "$HOME/.config/opencode/plugins/rtk.ts" ]; then
       info "rtk already initialised"
     else
-      run rtk init --global --opencode --auto-patch || rc=1
+      run_as "rtk init" rtk init --global --opencode --auto-patch || rc=1
     fi
   else
     warn "rtk is not installed"
@@ -466,7 +833,7 @@ step_inits() {
     if [ -f "$HOME/.claude/commands/recall.md" ] && [ -f "$HOME/.config/opencode/plugins/icm.ts" ]; then
       info "icm already initialised"
     else
-      run icm init || rc=1
+      run_as "icm init" icm init || rc=1
     fi
   else
     warn "icm is not installed"
@@ -475,11 +842,10 @@ step_inits() {
 
   # No-op once .zshrc is stowed (it already has the integration line).
   if have wt; then
-    run wt config shell install zsh || rc=1
+    run_as "worktrunk shell integration" wt config shell install zsh || rc=1
   fi
   if have awesome-lazy-zsh; then
-    info "awesome-lazy-zsh --doctor:"
-    awesome-lazy-zsh --doctor 2>&1 | sed 's/^/        /' || true
+    info "awesome-lazy-zsh --doctor: $(awesome-lazy-zsh --doctor 2>&1 | tr '\n' ' ')"
   fi
   return "$rc"
 }
@@ -487,20 +853,12 @@ step_inits() {
 step_finish() {
   if [ "$OS" = linux ] && [ "$(basename "${SHELL:-}")" != zsh ] && [ -x /usr/bin/zsh ]; then
     need_sudo
-    run sudo chsh -s /usr/bin/zsh "$USER" || warn "chsh failed; set your login shell to zsh by hand"
+    run_as "make zsh the login shell" sudo chsh -s /usr/bin/zsh "$USER" || warn "chsh failed; set your login shell to zsh by hand"
   fi
   if [ -n "$(git -C "$DOTFILES_DIR" status --porcelain 2>/dev/null)" ]; then
     warn "the repo has uncommitted changes. Fine if you are editing it; otherwise an installer edited a stowed file. Check: git -C $DOTFILES_DIR diff"
   fi
-  cat <<'EOF'
-
-    Still manual (none of it can be scripted):
-      - log in:            claude   and   opencode
-      - GitHub:            gh auth login
-      - SSH keys and the SSH agent
-      - macOS only:        sign in to the App Store, then re-run for the mas apps
-      - open a new terminal (or run: exec zsh) so the new PATH and shell config load
-EOF
+  return 0
 }
 
 # ------------------------------------------------------------ check-cleanup ---
@@ -520,15 +878,66 @@ check_cleanup() {
   rm -f "$tmp"
 }
 
+# --------------------------------------------------------------------- demo ---
+
+demo_progress() {
+  local i=1
+  while [ "$i" -le 40 ]; do
+    printf 'Installing package-%02d\n' "$i"
+    i=$((i + 1))
+    sleep 0.07
+  done
+}
+
+demo_fail() {
+  printf 'resolving mirror...\n'
+  sleep 0.6
+  printf 'curl: (22) The requested URL returned error: 404\n' >&2
+  sleep 0.3
+  return 3
+}
+
+# The whole display with fake tasks, so it can be previewed without installing anything.
+run_demo() {
+  OS=mac
+  DRY_RUN=1
+  RUN_START=$SECONDS
+  print_banner
+  DRY_RUN=0
+  step_header prerequisites 2 11
+  info "Homebrew already installed"
+  spin "apt-get update" sleep 1.2
+  spin "install Homebrew" sleep 1.5
+  step_header brew 3 11
+  spin_progress 40 '^Installing ' "brew bundle Brewfile" demo_progress
+  step_header toolchains 4 11
+  spin "install bun" sleep 1
+  warn "example warning: pnpm was skipped"
+  spin "install nvm $NVM_VERSION" demo_fail
+  step_header stow 8 11
+  info "backed up ~/.zshrc"
+  info "stowed into $HOME"
+  record "done" preflight 0
+  record "done" prerequisites 3
+  record "done" brew 4
+  record failed toolchains 2
+  record skipped agents 0
+  record "done" stow 1
+  print_summary
+  print_next_steps
+}
+
 # ------------------------------------------------------------------- main ---
 
 main() {
-  local s known ok results="" failed=0
+  local s known ok t0 idx=0 total=0 failed=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --dry-run)       DRY_RUN=1 ;;
       --upgrade)       UPGRADE=1 ;;
       --check-cleanup) CHECK_CLEANUP=1 ;;
+      --plain)         PLAIN=1 ;;
+      --demo)          DEMO=1 ;;
       --skip)
         [ $# -ge 2 ] || die "--skip needs a step name"
         known=0
@@ -543,38 +952,54 @@ main() {
     shift
   done
 
+  init_ui
+  trap cleanup_ui EXIT
+  trap on_interrupt INT TERM
+
   if [ "$CHECK_CLEANUP" = 1 ]; then
     check_cleanup
     exit 0
   fi
-  [ "$DRY_RUN" = 1 ] && say "DRY RUN: nothing will be changed."
+  if [ "$DEMO" = 1 ]; then
+    run_demo
+    exit 0
+  fi
+
+  if [ "$DRY_RUN" != 1 ] && mkdir -p "$LOG_DIR" 2>/dev/null; then
+    LOG_FILE="$LOG_DIR/$(date +%Y%m%d-%H%M%S).log"
+  fi
   detect_os
   prepare_env
+  RUN_START=$SECONDS
+  print_banner
 
+  for s in $STEPS; do total=$((total + 1)); done
   for s in $STEPS; do
+    idx=$((idx + 1))
+    step_header "$s" "$idx" "$total"
     case "$SKIP" in
       *" $s "*)
-        results="$results\n  skipped  $s"
+        info "skipped (--skip)"
+        record skipped "$s" 0
         continue
         ;;
     esac
-    step "$s"
+    t0=$SECONDS
     ok=1
     "step_$s" || ok=0
     if [ "$ok" = 1 ]; then
-      results="$results\n  done     $s"
+      record "done" "$s" $((SECONDS - t0))
     else
-      results="$results\n  FAILED   $s"
+      record failed "$s" $((SECONDS - t0))
       failed=1
     fi
   done
 
-  printf '\nSummary:'
-  # shellcheck disable=SC2059  # $results carries \n sequences on purpose
-  printf "$results\n"
+  print_summary
   if [ "$failed" = 1 ]; then
-    say "Some steps failed. Read the messages above, fix them, and re-run: finished steps are skipped."
+    printf '\n  %s%s some steps failed.%s Read the messages above, fix them and re-run: finished steps are skipped.\n' "$C_RED" "$FAIL" "$C_RESET"
   fi
+  print_next_steps
   exit "$failed"
 }
 
