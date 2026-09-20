@@ -18,7 +18,7 @@ into `~`. `.stow-local-ignore` keeps this README, `notes.txt`, `AI/` and
 | `.config/{atuin,bat,television,topgrade.toml,worktrunk,sketchybar}` | the matching tools |
 | `Library/` | iTerm2 and Terminal preferences, the Caddy launch agent |
 | `vira-theme-for-terminals/` | vendored upstream pack of terminal colour schemes (see [Palette](#palette)) |
-| `AI/` | Claude and opencode config, stowed separately (has its own `.stow-local-ignore`) |
+| `AI/` | opencode config (`opencode.json`, `tui.json`), stowed separately (has its own `.stow-local-ignore`) |
 
 `notes.txt` holds the install-script TODO.
 
