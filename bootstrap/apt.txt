@@ -1,0 +1,14 @@
+# Ubuntu prerequisites for install.sh, one package per line. Blank lines and
+# whole-line # comments are ignored. Everything else comes from Homebrew.
+#
+# Linuxbrew needs a compiler and a few basics; a few formulae build from source.
+build-essential
+curl
+git
+procps
+file
+ca-certificates
+# zsh must exist before chsh can make it the login shell.
+zsh
+# needed by the bun installer and by nvim's Mason installs.
+unzip
