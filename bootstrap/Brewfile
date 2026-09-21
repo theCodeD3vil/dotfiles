@@ -5,6 +5,7 @@ tap "adembc/tap", "https://github.com/Adembc/homebrew-tap", trusted: true
 tap "amjaradat01/awesome-lazy-zsh", trusted: true
 tap "dart-lang/dart", trusted: true
 tap "hudochenkov/sshpass", trusted: true
+tap "protonpass/tap", trusted: true
 tap "rtk-ai/tap", trusted: true
 # Browser automation CLI for AI agents
 brew "agent-browser"
@@ -107,6 +108,8 @@ brew "amjaradat01/awesome-lazy-zsh/awesome-lazy-zsh"
 # SDK
 brew "dart-lang/dart/dart"
 brew "hudochenkov/sshpass/sshpass", trusted: true
+# Proton Pass CLI - Command-line interface for Proton Pass
+brew "protonpass/tap/pass-cli"
 # Permanent memory for AI agents — MCP server with hybrid search
 brew "rtk-ai/tap/icm"
 go "golang.org/x/tools/gopls"
