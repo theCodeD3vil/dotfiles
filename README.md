@@ -65,9 +65,11 @@ The installer sets up the machine in this order:
 3. Installs Bun, pnpm, nvm, Node LTS, and the configured global packages.
 4. Installs the Claude Code and OpenCode command-line clients.
 5. Installs oh-my-zsh and the shell plugins used by this setup.
-6. Links the configuration files in this repository into your home directory.
-7. Applies the small Ubuntu-only shell fixes when needed.
-8. Sets up rtk, icm, and worktrunk when their commands are available.
+6. Fetches the plugin checkouts this repository tracks as Git submodules
+   (fzf-git and the tmux plugins) when they are empty.
+7. Links the configuration files in this repository into your home directory.
+8. Applies the small Ubuntu-only shell fixes when needed.
+9. Sets up rtk, icm, and worktrunk when their commands are available.
 
 On macOS, it also installs the Mac-only applications and App Store items listed
 in `bootstrap/Brewfile.mac`. On Ubuntu, Homebrew provides the developer tools

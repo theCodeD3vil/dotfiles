@@ -9,14 +9,18 @@ dotfiling a frozen copy would go stale and conflict with the real thing.
 
 bootstrap/install.sh runs these steps. Notes on each:
 
-  rtk init --global --opencode --auto-patch
-                                     # writes RTK.md and an @RTK.md line in
-                                     # CLAUDE.md, patches the settings.json hook,
-                                     # installs the OpenCode plugin
-                                     # (plugins/rtk.ts). No login needed, but
+  rtk init --global --auto-patch     # Claude Code: writes RTK.md and an @RTK.md
+                                     # line in CLAUDE.md, patches the
+                                     # settings.json hook. No login needed, but
                                      # ~/.claude must already exist (mkdir -p it)
-                                     # or it exits 1. Tested 2026-09-20 in a
-                                     # throwaway HOME.
+                                     # or it exits 1.
+  rtk init --global --opencode --auto-patch
+                                     # OpenCode plugin only (plugins/rtk.ts).
+                                     # With --opencode, rtk skips the Claude
+                                     # hook (checked on rtk 0.48 and 0.49,
+                                     # 2026-09-21), so run both. The first VPS
+                                     # run used only this one and left Claude
+                                     # Code without the hook.
 
   icm init                          # standard mode: CLAUDE.md instructions +
                                      # /recall + /remember commands + hooks, for
@@ -123,9 +127,11 @@ install.sh as built (2026-09-20). Steps run in this order; --skip NAME skips one
   agents          Claude Code and opencode from the vendors' installers, skipped if present
   globals         bun.txt, pnpm.txt (npm.txt arrives through nvm default-packages)
   omz             oh-my-zsh clone + omz-plugins.txt
+  submodules      fill EMPTY submodule dirs (fzf-git.sh, tmux tpm/sensible/catppuccin) from
+                  .gitmodules; a populated checkout is never touched
   stow            real ~/.config and ~/.config/opencode, back up conflicts, stow . AI
   linux           Ubuntu only, UNTESTED: /opt/homebrew symlink, iterm2 stub
-  inits           mkdir ~/.claude; rtk init; icm init; wt config shell install zsh
+  inits           mkdir ~/.claude; rtk init (Claude Code, then opencode); icm init; wt config shell install zsh
   finish          chsh to zsh (Ubuntu), repo-dirty warning, the manual checklist
 
   Flags: --dry-run, --upgrade, --check-cleanup (prints, never removes), --skip NAME,
@@ -163,6 +169,10 @@ Facts found while building it (stow 2.4.1)
     a password prompt behind a spinner would look like a hang.
   - background jobs in a non-interactive bash ignore Ctrl-C, so the interrupt trap
     kills the whole process tree itself and restores the cursor.
+  - found by the first real run on the Ubuntu VPS (2026-09-21): pnpm 12 installs its
+    binary to $PNPM_HOME/bin (11 and older: $PNPM_HOME), so both are put on PATH; and
+    fzf-git.sh plus three tmux plugins are git submodules (.gitmodules), which a plain
+    clone leaves as empty directories until the submodules step fills them.
   - the display was tested in a pseudo-terminal (fixed width, truecolor / 256-colour,
     UTF-8 / C locale, Ctrl-C mid-task) by reconstructing the final screen from the
     raw output. --demo is the way to look at it.
