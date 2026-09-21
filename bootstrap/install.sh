@@ -615,11 +615,18 @@ step_brew() {
       # Besides the "→ ..." plan lines, a check that finds missing entries also
       # prints a header and a footer sentence. Those are not errors.
       errors=$(printf '%s\n' "$out" | grep -vE '^→ |^[[:space:]]*$|^brew bundle can.t satisfy|^Satisfy missing dependencies')
-      if [ "$check_rc" != 0 ] && { [ -z "$plan" ] || [ -n "$errors" ]; }; then
+      # A check that lists what is missing exits 1 by design. It only counts as a
+      # failure when brew gave no plan at all. Other output next to a plan (for
+      # example a stale-keg "Warning:" from this machine's Homebrew) is shown, not fatal.
+      if [ "$check_rc" != 0 ] && [ -z "$plan" ]; then
         warn "$f: brew bundle check failed"
         printf '%s\n' "$out" | sed 's/^/        /' >&2
         return 1
       elif [ -n "$plan" ]; then
+        if [ -n "$errors" ]; then
+          warn "$f: brew also printed:"
+          printf '%s\n' "$errors" | sed 's/^/        /' >&2
+        fi
         dry "$f: brew would $verb:"
         printf '%s\n' "$plan"
       else
