@@ -167,11 +167,16 @@ Facts found while building it (stow 2.4.1)
     UTF-8 / C locale, Ctrl-C mid-task) by reconstructing the final screen from the
     raw output. --demo is the way to look at it.
 
-Tested on the Mac: syntax under bash 3.2, shellcheck, --dry-run, and the conflict
-backup + stow in a throwaway HOME (files moved, links made, second run a no-op).
-NOT tested: the whole Ubuntu path (apt, Linuxbrew, the /opt/homebrew symlink, the
-iterm2 stub, chsh, the vendor installers on Linux) and a first run on a machine with
-nothing installed. Run --dry-run first on the VPS.
+Tested on the Mac: syntax under bash 3.2, shellcheck, --dry-run, the conflict
+backup + stow in a throwaway HOME (files moved, links made, second run a no-op), and
+the progress display in a pseudo-terminal.
+Simulated Ubuntu on the Mac (fake uname + DOTFILES_OS_RELEASE, throwaway HOME): the
+apt plan reads bootstrap/apt.txt correctly, and the Linux stow ignore list keeps
+Library, .wezterm.lua, ghostty, sketchybar, .aerospace.toml and the vira theme out
+while everything else links.
+NOT tested: real apt, Linuxbrew, the /opt/homebrew symlink, chsh, the vendor
+installers on Linux, and a first run on a machine with nothing installed. Run
+--dry-run first on the VPS.
 
 Linux/VPS (Ubuntu) requirements found by the 2026-09-20 config audit
 =====================================================================

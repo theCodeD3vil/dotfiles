@@ -42,6 +42,8 @@ DOTFILES_DIR=$(cd "$BOOT_DIR/.." && pwd)
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
 LOG_DIR="$HOME/.cache/dotfiles-install"
 LOG_FILE=/dev/null
+# Only tests override this, to exercise the Linux branches from another OS.
+OS_RELEASE_FILE="${DOTFILES_OS_RELEASE:-/etc/os-release}"
 OS=""
 STOW_IGNORES=()
 BACKED_UP=0
@@ -324,9 +326,9 @@ print_banner() {
   local osname mode="live"
   if [ "$OS" = mac ]; then
     osname="macOS $(sw_vers -productVersion 2>/dev/null)"
-  elif [ -r /etc/os-release ]; then
+  elif [ -r "$OS_RELEASE_FILE" ]; then
     # shellcheck source=/dev/null
-    osname=$(. /etc/os-release && printf '%s' "${PRETTY_NAME:-Linux}")
+    osname=$(. "$OS_RELEASE_FILE" && printf '%s' "${PRETTY_NAME:-Linux}")
   else
     osname="${OS:-unknown}"
   fi
@@ -438,7 +440,7 @@ detect_os() {
   case "$(uname -s)" in
     Darwin) OS=mac ;;
     Linux)
-      if [ -r /etc/os-release ] && grep -qiE '^ID(_LIKE)?=.*(ubuntu|debian)' /etc/os-release; then
+      if [ -r "$OS_RELEASE_FILE" ] && grep -qiE '^ID(_LIKE)?=.*(ubuntu|debian)' "$OS_RELEASE_FILE"; then
         OS=linux
       else
         die "Linux support is Ubuntu/Debian only (it needs apt)"
@@ -538,7 +540,9 @@ step_prerequisites() {
     pkgs=$(list_items "$BOOT_DIR/apt.txt" | tr '\n' ' ')
     missing=""
     for p in $pkgs; do
-      dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"
+      if ! dpkg -s "$p" 2>/dev/null | grep -q '^Status: install ok installed'; then
+        missing="$missing $p"
+      fi
     done
     if [ -n "$missing" ]; then
       need_sudo
