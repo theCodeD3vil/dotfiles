@@ -49,6 +49,7 @@ OS_RELEASE_FILE="${DOTFILES_OS_RELEASE:-/etc/os-release}"
 OS=""
 STOW_IGNORES=()
 BACKED_UP=0
+SHELL_CHANGED=0
 
 # UI state. Everything is empty until init_ui decides between fancy and plain.
 UI_FANCY=0
@@ -376,6 +377,9 @@ EOF
 
 print_next_steps() {
   printf '\n  %s%s next steps%s  %s(none of these can be scripted)%s\n' "$C_MAUVE" "$ARROW" "$C_RESET" "$C_GREY" "$C_RESET"
+  if [ "$SHELL_CHANGED" = 1 ]; then
+    printf '      %s%s%s your login shell is now zsh, but this terminal is still on the old one. Run %sexec zsh%s or log in again; do not %ssource ~/.zshrc%s from bash\n' "$C_TEAL" "$DOT" "$C_RESET" "$C_BOLD" "$C_RESET" "$C_BOLD" "$C_RESET"
+  fi
   printf '      %s%s%s log in to %sclaude%s and %sopencode%s\n' "$C_TEAL" "$DOT" "$C_RESET" "$C_BOLD" "$C_RESET" "$C_BOLD" "$C_RESET"
   printf '      %s%s%s GitHub: %sgh auth login%s\n' "$C_TEAL" "$DOT" "$C_RESET" "$C_BOLD" "$C_RESET"
   printf '      %s%s%s SSH keys and the SSH agent\n' "$C_TEAL" "$DOT" "$C_RESET"
@@ -963,7 +967,13 @@ step_finish() {
       rc=1
     elif [ "$(basename "$login_shell")" != zsh ]; then
       need_sudo
-      run_as "make zsh the login shell" sudo chsh -s "$zsh_bin" "$(id -un)" || { warn "chsh failed; set your login shell to zsh by hand"; rc=1; }
+      if run_as "make zsh the login shell" sudo chsh -s "$zsh_bin" "$(id -un)"; then
+        # chsh only applies to new logins: this terminal keeps its old shell.
+        [ "$DRY_RUN" = 1 ] || SHELL_CHANGED=1
+      else
+        warn "chsh failed; set your login shell to zsh by hand"
+        rc=1
+      fi
       release_sudo
     fi
   fi
