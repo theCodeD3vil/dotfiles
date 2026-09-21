@@ -915,6 +915,33 @@ step_linux() {
   release_sudo
 }
 
+# Regenerated on every run and only replaced when the output changed, so a pass-cli
+# upgrade is picked up. Written through a temp file: a failed run must not leave an
+# empty _pass-cli behind.
+setup_pass_cli_completions() {
+  local dir="$HOME/.zfunc" tmp
+  if [ "$DRY_RUN" = 1 ]; then
+    dry "pass-cli completions zsh > $dir/_pass-cli"
+    return 0
+  fi
+  mkdir -p "$dir" || return 1
+  # compinit refuses group-writable directories, and Ubuntu's umask makes new ones so.
+  chmod go-w "$dir"
+  tmp=$(mktemp "$dir/.pass-cli.XXXXXX") || return 1
+  if ! pass-cli completions zsh > "$tmp" 2>/dev/null || [ ! -s "$tmp" ]; then
+    rm -f "$tmp"
+    warn "pass-cli completions zsh failed"
+    return 1
+  fi
+  if [ -f "$dir/_pass-cli" ] && cmp -s "$tmp" "$dir/_pass-cli"; then
+    rm -f "$tmp"
+    info "pass-cli completions up to date"
+  else
+    mv -f "$tmp" "$dir/_pass-cli"
+    info "wrote $dir/_pass-cli"
+  fi
+}
+
 step_inits() {
   local rc=0
   quiet mkdir -p "$HOME/.claude"    # rtk init exits 1 without it
@@ -944,6 +971,15 @@ step_inits() {
     fi
   else
     warn "icm is not installed"
+    [ "$DRY_RUN" = 1 ] || rc=1
+  fi
+
+  # pass-cli ships a completion generator, not a file. The result goes in ~/.zfunc,
+  # which .zshrc puts on fpath before oh-my-zsh runs compinit.
+  if have pass-cli; then
+    setup_pass_cli_completions || rc=1
+  else
+    warn "pass-cli is not installed"
     [ "$DRY_RUN" = 1 ] || rc=1
   fi
 

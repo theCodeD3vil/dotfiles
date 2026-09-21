@@ -69,7 +69,8 @@ The installer sets up the machine in this order:
    (fzf-git and the tmux plugins) when they are empty.
 7. Links the configuration files in this repository into your home directory.
 8. Applies the small Ubuntu-only shell fixes when needed.
-9. Sets up rtk, icm, and worktrunk when their commands are available.
+9. Sets up rtk, icm, worktrunk, and the pass-cli shell completions when those
+   commands are available.
 
 On macOS, it also installs the Mac-only applications and App Store items listed
 in `bootstrap/Brewfile.mac`. On Ubuntu, Homebrew provides the developer tools

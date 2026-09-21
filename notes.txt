@@ -131,7 +131,7 @@ install.sh as built (2026-09-20). Steps run in this order; --skip NAME skips one
                   .gitmodules; a populated checkout is never touched
   stow            real ~/.config and ~/.config/opencode, back up conflicts, stow . AI
   linux           Ubuntu only, UNTESTED: /opt/homebrew symlink, iterm2 stub
-  inits           mkdir ~/.claude; rtk init (Claude Code, then opencode); icm init; wt config shell install zsh
+  inits           mkdir ~/.claude; rtk init (Claude Code, then opencode); icm init; pass-cli completions -> ~/.zfunc/_pass-cli (fpath set in .zshrc above the awesome-lazy-zsh block, before oh-my-zsh runs compinit); wt config shell install zsh
   finish          chsh to zsh (Ubuntu; the checklist then says to exec zsh, chsh only affects new logins), repo-dirty warning, the manual checklist
 
   Flags: --dry-run, --upgrade, --check-cleanup (prints, never removes), --skip NAME,
