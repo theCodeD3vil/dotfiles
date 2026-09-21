@@ -53,7 +53,15 @@ config.colors = {
 	brights = { "#45454A", "#c85e60", "#a3c679", "#d5b05f", "#6a90d0", "#a178c4", "#6ebad7", "#ffffff" },
 }
 
-config.font = wezterm.font("Operator Mono Lig")
+-- Operator Mono has no Nerd Font glyphs, and the Symbols Nerd Font bundled with
+-- WezTerm 20240203 predates some of the ones starship.toml uses (U+E91B, U+EC6F),
+-- which show up as placeholder boxes. Name the installed Nerd Font as a fallback and
+-- keep the bundled symbols font last for anything it does not cover.
+config.font = wezterm.font_with_fallback({
+	"Operator Mono Lig",
+	"CaskaydiaCove Nerd Font Mono",
+	"Symbols Nerd Font Mono",
+})
 config.font_size = 16
 
 config.enable_tab_bar = true
