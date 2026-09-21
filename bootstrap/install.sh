@@ -12,7 +12,7 @@
 #                    Brewfiles, then exit (never removes anything)
 #   --skip STEP      skip a step; repeat for several. Steps:
 #                    preflight prerequisites brew toolchains agents globals omz
-#                    stow linux inits finish
+#                    submodules stow linux inits finish
 #   --plain          no colour, spinners or bars. Chosen automatically when the
 #                    output is not a terminal or NO_COLOR is set.
 #   --demo           show the progress display with fake tasks; changes nothing
@@ -32,7 +32,7 @@ CHECK_CLEANUP=0
 PLAIN=0
 DEMO=0
 SKIP=" "
-STEPS="preflight prerequisites brew toolchains agents globals omz stow linux inits finish"
+STEPS="preflight prerequisites brew toolchains agents globals omz submodules stow linux inits finish"
 
 # Pinned on 2026-09-20. Bump on purpose, not by accident.
 NVM_VERSION="v0.40.7"
@@ -307,6 +307,7 @@ step_desc() {
     agents)        echo "the Claude Code and opencode CLIs" ;;
     globals)       echo "global bun and pnpm packages" ;;
     omz)           echo "oh-my-zsh and its plugins" ;;
+    submodules)    echo "fill the plugin checkouts the repo tracks (fzf-git, tmux)" ;;
     stow)          echo "link the dotfiles into your home directory" ;;
     linux)         echo "Ubuntu-only shell fixes" ;;
     inits)         echo "rtk, icm and worktrunk setup" ;;
@@ -519,7 +520,8 @@ prepare_env() {
   export NVM_DIR="$HOME/.nvm"
   export PNPM_HOME
   PNPM_HOME=$(pnpm_home_dir)
-  export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PNPM_HOME:$BUN_INSTALL/bin:$PATH"
+  # pnpm 11 and older keep the binary in $PNPM_HOME, pnpm 12 and newer in $PNPM_HOME/bin.
+  export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PNPM_HOME/bin:$PNPM_HOME:$BUN_INSTALL/bin:$PATH"
   if [ -s "$NVM_DIR/nvm.sh" ]; then
     # shellcheck source=/dev/null
     . "$NVM_DIR/nvm.sh"
@@ -646,7 +648,7 @@ step_toolchains() {
     fetch_run "install bun" "" bash https://bun.sh/install || rc=1
   fi
 
-  if have pnpm || [ -x "$(pnpm_home_dir)/pnpm" ]; then
+  if have pnpm || [ -x "$(pnpm_home_dir)/bin/pnpm" ] || [ -x "$(pnpm_home_dir)/pnpm" ]; then
     info "pnpm already installed"
   else
     fetch_run "install pnpm" "" sh https://get.pnpm.io/install.sh || rc=1
@@ -761,6 +763,24 @@ step_omz() {
       run_as "clone plugin $name" git clone --depth=1 "$url" "$dest" || { warn "could not clone $name"; rc=1; }
     fi
   done < <(list_items "$BOOT_DIR/omz-plugins.txt")
+  return "$rc"
+}
+
+# The repo tracks a few plugin checkouts as git submodules (see .gitmodules). A plain
+# `git clone` leaves them as empty directories, so fill the empty ones before stow
+# links the tree. A checkout that already has files is left alone: `git submodule
+# update` would move it back to the pinned commit.
+step_submodules() {
+  local p rc=0 todo=0
+  while IFS= read -r p; do
+    [ -n "$p" ] || continue
+    [ -z "$(ls -A "$DOTFILES_DIR/$p" 2>/dev/null)" ] || continue
+    todo=$((todo + 1))
+    run_as "submodule $p" git -C "$DOTFILES_DIR" submodule update --init -- "$p" || rc=1
+  done < <(git -C "$DOTFILES_DIR" ls-files --stage 2>/dev/null | awk '$1 == "160000" { print $4 }')
+  if [ "$todo" = 0 ]; then
+    info "submodule checkouts already present"
+  fi
   return "$rc"
 }
 
@@ -892,7 +912,10 @@ step_inits() {
     if [ -f "$HOME/.claude/RTK.md" ] && [ -f "$HOME/.config/opencode/plugins/rtk.ts" ]; then
       info "rtk already initialised"
     else
-      run_as "rtk init" rtk init --global --opencode --auto-patch || rc=1
+      # With --opencode, rtk installs only the OpenCode plugin (checked on rtk 0.48
+      # and 0.49): the Claude Code hook and RTK.md need their own call.
+      run_as "rtk init (Claude Code)" rtk init --global --auto-patch || rc=1
+      run_as "rtk init (opencode)" rtk init --global --opencode --auto-patch || rc=1
     fi
   else
     warn "rtk is not installed"
@@ -986,17 +1009,17 @@ run_demo() {
   RUN_START=$SECONDS
   print_banner
   DRY_RUN=0
-  step_header prerequisites 2 11
+  step_header prerequisites 2 12
   info "Homebrew already installed"
   spin "apt-get update" sleep 1.2
   spin "install Homebrew" sleep 1.5
-  step_header brew 3 11
+  step_header brew 3 12
   spin_progress 40 '^Installing ' "brew bundle Brewfile" demo_progress
-  step_header toolchains 4 11
+  step_header toolchains 4 12
   spin "install bun" sleep 1
   warn "example warning: pnpm was skipped"
   spin "install nvm $NVM_VERSION" demo_fail
-  step_header stow 8 11
+  step_header stow 9 12
   info "backed up ~/.zshrc"
   info "stowed into $HOME"
   record "done" preflight 0

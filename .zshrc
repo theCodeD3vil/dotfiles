@@ -15,10 +15,14 @@ case "$(uname -s)" in
   Darwin) export PNPM_HOME="$HOME/Library/pnpm" ;;
   *)      export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm" ;;
 esac
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
+# pnpm 11 and older keep the binary in $PNPM_HOME, pnpm 12 and newer in $PNPM_HOME/bin.
+for _pnpm_dir in "$PNPM_HOME/bin" "$PNPM_HOME"; do
+  case ":$PATH:" in
+    *":$_pnpm_dir:"*) ;;
+    *) export PATH="$_pnpm_dir:$PATH" ;;
+  esac
+done
+unset _pnpm_dir
 # pnpm end
 
 # bun completions
