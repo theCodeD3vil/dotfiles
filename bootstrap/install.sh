@@ -610,7 +610,9 @@ step_brew() {
       out=$(HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 brew bundle check $upflag --verbose --file "$BOOT_DIR/$f" 2>&1)
       check_rc=$?
       plan=$(printf '%s\n' "$out" | sed -n 's/^→ /        /p')
-      errors=$(printf '%s\n' "$out" | grep -vE '^→ .*|^[[:space:]]*$')
+      # Besides the "→ ..." plan lines, a check that finds missing entries also
+      # prints a header and a footer sentence. Those are not errors.
+      errors=$(printf '%s\n' "$out" | grep -vE '^→ |^[[:space:]]*$|^brew bundle can.t satisfy|^Satisfy missing dependencies')
       if [ "$check_rc" != 0 ] && { [ -z "$plan" ] || [ -n "$errors" ]; }; then
         warn "$f: brew bundle check failed"
         printf '%s\n' "$out" | sed 's/^/        /' >&2
