@@ -36,6 +36,8 @@ STEPS="preflight prerequisites brew toolchains agents globals omz stow linux ini
 
 # Pinned on 2026-09-20. Bump on purpose, not by accident.
 NVM_VERSION="v0.40.7"
+# Immutable Homebrew/install commit, pinned 2026-09-21. Bump on purpose.
+HOMEBREW_INSTALL_COMMIT="b41c8e7b3588e2899974119faf3b2a897428648d"
 
 BOOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 DOTFILES_DIR=$(cd "$BOOT_DIR/.." && pwd)
@@ -193,6 +195,7 @@ cleanup_ui() {
   if [ -n "$SUDO_KEEPALIVE_PID" ]; then
     kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
     SUDO_KEEPALIVE_PID=""
+    sudo -k 2>/dev/null || true
   fi
   if [ "$UI_FANCY" = 1 ]; then
     printf '%s' "$CURSOR_SHOW"
@@ -487,6 +490,17 @@ need_sudo() {
   fi
 }
 
+# Do not leave a root-capable ticket available to downloaded installers or
+# package lifecycle scripts. Privileged Linux setup reacquires it when needed.
+release_sudo() {
+  [ "$DRY_RUN" = 1 ] && return 0
+  if [ -n "$SUDO_KEEPALIVE_PID" ]; then
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
+    SUDO_KEEPALIVE_PID=""
+  fi
+  sudo -k 2>/dev/null || true
+}
+
 pnpm_home_dir() {
   if [ "$OS" = mac ]; then
     echo "$HOME/Library/pnpm"
@@ -524,7 +538,7 @@ step_preflight() {
 }
 
 step_prerequisites() {
-  local pkgs missing p
+  local pkgs missing p rc=0
   if [ "$OS" = mac ]; then
     if ! xcode-select -p >/dev/null 2>&1; then
       if [ "$DRY_RUN" = 1 ]; then
@@ -546,27 +560,35 @@ step_prerequisites() {
     done
     if [ -n "$missing" ]; then
       need_sudo
-      run_as "apt-get update" sudo apt-get update
+      run_as "apt-get update" sudo apt-get update || rc=1
       # shellcheck disable=SC2086  # $missing is a list of package names
-      run_as "apt-get install$missing" sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y $missing
+      if [ "$rc" = 0 ]; then
+        run_as "apt-get install$missing" sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y $missing || rc=1
+      fi
     else
       info "apt prerequisites already installed"
     fi
+  fi
+  if [ "$rc" != 0 ]; then
+    release_sudo
+    return 1
   fi
 
   if brew_bin >/dev/null 2>&1; then
     info "Homebrew already installed"
   else
     need_sudo
-    fetch_run "install Homebrew" "NONINTERACTIVE=1" bash https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh || return 1
+    fetch_run "install Homebrew" "NONINTERACTIVE=1" bash "https://raw.githubusercontent.com/Homebrew/install/$HOMEBREW_INSTALL_COMMIT/install.sh" || rc=1
   fi
-  if [ "$DRY_RUN" != 1 ]; then
-    load_brew_env || die "Homebrew is not usable after the install"
+  if [ "$DRY_RUN" != 1 ] && [ "$rc" = 0 ]; then
+    load_brew_env || rc=1
   fi
+  release_sudo
+  [ "$rc" = 0 ] || { warn "Homebrew is not usable after the install"; return 1; }
 }
 
 step_brew() {
-  local f rc=0 out upflag="--no-upgrade" verb="install"
+  local f rc=0 out plan errors check_rc upflag="--no-upgrade" verb="install"
   if [ "$UPGRADE" = 1 ]; then
     upflag=""
     verb="install or upgrade"
@@ -585,10 +607,17 @@ step_brew() {
       info "checking $f ..."
       # No auto-update: a dry run must not touch Homebrew's own index either.
       # shellcheck disable=SC2086  # $upflag is empty or one option
-      out=$(HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 brew bundle check $upflag --verbose --file "$BOOT_DIR/$f" 2>&1 | grep '^→' | sed 's/^→ /        /')
-      if [ -n "$out" ]; then
+      out=$(HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 brew bundle check $upflag --verbose --file "$BOOT_DIR/$f" 2>&1)
+      check_rc=$?
+      plan=$(printf '%s\n' "$out" | sed -n 's/^→ /        /p')
+      errors=$(printf '%s\n' "$out" | grep -vE '^→ .*|^[[:space:]]*$')
+      if [ "$check_rc" != 0 ] && { [ -z "$plan" ] || [ -n "$errors" ]; }; then
+        warn "$f: brew bundle check failed"
+        printf '%s\n' "$out" | sed 's/^/        /' >&2
+        return 1
+      elif [ -n "$plan" ]; then
         dry "$f: brew would $verb:"
-        printf '%s\n' "$out"
+        printf '%s\n' "$plan"
       else
         dry "$f: nothing to $verb"
       fi
@@ -605,7 +634,7 @@ step_brew() {
 }
 
 step_toolchains() {
-  local rc=0
+  local rc=0 pkg
 
   # bun and pnpm append to ~/.zshrc, which is stowed from the repo, so this step
   # has to run before stow. Whatever they add lands in a file stow will back up.
@@ -631,7 +660,7 @@ step_toolchains() {
   # and fails if that directory already exists. nvm installs everything listed in
   # it after every `nvm install`, which is how npm.txt gets applied.
   if [ -d "$NVM_DIR" ] || [ "$DRY_RUN" = 1 ]; then
-    quiet ln -sfn "$BOOT_DIR/npm.txt" "$NVM_DIR/default-packages"
+    quiet ln -sfn "$BOOT_DIR/npm.txt" "$NVM_DIR/default-packages" || rc=1
   fi
   if [ "$DRY_RUN" != 1 ] && [ -s "$NVM_DIR/nvm.sh" ]; then
     # shellcheck source=/dev/null
@@ -642,8 +671,25 @@ step_toolchains() {
       info "an LTS node is already installed"
     fi
     nvm alias default 'lts/*' >/dev/null 2>&1 || true
+    # spin runs in a subshell, so nvm install's PATH change does not reach us.
+    # Select nvm's Node here before globals/inits (brew may also provide Node).
+    if nvm use --silent default; then
+      # default-packages runs only during nvm install. Also fill gaps on existing
+      # LTS installations and retries after a failed global package install.
+      for pkg in $(list_items "$BOOT_DIR/npm.txt"); do
+        if npm ls -g --depth=0 "$pkg" >/dev/null 2>&1; then
+          info "npm: $pkg already installed"
+        else
+          run_as "npm install -g $pkg" npm install -g "$pkg" || rc=1
+        fi
+      done
+    else
+      warn "nvm's default Node is not usable"
+      rc=1
+    fi
   elif [ "$DRY_RUN" = 1 ]; then
     dry "nvm install --lts (if no LTS node is installed), then nvm alias default 'lts/*'"
+    dry "nvm use default, then install any missing packages from npm.txt"
   fi
   return "$rc"
 }
@@ -718,22 +764,43 @@ step_omz() {
 
 stow_run() {
   # $1 = simulate | real. Output and status are the caller's to inspect.
-  local flag=""
-  [ "$1" = simulate ] && flag="--simulate"
-  # shellcheck disable=SC2086  # $flag is empty or a single option
-  (cd "$DOTFILES_DIR" && stow $flag -t "$HOME" "${STOW_IGNORES[@]}" . AI 2>&1)
+  # Both packages contain .config. During simulation Stow cannot unfold a
+  # directory link it has only planned (fresh HOME). Walk the individual files
+  # instead; keep both packages in one plan so cross-package conflicts are caught.
+  (
+    cd "$DOTFILES_DIR" || exit 1
+    export LC_ALL=C
+    if [ "$1" = simulate ]; then
+      stow --simulate --no-folding -t "$HOME" "${STOW_IGNORES[@]}" . AI
+    else
+      stow -t "$HOME" "${STOW_IGNORES[@]}" . || exit 1
+      # Also unfolds an opencode directory linked by a previous manual stow.
+      # mkdir -p alone follows that symlink, letting init tools write into git.
+      stow --restow --no-folding -t "$HOME" "${STOW_IGNORES[@]}" AI
+    fi
+  ) 2>&1
 }
 
 # Move every real file that is in stow's way to $BACKUP_DIR (same relative path).
 # Never --adopt: that would pull the machine's file into the repo.
 resolve_conflicts() {
-  local round=0 out paths p
+  local round=0 out paths p rc other
   while [ "$round" -lt 6 ]; do
     out=$(stow_run simulate)
-    # stow 2.4.1 wording: "cannot stow <src> over existing target <path> since neither a link nor a directory ..."
-    paths=$(printf '%s\n' "$out" | sed -n 's/^  \* cannot stow .* over existing target \(.*\) since neither a link nor a directory.*$/\1/p')
+    rc=$?
+    # Homebrew Stow 2.4 and Ubuntu's Stow 2.3 describe file conflicts differently.
+    # A shared parent (e.g. .config) may be reported once by each package.
+    paths=$(printf '%s\n' "$out" | sed -n \
+      -e 's/^  \* cannot stow .* over existing target \(.*\) since neither a link nor a directory.*$/\1/p' \
+      -e 's/^  \* existing target is neither a link nor a directory: \(.*\)$/\1/p' | sort -u)
+    other=$(printf '%s\n' "$out" | grep -E '^(  \*|stow: ERROR)' | grep -vE \
+      '^  \* (cannot stow .* over existing target .* since neither a link nor a directory|existing target is neither a link nor a directory: )')
+    if [ -n "$other" ]; then
+      printf '%s\n' "$out" | sed 's/^/      /' >&2
+      return 1
+    fi
     if [ -z "$paths" ]; then
-      if printf '%s\n' "$out" | grep -qE '^(stow: ERROR|WARNING! stowing)'; then
+      if [ "$rc" != 0 ]; then
         printf '%s\n' "$out" | sed 's/^/      /' >&2
         return 1
       fi
@@ -781,12 +848,11 @@ step_stow() {
       --ignore='\.aerospace\.toml'
     )
   fi
-  # Real directories BEFORE stow. If ~/.config/opencode does not exist, stow folds it
-  # into one symlink to the repo, and rtk/icm would then write plugins/ and skills/
-  # into the repo. With a real directory only the two tracked files get linked.
-  quiet mkdir -p "$HOME/.config" "$HOME/.config/opencode"
-
+  # Resolve blockers, including ~/.config itself being a conflicting file.
   resolve_conflicts || return 1
+  # Keep .config real before linking the shared packages. Only tracked files in
+  # opencode are linked; init tools can create plugins/skills outside the repo.
+  quiet mkdir -p "$HOME/.config" "$HOME/.config/opencode" || return 1
   if [ "$DRY_RUN" = 1 ]; then
     dry "stow simulation reports no other problems"
     return 0
@@ -807,12 +873,13 @@ step_linux() {
   # tool and hardcodes /opt/homebrew, so point that path at Linuxbrew.
   if [ ! -e /opt/homebrew ]; then
     need_sudo
-    quiet sudo ln -s /home/linuxbrew/.linuxbrew /opt/homebrew
+    quiet sudo ln -s /home/linuxbrew/.linuxbrew /opt/homebrew || { release_sudo; return 1; }
   fi
   # UNTESTED: the same block sources this iTerm file unguarded.
   if [ ! -e "$HOME/.iterm2_shell_integration.zsh" ]; then
-    quiet touch "$HOME/.iterm2_shell_integration.zsh"
+    quiet touch "$HOME/.iterm2_shell_integration.zsh" || { release_sudo; return 1; }
   fi
+  release_sudo
 }
 
 step_inits() {
@@ -855,14 +922,23 @@ step_inits() {
 }
 
 step_finish() {
-  if [ "$OS" = linux ] && [ "$(basename "${SHELL:-}")" != zsh ] && [ -x /usr/bin/zsh ]; then
-    need_sudo
-    run_as "make zsh the login shell" sudo chsh -s /usr/bin/zsh "$USER" || warn "chsh failed; set your login shell to zsh by hand"
+  local login_shell zsh_bin rc=0
+  zsh_bin=$(command -v zsh 2>/dev/null)
+  if [ "$OS" = linux ] && [ -n "$zsh_bin" ] && [ -x "$zsh_bin" ]; then
+    login_shell=$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f7)
+    if [ -z "$login_shell" ]; then
+      warn "could not determine the login shell"
+      rc=1
+    elif [ "$(basename "$login_shell")" != zsh ]; then
+      need_sudo
+      run_as "make zsh the login shell" sudo chsh -s "$zsh_bin" "$(id -un)" || { warn "chsh failed; set your login shell to zsh by hand"; rc=1; }
+      release_sudo
+    fi
   fi
   if [ -n "$(git -C "$DOTFILES_DIR" status --porcelain 2>/dev/null)" ]; then
     warn "the repo has uncommitted changes. Fine if you are editing it; otherwise an installer edited a stowed file. Check: git -C $DOTFILES_DIR diff"
   fi
-  return 0
+  return "$rc"
 }
 
 # ------------------------------------------------------------ check-cleanup ---
@@ -934,7 +1010,7 @@ run_demo() {
 # ------------------------------------------------------------------- main ---
 
 main() {
-  local s known ok t0 idx=0 total=0 failed=0
+  local s known ok t0 idx=0 total=0 failed=0 stow_failed=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --dry-run)       DRY_RUN=1 ;;
@@ -988,6 +1064,11 @@ main() {
         continue
         ;;
     esac
+    if [ "$stow_failed" = 1 ] && { [ "$s" = inits ] || [ "$s" = finish ]; }; then
+      info "skipped (stow failed)"
+      record skipped "$s" 0
+      continue
+    fi
     t0=$SECONDS
     ok=1
     "step_$s" || ok=0
@@ -996,6 +1077,7 @@ main() {
     else
       record failed "$s" $((SECONDS - t0))
       failed=1
+      if [ "$s" = stow ]; then stow_failed=1; fi
     fi
   done
 
