@@ -81,6 +81,52 @@ alias uncommit="git reset --soft HEAD~1"
 alias claude2='CLAUDE_CONFIG_DIR=~/.config/claude-code-sub2 claude'
 
 # *****************************************************************************
+# GUM PICKERS — pick instead of type, guard instead of just run
+# *****************************************************************************
+
+# git: fuzzy-checkout a local branch
+gco() { git checkout "$(git branch --sort=-committerdate | sed 's/^[* ] //' | gum filter --placeholder 'branch')" }
+
+# git: multi-select merged local branches to delete
+gbclean() {
+  local br
+  br=$(git branch --merged | grep -vE '^\*|main|master' | gum choose --no-limit)
+  [ -n "$br" ] || return 0
+  gum confirm "delete: $(echo "$br" | tr '\n' ' ')?" && echo "$br" | xargs git branch -d
+}
+
+# gh: pick an open PR, open it in the browser
+ghpv() { gh pr list --json number,title -q '.[]|"\(.number)\t\(.title)"' | gum filter | cut -f1 | xargs -r gh pr view --web }
+
+# docker: pick a running container to tail or shell into
+dlogs() { docker ps --format '{{.Names}}' 2>/dev/null | gum filter | xargs -r docker logs -f }
+dsh()   { docker ps --format '{{.Names}}' 2>/dev/null | gum filter | xargs -r -I{} docker exec -it {} sh }
+
+# worktrunk: pick a worktree branch to switch to
+wtsw() { wt list --format json 2>/dev/null | jq -r '.items[] | select(.branch != null) | .branch' | gum filter | xargs -r wt switch }
+
+# pass-cli: pick a secret, copy its password to the clipboard (macOS only; field
+# names below are best-effort from `pass-cli item list --help` since listing real
+# vault contents to verify the JSON shape needs a live vault, not tested end-to-end)
+passc() {
+  local sel id
+  sel=$(pass-cli item list --output json | jq -r '.[] | "\(.id)\t\(.title // .name)"' | gum filter --placeholder 'secret')
+  [ -n "$sel" ] || return 0
+  id=${sel%%$'\t'*}
+  if [[ "$OSTYPE" == darwin* ]]; then
+    pass-cli item view --item-id "$id" --field password --output human | pbcopy && echo "copied to clipboard"
+  else
+    pass-cli item view --item-id "$id" --field password --output human
+  fi
+}
+
+# homebrew: pick a leaf package (nothing else depends on it) to uninstall
+brmv() { brew leaves | gum filter --placeholder 'uninstall which?' | xargs -r brew uninstall }
+
+# guarded rm -rf
+rmi() { gum confirm "rm -rf $*?" && rm -rf "$@" }
+
+# *****************************************************************************
 # RUNTIME VERSION MANAGER (MISE)
 # *****************************************************************************
 
