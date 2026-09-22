@@ -185,17 +185,10 @@ export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/b
 export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin/"
 
 # Docker Aliases
+# dstop/drm are defined after the managed block below (see the override section
+# past it): both the docker plugin and awesome-lazy-zsh's alias-manager.zsh
+# redefine them as plain aliases, which breaks a same-named function this early.
 alias dps='docker ps'
-dstop() {
-  local ids; ids=$(docker ps -aq)
-  [ -n "$ids" ] || return 0
-  gum confirm "Stop all containers?" && docker stop $ids
-}
-drm() {
-  local ids; ids=$(docker ps -aq)
-  [ -n "$ids" ] || return 0
-  gum confirm "Remove all containers?" && docker rm $ids
-}
 alias dimages='docker images'
 alias dbuild='docker build -t'
 
@@ -247,6 +240,23 @@ unalias pi 2>/dev/null  # frees `pi` for pi-coding-agent binary; plugin above al
 # awesome-lazy-zsh regenerating the block can't undo them.
 # - nvm's node has to beat the brew node that `brew shellenv` put first on PATH.
 [ -n "$NVM_BIN" ] && export PATH="$NVM_BIN:$PATH"
+# - the git-extras.zsh alias file and awesome-lazy-zsh's alias-manager.zsh
+#   (both sourced inside the block above) redefine gco/gbclean/dstop/drm as
+#   plain aliases: gco/gbclean just get shadowed (their functions, defined much
+#   earlier, are still intact underneath); dstop/drm are new enough here that
+#   the alias makes zsh choke parsing a same-named function ("defining function
+#   based on alias"), so they're fully (re)defined below instead of just unaliased.
+unalias gco gbclean dstop drm 2>/dev/null
+dstop() {
+  local ids; ids=$(docker ps -aq)
+  [ -n "$ids" ] || return 0
+  gum confirm "Stop all containers?" && docker stop $ids
+}
+drm() {
+  local ids; ids=$(docker ps -aq)
+  [ -n "$ids" ] || return 0
+  gum confirm "Remove all containers?" && docker rm $ids
+}
 # - the block sets BROWSER=open, which only exists on macOS.
 [[ "$OSTYPE" == darwin* ]] || unset BROWSER
 
