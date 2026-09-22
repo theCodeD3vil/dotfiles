@@ -49,6 +49,8 @@ brew "git-delta"
 brew "tmux"
 # Git status in tmux status bar
 brew "gitmux"
+# Tool for glamorous shell scripts (prompts, confirms, spinners)
+brew "gum"
 # Review-first terminal diff viewer for agent-authored changesets
 brew "hunk"
 # Simple terminal UI for git commands

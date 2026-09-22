@@ -140,8 +140,16 @@ export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin/"
 
 # Docker Aliases
 alias dps='docker ps'
-alias dstop='docker stop $(docker ps -a -q)'
-alias drm='docker rm $(docker ps -a -q)'
+dstop() {
+  local ids; ids=$(docker ps -aq)
+  [ -n "$ids" ] || return 0
+  gum confirm "Stop all containers?" && docker stop $ids
+}
+drm() {
+  local ids; ids=$(docker ps -aq)
+  [ -n "$ids" ] || return 0
+  gum confirm "Remove all containers?" && docker rm $ids
+}
 alias dimages='docker images'
 alias dbuild='docker build -t'
 
