@@ -1,0 +1,40 @@
+[metadata]
+name = "alias"
+description = "Browse custom aliases and shell functions defined in .zshrc"
+requirements = ["awk", "bat"]
+
+[source]
+command = '''
+awk '
+  /^alias [a-zA-Z_][a-zA-Z0-9_]*=/ {
+    name = $0
+    sub(/^alias /, "", name)
+    sub(/=.*/, "", name)
+    printf "%d\t%s\talias\n", NR, name
+  }
+  /^[a-zA-Z_][a-zA-Z0-9_]*\(\)/ {
+    name = $0
+    sub(/\(\).*/, "", name)
+    printf "%d\t%s\tfunction\n", NR, name
+  }
+' "$HOME/.zshrc"
+'''
+display = "{split:\t:1}  ({split:\t:2})"
+output = "{split:\t:0}\t{split:\t:1}"
+
+[preview]
+command = "bat -n --color=always --highlight-line '{split:\t:0}' \"$HOME/.zshrc\""
+env = { BAT_THEME = "ansi" }
+offset = "{split:\t:0}"
+
+[ui]
+preview_panel = { header = "{split:\t:1}" }
+
+[keybindings]
+enter = "actions:edit"
+
+[actions.edit]
+description = "Open .zshrc in editor at this definition"
+command = "${EDITOR:-vim} '+{split:\t:0}' \"$HOME/.zshrc\""
+shell = "bash"
+mode = "execute"
