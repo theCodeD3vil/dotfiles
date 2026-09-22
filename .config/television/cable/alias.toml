@@ -6,32 +6,51 @@ requirements = ["awk", "bat"]
 [source]
 command = '''
 awk '
+  /^#/ {
+    line = $0
+    sub(/^# ?/, "", line)
+    cbuf = (cbuf == "") ? line : cbuf " " line
+    next
+  }
   /^alias [a-zA-Z_][a-zA-Z0-9_]*=/ {
     name = $0
     sub(/^alias /, "", name)
     sub(/=.*/, "", name)
-    printf "%d\t%s\talias\n", NR, name
+    printf "%d\t%s\talias\t%s\n", NR, name, cbuf
+    cbuf = ""
+    next
   }
   /^[a-zA-Z_][a-zA-Z0-9_]*\(\)/ {
     name = $0
     sub(/\(\).*/, "", name)
-    printf "%d\t%s\tfunction\n", NR, name
+    printf "%d\t%s\tfunction\t%s\n", NR, name, cbuf
+    cbuf = ""
+    next
   }
+  { cbuf = "" }
 ' "$HOME/.zshrc"
 '''
 display = "{split:\t:1}  ({split:\t:2})"
-output = "{split:\t:0}\t{split:\t:1}"
+output = "{split:\t:1}"
 
 [preview]
-command = "bat -n --color=always --highlight-line '{split:\t:0}' \"$HOME/.zshrc\""
-env = { BAT_THEME = "ansi" }
+command = '''
+desc="{split:\t:3}"
+[ -n "$desc" ] && printf "\033[1;36m%s\033[0m\n\n" "$desc"
+bat -n --color=always --highlight-line "{split:\t:0}" "$HOME/.zshrc"
+'''
 offset = "{split:\t:0}"
 
 [ui]
-preview_panel = { header = "{split:\t:1}" }
+preview_panel = { header = "{split:\t:1}  ({split:\t:2})" }
 
 [keybindings]
-enter = "actions:edit"
+enter = "actions:run"
+
+[actions.run]
+description = "Run the selected alias/function"
+command = "zsh -ic '{split:\t:1}'"
+mode = "execute"
 
 [actions.edit]
 description = "Open .zshrc in editor at this definition"
