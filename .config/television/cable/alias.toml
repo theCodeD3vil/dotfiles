@@ -16,6 +16,7 @@ awk '
     name = $0
     sub(/^alias /, "", name)
     sub(/=.*/, "", name)
+    if (name ~ /^(ls|cd)$/) { cbuf = ""; next }
     printf "%d\t%s\talias\t%s\n", NR, name, cbuf
     cbuf = ""
     next
@@ -23,6 +24,7 @@ awk '
   /^[a-zA-Z_][a-zA-Z0-9_]*\(\)/ {
     name = $0
     sub(/\(\).*/, "", name)
+    if (name ~ /^(chpwd|_fzf_compgen_path|_fzf_compgen_dir|_fzf_comprun)$/) { cbuf = ""; next }
     printf "%d\t%s\tfunction\t%s\n", NR, name, cbuf
     cbuf = ""
     next
@@ -49,7 +51,7 @@ enter = "actions:run"
 
 [actions.run]
 description = "Run the selected alias/function"
-command = "zsh -ic '{split:\t:1}'"
+command = "zsh -c 'source \"$HOME/.zshrc\" >/dev/null 2>&1; {split:\t:1}'"
 mode = "execute"
 
 [actions.edit]
