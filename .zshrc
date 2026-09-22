@@ -226,22 +226,23 @@ if [[ "$OSTYPE" == darwin* ]]; then
 fi
 
 # *****************************************************************************
+# CATPPUCCIN MOCHA PALETTE (shared by fzf, bat, zsh-syntax-highlighting)
+# *****************************************************************************
+
+ctp_base="#1e1e2e" ctp_mantle="#181825" ctp_surface0="#313244" ctp_surface1="#45475a"
+ctp_overlay0="#6c7086" ctp_text="#cdd6f4"
+ctp_red="#f38ba8" ctp_peach="#fab387" ctp_yellow="#f9e2af" ctp_green="#a6e3a1"
+ctp_teal="#94e2d5" ctp_blue="#89b4fa" ctp_mauve="#cba6f7" ctp_pink="#f5c2e7"
+
+# *****************************************************************************
 # FZF
 # *****************************************************************************
 
 # setup fzf keybindings and completions
 eval "$(fzf --zsh)"
 
-# fzf theme
-# --- setup fzf theme ---
-fg="#CBE0F0"
-bg="#000000"
-bg_highlight="#143652"
-purple="#B388FF"
-blue="#06BCE4"
-cyan="#2CF9ED"
-
-export FZF_DEFAULT_OPTS="--color=fg:${fg},bg:${bg},hl:${purple},fg+:${fg},bg+:${bg_highlight},hl+:${purple},info:${blue},prompt:${cyan},pointer:${cyan},marker:${cyan},spinner:${cyan},header:${cyan}"
+# fzf theme — Catppuccin Mocha
+export FZF_DEFAULT_OPTS="--color=fg:${ctp_text},bg:${ctp_base},hl:${ctp_mauve},fg+:${ctp_text},bg+:${ctp_surface1},hl+:${ctp_mauve},info:${ctp_blue},prompt:${ctp_teal},pointer:${ctp_pink},marker:${ctp_peach},spinner:${ctp_pink},header:${ctp_teal}"
 
 
 # -- Use fd instead of fzf --
@@ -284,7 +285,7 @@ _fzf_comprun(){
 
 # ----- Bat (better cat) -----
 
-export BAT_THEME=tokyonight_night
+export BAT_THEME="Catppuccin Mocha"
 
 # ---- Eza (better ls) -----
 
@@ -306,6 +307,7 @@ export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional
 zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
 source <(carapace _carapace)
 zstyle ':completion:*:git:*' group-order 'main commands' 'alias commands' 'external commands'
+
 #worktrunk
 if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
 
@@ -314,7 +316,7 @@ if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)
 export WT_TMUX=on                    # tmux session per worktree (off to skip)
 export WT_AGENTS="claude opencode"   # agents started in the Agents window ("" for none)
 export WT_EDITOR=nvim                # editor in the Editor window
-export WT_PROXY=on                   # Caddy route per worktree (off to skip)
+export WT_PROXY=off                   # Caddy route per worktree (off to skip)
 
 # use the defined nodejs version if present in the folder via .nvmrc
 chpwd(){
@@ -340,8 +342,7 @@ ZSH_HIGHLIGHT_PATTERNS+=('rm -rf *' 'fg=white,bold,bg=red')
 ZSH_HIGHLIGHT_MAXLENGTH=512
 ZSH_HIGHLIGHT_DIRS_BLACKLIST+=(/mnt/nfs-share)
 
-# Catppuccin Mocha colors (ansi mapping: magenta=Pink, cyan=Teal)
-ctp_pink='#f5c2e7' ctp_teal='#94e2d5'
+# Catppuccin Mocha colors (ansi mapping: magenta=Pink, cyan=Teal; palette defined above near FZF)
 ZSH_HIGHLIGHT_STYLES[alias]="fg=$ctp_pink,bold"
 ZSH_HIGHLIGHT_STYLES[path]="fg=$ctp_teal"
 ZSH_HIGHLIGHT_STYLES[globbing]='none'
@@ -349,3 +350,6 @@ ZSH_HIGHLIGHT_STYLES[globbing]='none'
 [ -f "$HOME/.atuin/bin/env" ] && . "$HOME/.atuin/bin/env"
 
 command -v atuin >/dev/null 2>&1 && eval "$(atuin init zsh)"
+
+# Disable telemetry for pass-cli
+PROTON_PASS_DISABLE_TELEMETRY=true
