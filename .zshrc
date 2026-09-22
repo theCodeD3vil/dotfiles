@@ -84,6 +84,11 @@ alias claude2='CLAUDE_CONFIG_DIR=~/.config/claude-code-sub2 claude'
 # GUM PICKERS — pick instead of type, guard instead of just run
 # *****************************************************************************
 
+# Re-sourcing this file inside a shell that already has gco/gbclean aliased
+# (from a previous load, before the managed block's unalias runs again below)
+# would otherwise make zsh choke defining a function under an aliased name.
+unalias gco gbclean 2>/dev/null
+
 # git: fuzzy-checkout a local branch
 gco() { git checkout "$(git branch --sort=-committerdate | sed 's/^[* ] //' | gum filter --placeholder 'branch')" }
 
