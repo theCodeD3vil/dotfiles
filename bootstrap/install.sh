@@ -16,6 +16,8 @@
 #   --plain          no colour, spinners or bars. Chosen automatically when the
 #                    output is not a terminal or NO_COLOR is set.
 #   --demo           show the progress display with fake tasks; changes nothing
+#   --yes            skip the "move files out of the way?" prompt in the stow
+#                    step (already skipped automatically when stdin isn't a tty)
 #   -h, --help
 #
 # Every real run is logged to ~/.cache/dotfiles-install/<timestamp>.log
@@ -31,6 +33,7 @@ UPGRADE=0
 CHECK_CLEANUP=0
 PLAIN=0
 DEMO=0
+ASSUME_YES=0
 SKIP=" "
 STEPS="preflight prerequisites brew toolchains agents globals omz submodules stow linux inits finish"
 
@@ -814,10 +817,30 @@ stow_run() {
   ) 2>&1
 }
 
+# Ask before moving real files out of stow's way. Skipped for --dry-run (nothing
+# moves yet), --yes, and when stdin isn't a tty (a piped/CI run must never hang
+# on a prompt it can't show; today's default of "just move them" is preserved).
+confirm_backup() {
+  local n=$1
+  [ "$DRY_RUN" = 1 ] && return 0
+  [ "$ASSUME_YES" = 1 ] && return 0
+  if [ ! -t 0 ]; then
+    warn "stdin is not a terminal, moving $n file(s) to $BACKUP_DIR without asking (use --yes to silence this)"
+    return 0
+  fi
+  if have gum; then
+    gum confirm "Move $n file(s) into $BACKUP_DIR to continue?"
+  else
+    printf '    move %s file(s) into %s? [y/N] ' "$n" "$BACKUP_DIR"
+    read -r ans
+    case "$ans" in [Yy]*) return 0 ;; *) return 1 ;; esac
+  fi
+}
+
 # Move every real file that is in stow's way to $BACKUP_DIR (same relative path).
 # Never --adopt: that would pull the machine's file into the repo.
 resolve_conflicts() {
-  local round=0 out paths p rc other
+  local round=0 out paths p rc other asked=0
   while [ "$round" -lt 6 ]; do
     out=$(stow_run simulate)
     rc=$?
@@ -838,6 +861,10 @@ resolve_conflicts() {
         return 1
       fi
       return 0
+    fi
+    if [ "$DRY_RUN" != 1 ] && [ "$asked" = 0 ]; then
+      confirm_backup "$(printf '%s\n' "$paths" | grep -c .)" || { warn "declined to move files out of stow's way"; return 1; }
+      asked=1
     fi
     while IFS= read -r p; do
       [ -n "$p" ] || continue
@@ -1096,6 +1123,7 @@ main() {
       --check-cleanup) CHECK_CLEANUP=1 ;;
       --plain)         PLAIN=1 ;;
       --demo)          DEMO=1 ;;
+      --yes)           ASSUME_YES=1 ;;
       --skip)
         [ $# -ge 2 ] || die "--skip needs a step name"
         known=0
