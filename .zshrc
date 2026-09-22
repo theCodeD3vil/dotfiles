@@ -94,21 +94,39 @@ gco() { git checkout "$(git branch --sort=-committerdate | sed 's/^[* ] //' | gu
 
 # git: multi-select merged local branches to delete
 gbclean() {
-  local br
-  br=$(git branch --merged | grep -vE '^\*|main|master' | gum choose --no-limit)
+  local merged br
+  merged=$(git branch --merged | grep -vE '^\*|main|master')
+  [ -n "$merged" ] || { echo "nothing to clean"; return 0; }
+  br=$(echo "$merged" | gum choose --no-limit)
   [ -n "$br" ] || return 0
   gum confirm "delete: $(echo "$br" | tr '\n' ' ')?" && echo "$br" | xargs git branch -d
 }
 
 # gh: pick an open PR, open it in the browser
-ghpv() { gh pr list --json number,title -q '.[]|"\(.number)\t\(.title)"' | gum filter | cut -f1 | xargs -r gh pr view --web }
+ghpv() {
+  local prs; prs=$(gh pr list --json number,title -q '.[]|"\(.number)\t\(.title)"')
+  [ -n "$prs" ] || { echo "no open PRs"; return 0; }
+  echo "$prs" | gum filter | cut -f1 | xargs -r gh pr view --web
+}
 
 # docker: pick a running container to tail or shell into
-dlogs() { docker ps --format '{{.Names}}' 2>/dev/null | gum filter | xargs -r docker logs -f }
-dsh()   { docker ps --format '{{.Names}}' 2>/dev/null | gum filter | xargs -r -I{} docker exec -it {} sh }
+dlogs() {
+  local c; c=$(docker ps --format '{{.Names}}' 2>/dev/null)
+  [ -n "$c" ] || { echo "no running containers"; return 0; }
+  echo "$c" | gum filter | xargs -r docker logs -f
+}
+dsh() {
+  local c; c=$(docker ps --format '{{.Names}}' 2>/dev/null)
+  [ -n "$c" ] || { echo "no running containers"; return 0; }
+  echo "$c" | gum filter | xargs -r -I{} docker exec -it {} sh
+}
 
 # worktrunk: pick a worktree branch to switch to
-wtsw() { wt list --format json 2>/dev/null | jq -r '.items[] | select(.branch != null) | .branch' | gum filter | xargs -r wt switch }
+wtsw() {
+  local b; b=$(wt list --format json 2>/dev/null | jq -r '.items[] | select(.branch != null) | .branch')
+  [ -n "$b" ] || { echo "no worktree branches"; return 0; }
+  echo "$b" | gum filter | xargs -r wt switch
+}
 
 # pass-cli: pick a secret, copy its password to the clipboard (macOS only; field
 # names below are best-effort from `pass-cli item list --help` since listing real
