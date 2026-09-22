@@ -9,12 +9,12 @@ frecency = false
 no_sort = true
 output = "{strip_ansi|split: :1..|join: }"
 [[source.command]]
-name = "All"
-run = "sesh list --icons"
-
-[[source.command]]
 name = "Tmux"
 run = "sesh list -t --icons"
+
+[[source.command]]
+name = "All"
+run = "sesh list --icons"
 
 [[source.command]]
 name = "Configs"
