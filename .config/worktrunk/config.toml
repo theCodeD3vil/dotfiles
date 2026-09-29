@@ -3,10 +3,10 @@ command = "MAX_THINKING_TOKENS=0 claude -p --no-session-persistence --model=haik
 
 [projects]
 
-[projects."github.com-work/theCodeD3vil/trunk"]
+[projects."github.com-work/*"]
 worktree-path = "{{ repo_path }}/../{{ branch | sanitize }}"
 
-[projects."github.com-work/theCodeD3vil/go-projects"]
+[projects."github.com/*"]
 worktree-path = "{{ repo_path }}/../{{ branch | sanitize }}"
 
 [list]
