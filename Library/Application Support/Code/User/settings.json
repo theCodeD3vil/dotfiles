@@ -1,0 +1,375 @@
+{
+
+  // Editor
+  "editor.fontSize": 16,
+  "editor.fontFamily": "'Cartograph CF','Operator Mono Lig',Consolas, 'Courier New', monospace",
+  "editor.fontLigatures": true,
+  "editor.suggestSelection": "first",
+  "editor.wordWrap": "bounded",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.cursorBlinking": "phase",
+  "editor.formatOnPaste": true,
+  "editor.fontWeight": "500",
+  "editor.inlineSuggest.enabled": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.codeLensFontSize": 16,
+  "editor.codeLensFontFamily": "'Lato'",
+  "editor.smoothScrolling": true,
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "name": "One Dark italic",
+        "scope": [
+          "comment",
+          "entity.other.attribute-name",
+          "markup.underline.link",
+          "storage.modifier",
+          "storage.type",
+          "string.url",
+          "variable.language.super",
+          "variable.language.this"
+        ],
+        "settings": {
+          "fontStyle": "italic"
+        }
+      },
+      {
+        "name": "One Dark italic 2",
+        "scope": [
+          "keyword",
+          "meta.return-type",
+          "variable.parameter"
+        ],
+        "settings": {
+          "fontStyle": "italic bold"
+        }
+      },
+      {
+        "name": "One Dark italic reset",
+        "scope": [
+          "entity.name.function",
+          "keyword.operator",
+          "keyword.other.type",
+          "storage.modifier.import",
+          "storage.modifier.package",
+          "storage.type.built-in",
+          "storage.type.function.arrow",
+          "storage.type.generic",
+          "storage.type.java",
+          "storage.type.primitive"
+        ],
+        "settings": {
+          "fontStyle": "bold"
+        }
+      }
+    ]
+  },
+  "editor.guides.indentation": true,
+  "editor.minimap.autohide": "mouseover",
+  "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+  "editor.formatOnSaveMode": "modifications",
+  "editor.minimap.enabled": false,
+  "editor.linkedEditing": true,
+  "editor.parameterHints.enabled": true,
+  "editor.suggest.snippetsPreventQuickSuggestions": true,
+  "editor.formatOnSave": true,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "editor.gotoLocation.multipleDefinitions": "goto",
+  "editor.accessibilitySupport": "on",
+  "editor.cursorStyle": "block",
+
+  // Files & explorer
+  "files.autoSave": "onFocusChange",
+  "explorer.confirmDelete": false,
+  "files.autoSaveDelay": 10000,
+  "explorer.confirmDragAndDrop": false,
+  "explorer.excludeGitIgnore": true,
+  "explorer.fileNesting.patterns": {
+    "*.ts": "${capture}.js",
+    "*.js": "${capture}.js.map, ${capture}.min.js, ${capture}.d.ts",
+    "*.jsx": "${capture}.js",
+    "*.tsx": "${capture}.ts",
+    "tsconfig.json": "tsconfig.*.json",
+    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml, bun.lockb, bun.lock",
+    "*.sqlite": "${capture}.${extname}-*",
+    "*.db": "${capture}.${extname}-*",
+    "*.sqlite3": "${capture}.${extname}-*",
+    "*.db3": "${capture}.${extname}-*",
+    "*.sdb": "${capture}.${extname}-*",
+    "*.s3db": "${capture}.${extname}-*"
+  },
+
+  // Workbench & window
+  "workbench.editorAssociations": {
+    "*.ipynb": "jupyter.notebook.ipynb"
+  },
+  "window.menuBarVisibility": "compact",
+  "extensions.autoUpdate": "on",
+  "workbench.editor.closeOnFileDelete": true,
+  "update.mode": "start",
+  "workbench.iconTheme": "flow-deep",
+  "workbench.reduceMotion": "on",
+  "window.dialogStyle": "custom",
+  "window.customMenuBarAltFocus": false,
+  "window.titleSeparator": " >> ",
+  "zenMode.hideActivityBar": false,
+  "zenMode.hideLineNumbers": false,
+  "zenMode.hideStatusBar": false,
+  "problems.showCurrentInStatus": true,
+  "window.restoreWindows": "none",
+  "application.experimental.rendererProfiling": true,
+  "workbench.editor.empty.hint": "hidden",
+  "accessibility.signals.noInlayHints": {
+    "sound": "on"
+  },
+  "accessibility.signals.taskCompleted": {
+    "sound": "on"
+  },
+  "accessibility.signals.terminalCommandFailed": {
+    "sound": "on"
+  },
+  "accessibility.signals.chatRequestSent": {
+    "sound": "on"
+  },
+  "accessibility.signals.clear": {
+    "sound": "on"
+  },
+  "accessibility.signals.terminalBell": {
+    "sound": "on"
+  },
+  "workbench.colorTheme": "Vesper Vibrant",
+  "telemetry.telemetryLevel": "off",
+  "extensions.experimental.deferredStartupFinishedActivation": true,
+  "workbench.startupEditor": "none",
+  "workbench.editor.enablePreview": false,
+  "workbench.browser.enableChatTools": true,
+  "security.promptForLocalFileProtocolHandling": false,
+  "workbench.productIconTheme": "polar-black-ui",
+  "workbench.activityBar.location": "bottom",
+
+  // Custom CSS (be5invis.vscode-custom-css)
+  "vscode_custom_css.policy": true,
+  "vscode_custom_css.imports": [
+    "file:///Users/michaelnji/.config/vscode/custom.css"
+  ],
+
+  // Terminal
+  "terminal.integrated.copyOnSelection": true,
+  "terminal.integrated.cursorBlinking": true,
+  "terminal.integrated.fontFamily": "Space Mono",
+  "terminal.integrated.tabs.enableAnimation": false,
+  "terminal.integrated.enableMultiLinePasteWarning": false,
+  "terminal.integrated.enableVisualBell": true,
+  "terminal.integrated.initialHint": false,
+
+  // Git & GitHub
+  "git.suggestSmartCommit": false,
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "githubPullRequests.remotes": [
+    "origin",
+    "upstream",
+    "Bloga"
+  ],
+  "git.openRepositoryInParentFolders": "never",
+  "githubPullRequests.fileListLayout": "tree",
+  "githubPullRequests.createOnPublishBranch": "never",
+
+  // AI & chat
+  "github.copilot.enable": {
+    "*": false,
+    "plaintext": true,
+    "markdown": false,
+    "scminput": false,
+    "yaml": false,
+    "svelte": false,
+    "typescript": true
+  },
+  "chat.editing.confirmEditRequestRemoval": false,
+  "github.copilot.nextEditSuggestions.enabled": false,
+  "chat.mcp.gallery.enabled": true,
+  "chat.viewSessions.orientation": "stacked",
+  "chat.tools.terminal.autoApprove": {
+    "bun": true,
+    "npx shadcn-vue@latest": true,
+    "bunx": true,
+    "pnpm": true,
+    "mv": true,
+    "mkdir": true,
+    "firecrawl": true,
+    "rtk": true,
+    "npm install": true
+  },
+  "chat.tools.urls.autoApprove": {
+    "https://code.visualstudio.com": true,
+    "https://github.com/microsoft/vscode/wiki/*": true,
+    "https://www.sanity.io": true,
+    "https://www.npmjs.com": true,
+    "https://www.fontshare.com": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://*.google.com": true,
+    "https://www.dafont.com": {
+      "approveRequest": true,
+      "approveResponse": false
+    },
+    "https://fontesk.com": {
+      "approveRequest": true,
+      "approveResponse": false
+    },
+    "https://www.cdnfonts.com": {
+      "approveRequest": true,
+      "approveResponse": false
+    },
+    "https://github.com": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://raw.githubusercontent.com": {
+      "approveRequest": false,
+      "approveResponse": true
+    }
+  },
+  "claudeCode.preferredLocation": "panel",
+  "chat.useClaudeHooks": true,
+  "chat.utilityModel": "copilot/gpt-5.4",
+  "chat.utilitySmallModel": "copilot/claude-sonnet-4.6",
+  "chat.tools.compressOutput.enabled": true,
+  "github.copilot.nextEditSuggestions.eagerness": "medium",
+  "remote.defaultExtensionsIfInstalledLocally": [
+    "GitHub.copilot",
+    "GitHub.copilot-chat",
+    "GitHub.vscode-pull-request-github",
+    "TabbyML.pochi"
+  ],
+  "chat.sessionSync.enabled": true,
+
+  // Language formatters
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "Vue.volar"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[dart]": {
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.rulers": [
+      80
+    ],
+    "editor.selectionHighlight": false,
+    "editor.tabCompletion": "onlySnippets",
+    "editor.wordBasedSuggestions": "off"
+  },
+
+  // Language & tool extensions
+  "yaml.completion": true,
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/stepci/stepci/main/schema.json": "*.stepci.yml"
+  },
+  "better-comments.tags": [
+    {
+      "tag": "!",
+      "color": "#FF2D00"
+    },
+    {
+      "tag": "bug",
+      "color": "#FF2D00",
+      "bold": true
+    },
+    {
+      "tag": "?",
+      "color": "#3498DB"
+    },
+    {
+      "tag": "//",
+      "color": "#474747",
+      "strikethrough": true
+    },
+    {
+      "tag": "TODO",
+      "color": "#FF8C00"
+    },
+    {
+      "tag": "*",
+      "color": "#98C379"
+    },
+    {
+      "tag": "fixme",
+      "color": "#98C379",
+      "bold": true
+    },
+    {
+      "tag": "^",
+      "color": "#fcc419",
+      "bold": true
+    },
+    {
+      "tag": "&&",
+      "color": "#845ef7",
+      "bold": true,
+      "italic": true
+    }
+  ],
+  "better-comments.highlightPlainText": true,
+  "errorLens.fontFamily": "'Space Mono'",
+  "errorLens.fontSize": "16px",
+  "errorLens.addAnnotationTextPrefixes": true,
+  "typescript.suggest.paths": false,
+  "typescript.disableAutomaticTypeAcquisition": true,
+  "path-intellisense.extensionOnImport": true,
+  "redhat.telemetry.enabled": true,
+  "importCost.bundleSizeDecoration": "minified",
+  "tailwindCSS.emmetCompletions": true,
+  "eslint.codeAction.showDocumentation": {
+    "enable": false
+  },
+  "npm-intellisense.showBuildInLibs": true,
+  "tailwindCSS.hovers": false,
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "javascript.inlayHints.parameterNames.enabled": "literals",
+  "nuxtr.piniaFiles.defaultTemplate": "setup",
+  "nuxtr.vueFiles.style.alwaysScoped": true,
+  "nuxtr.vueFiles.style.addStyleTag": false,
+  "openapi.internalFeatures": false,
+  "openapi.internalUseDevEndpoints": false,
+  "openapi.approvedHostnames": [],
+  "json.schemaDownload.trustedDomains": {
+    "https://developer.microsoft.com/json-schemas/": true,
+    "https://json-schema.org/": true,
+    "https://json.schemastore.org/": true,
+    "https://models.dev": true,
+    "https://opencode.ai": true,
+    "https://raw.githubusercontent.com/devcontainers/spec/": true,
+    "https://raw.githubusercontent.com/microsoft/vscode/": true,
+    "https://schemastore.azurewebsites.net/": true,
+    "https://shadcn-vue.com": true,
+    "https://www.schemastore.org/": true
+  },
+  "claudeCode.hideOnboarding": true,
+  "window.density.layout": "compact",
+  "workbench.notifications.position": "top-right",
+  "githubPullRequests.experimental.notificationsMarkPullRequests": "markAsDone",
+  "githubPullRequests.notifications": "pullRequests",
+  "extensions.ignoreRecommendations": true
+}

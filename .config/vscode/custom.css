@@ -1,0 +1,129 @@
+/* VS Code custom CSS, loaded by be5invis.vscode-custom-css.
+   Ported from the old apc.* settings. Re-apply after every VS Code update:
+   Cmd+Shift+P -> "Reload Custom CSS and JS". */
+
+/* apc.font.family / apc.stylesheet["*"] */
+.monaco-workbench,
+.monaco-workbench .part,
+.monaco-workbench .monaco-list,
+.monaco-workbench .monaco-menu,
+.monaco-workbench .quick-input-widget {
+  font-family:   'Operator Mono lig', monospace;
+}
+
+/* apc.stylesheet[".editor .title"] */
+.editor .title,
+.monaco-workbench .part.editor > .content > .editor-group-container > .title {
+  background: transparent !important;
+}
+
+/* UI font size. macOS VS Code defaults to 11px; the old APC values (11/11/10)
+   were smaller still. Change --ui-font-size to scale everything below. */
+.monaco-workbench {
+  --ui-font-size: 14px;
+  font-size: var(--ui-font-size);
+}
+
+/* Title bar (was apc.header 25px / 11px) */
+.monaco-workbench .part.titlebar {
+  height: 30px;
+  line-height: 30px;
+  font-size: var(--ui-font-size);
+}
+.monaco-workbench .pane-header {
+  font-size: var(--ui-font-size);
+}
+
+/* Lists and trees (was apc.listRow 19px / 11px).
+   Row height is set inline by VS Code's virtual list, so only line-height
+   and font-size are overridden. 22px matches VS Code's default row height. */
+.monaco-workbench .monaco-list .monaco-list-row {
+  font-size: var(--ui-font-size);
+  line-height: 22px;
+}
+
+/* Status bar (was apc.statusBar 20px / 10px; position editor-bottom is not
+   reproducible with CSS) */
+.monaco-workbench .part.statusbar {
+  height: 24px;
+  line-height: 24px;
+  font-size: calc(var(--ui-font-size) - 1px);
+}
+
+/* ---- Blur behind floating widgets ----
+   Widgets need a translucent background for backdrop-filter to show through.
+   VS Code also paints an opaque background on the list inside the palette and
+   suggest widget (.monaco-list-rows, set by JS), so that is cleared too. */
+.quick-input-widget,
+.monaco-editor .suggest-widget,
+.monaco-editor .suggest-details,
+.monaco-editor .parameter-hints-widget,
+.monaco-workbench .monaco-hover,
+.monaco-editor .monaco-hover {
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+}
+.quick-input-widget {
+  background-color: color-mix(in srgb, var(--vscode-quickInput-background) 55%, transparent) !important;
+}
+.monaco-editor .suggest-widget,
+.monaco-editor .suggest-details {
+  background-color: color-mix(in srgb, var(--vscode-editorSuggestWidget-background) 55%, transparent) !important;
+}
+.monaco-editor .parameter-hints-widget,
+.monaco-workbench .monaco-hover,
+.monaco-editor .monaco-hover {
+  background-color: color-mix(in srgb, var(--vscode-editorHoverWidget-background) 60%, transparent) !important;
+}
+.quick-input-widget .monaco-list .monaco-list-rows,
+.quick-input-widget .quick-input-titlebar,
+.monaco-editor .suggest-widget .monaco-list .monaco-list-rows {
+  background: transparent !important;
+}
+
+/* ---- Dim inactive editor groups (full brightness on hover) ---- */
+.monaco-workbench .editor-group-container.inactive > .editor-container {
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+.monaco-workbench .editor-group-container.inactive:hover > .editor-container {
+  opacity: 1;
+}
+
+/* ---- Tab close button only on hover / active tab.
+        Dirty tabs keep it visible so the unsaved dot is never hidden. ---- */
+.monaco-workbench .tab .tab-actions {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.monaco-workbench .tab:hover .tab-actions,
+.monaco-workbench .tab.active .tab-actions,
+.monaco-workbench .tab.dirty .tab-actions {
+  opacity: 1;
+}
+
+
+
+/* ---- Gradient block cursor (editor.cursorStyle is already "block").
+        Monaco sets the cursor color inline, so !important is required.
+        Catppuccin Mocha red -> peach -> yellow. ---- */
+.monaco-editor .cursors-layer > .cursor {
+  background: linear-gradient(180deg, #f38ba8 0%, #fab387 50%, #f9e2af 100%) !important;
+  border-color: transparent !important;
+  border-radius: 2px;
+}
+
+/* ---- Softer indent guides ---- */
+.monaco-editor .lines-content .core-guide,
+.monaco-editor .lines-content .cigr {
+  opacity: 0.35;
+}
+
+/* ---- Fade line numbers except the current line ---- */
+.monaco-editor .margin-view-overlays .line-numbers {
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+.monaco-editor .margin-view-overlays .line-numbers.active-line-number {
+  opacity: 1;
+}
