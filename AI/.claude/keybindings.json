@@ -1,0 +1,8 @@
+{
+  "bindings": [
+    {
+      "context": "Global",
+      "bindings": { "ctrl+e": "app:cycleDiffBase" }
+    }
+  ]
+}
