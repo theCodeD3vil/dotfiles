@@ -7,4 +7,3 @@ crayon@cc-crayon                         jonpojonpo/cc-crayon
 typescript-lsp@claude-plugins-official   anthropics/claude-plugins-official
 vercel@claude-plugins-official           anthropics/claude-plugins-official
 worktrunk@worktrunk                      max-sixty/worktrunk
-cc-prompt-enhance-mod@cc-prompt-enhance-mod yibudak/cc-prompt-enhance-mod
