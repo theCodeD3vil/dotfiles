@@ -1,10 +1,7 @@
-import type { EngineInterface, Register, RenderChildren, SessionRateLimit } from 'claude-code'
+import type { Register, RenderChildren, SessionRateLimit } from 'claude-code'
 
-import type { ContextReading } from '../types'
-
-// Ember Pills: Claude Code's footer, replaced, plus the context's heat in the band above the prompt.
-//   above:   ✻ Hot  134.4k / 200k   last turns ▁▂▃▅▆▇  ▲ +98.3k last turn
-//   below:  ✻ Opus 5.5   5h ▬▬▬▬▬▬▬▬▬▮▬▬▬▬▬▬▬▬▬▬▬▬ 41% 2h14m   wk ▬▬▬▬▮▬▬▬▬▬▬▬▬▬ 18% 3d05h
+// Ember Pills: Claude Code's footer, replaced.
+//   ✻ Opus 5.5   5h ▬▬▬▬▬▬▬▬▬▮▬▬▬▬▬▬▬▬▬▬▬▬ 41% 2h14m   wk ▬▬▬▬▮▬▬▬▬▬▬▬▬▬ 18% 3d05h
 // Usage bars fill with usage; the ▮ marker shows how much of the window has passed.
 // The ✻ spins while Claude works.
 
@@ -50,66 +47,17 @@ function timeLeft(limit: SessionRateLimit | undefined, now: number) {
   return `${Math.floor(mins / 60)}h${pad(mins % 60)}m`
 }
 
-// Ember heat (Catppuccin Mocha colours, Claude orange for Warm): a word by how full the context window is, the last 12 turns as a sparkline.
-const HISTORY = 12
-const BARS = '▁▂▃▄▅▆▇█'
-const HEAT = [
-  { upTo: 25, word: 'Fresh', color: '#A6E3A1' },
-  { upTo: 50, word: 'Warm', color: CLAUDE },
-  { upTo: 75, word: 'Hot', color: '#F9E2AF' },
-  { upTo: 90, word: 'Blazing', color: '#F5C2E7' },
-  { upTo: Infinity, word: 'Compact soon', color: '#F38BA8' },
-]
-
-// Held by the host, so the history survives a hot reload of this file.
-const readings = { plugin: 'ember-ribbon', key: 'readings' } as const
-
-async function takeReading($: EngineInterface) {
-  const { context } = await $.session.usage()
-  if (!context?.window) return
-  const tokens = context.tokens ?? 0
-  const percent = context.percent ?? Math.round((tokens / context.window) * 100)
-  const { value: history = [] } = await $.state.get(readings)
-  await $.state.set(readings, [...history, { tokens, window: context.window, percent }].slice(-HISTORY))
-}
-
-function sparkline(history: ContextReading[]) {
-  const top = Math.max(...history.map(r => r.tokens), 1)
-  return history.map(r => BARS[Math.floor((r.tokens / top) * (BARS.length - 1))]).join('')
-}
-
-function trend(history: ContextReading[]) {
-  const delta = (history[history.length - 1]?.tokens ?? 0) - (history[history.length - 2]?.tokens ?? 0)
-  if (delta === 0) return 'steady'
-  return delta > 0 ? `▲ +${short(delta)} last turn` : `▼ ${short(-delta)} last turn`
-}
-
-function short(n: number) {
-  if (n >= 1_000_000) return `${+(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `${+(n / 1_000).toFixed(1)}k`
-  return String(n)
-}
-
 export const register: Register = on => {
   let working = false
   let tick = 0
 
-  on('session.start', async ($, e, next) => {
+  on('session.start', ($, e, next) => {
     $.clock.every(100, () => {
       tick++
       // Animate while working; otherwise redraw once a minute for the countdowns.
       if (working || tick % 600 === 0) $.ui.invalidate('ui.render')
     })
-    const result = await next(e)
-    await takeReading($)
-    return result
-  })
-
-  // One context reading per main-loop turn (not subagents).
-  on('turn.complete', async ($, e, next) => {
-    const result = await next(e)
-    if (!e.agentId) await takeReading($)
-    return result
+    return next(e)
   })
 
   // New usage figures arrived: redraw.
@@ -120,34 +68,6 @@ export const register: Register = on => {
 
   // Hide the mode labels.
   on('ui.render', { component: 'SessionMode' }, ($, e, next) => next({ ...e, props: { modes: [] } }))
-
-  // Context heat at the far right of the band above the prompt.
-  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const { value: history = [] } = await $.state.get(readings)
-    const now = history[history.length - 1]
-    if (e.surface !== 'terminal' || e.props.hasSurvey || !now) return next(e)
-
-    const { Box, Text } = $.ui.resolve(e)
-    const f = HEAT.find(b => now.percent < b.upTo) ?? HEAT[HEAT.length - 1]!
-    const wide = e.props.bodyColumns >= 60
-
-    // bodyColumns is the band's width less the engine's [-] marker, so this sits flush right.
-    return (
-      <Box width={e.props.bodyColumns} justifyContent="flex-end">
-        <Box gap={2}>
-          <Text color={f.color} bold>✻ {f.word}</Text>
-          <Text dimColor>{short(now.tokens)} / {short(now.window)}</Text>
-          {wide ? (
-            <Box gap={1}>
-              <Text dimColor> last turns</Text>
-              <Text color={f.color}>{sparkline(history)}</Text>
-            </Box>
-          ) : null}
-          {wide && history.length > 1 ? <Text dimColor>{trend(history)}</Text> : null}
-        </Box>
-      </Box>
-    )
-  })
 
   // Draw the footer in place of the hint line.
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
