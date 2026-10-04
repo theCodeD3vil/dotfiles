@@ -885,6 +885,28 @@ EOF
   return 1
 }
 
+# opencode.json is a starting point, not a link (see AI/.stow-local-ignore): tools
+# rewrite it with machine-only plugin paths. Copied only when missing, and a link
+# left by an older stow run becomes a real copy so those writes stay out of git.
+seed_opencode_config() {
+  local src="$DOTFILES_DIR/AI/.config/opencode/opencode.json" dest="$HOME/.config/opencode/opencode.json"
+  if [ -L "$dest" ]; then
+    case "$(readlink "$dest")" in
+      */AI/.config/opencode/opencode.json) ;;
+      *) info "opencode.json is a link we don't own, leaving it"; return 0 ;;
+    esac
+  elif [ -e "$dest" ]; then
+    info "opencode.json already present, leaving it"
+    return 0
+  fi
+  if [ "$DRY_RUN" = 1 ]; then
+    dry "copy $src to $dest"
+    return 0
+  fi
+  rm -f "$dest" && cp "$src" "$dest" || return 1
+  info "copied opencode.json into ~/.config/opencode"
+}
+
 step_stow() {
   local out
   if ! have stow; then
@@ -913,6 +935,7 @@ step_stow() {
   # Keep .config real before linking the shared packages. Only tracked files in
   # opencode are linked; init tools can create plugins/skills outside the repo.
   quiet mkdir -p "$HOME/.config" "$HOME/.config/opencode" || return 1
+  seed_opencode_config || return 1
   if [ "$DRY_RUN" = 1 ]; then
     dry "stow simulation reports no other problems"
     return 0

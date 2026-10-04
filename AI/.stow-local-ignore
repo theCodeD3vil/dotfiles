@@ -8,3 +8,12 @@
 # Claude Code mods load straight from this repo (CLAUDE_CODE_PLUGIN_DIRS, set by
 # the bootstrap): the plugin loader won't read a hooks.json that is a symlink.
 ^/\.claude/mods$
+
+# Copied in by the bootstrap, not linked: opencode and other tools rewrite it with
+# plugin paths that only exist on this machine, replacing the link with a real file.
+^/\.config/opencode/opencode\.json$
+
+# Build output and dependencies of the opencode TUI plugins; gitignored, never linked.
+node_modules
+^/\.config/opencode/tui-plugins/statusline/dist$
+^/\.config/opencode/tui-plugins/statusline/package-lock\.json$
