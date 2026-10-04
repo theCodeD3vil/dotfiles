@@ -314,7 +314,7 @@ step_desc() {
     submodules)    echo "fill the plugin checkouts the repo tracks (fzf-git, tmux)" ;;
     stow)          echo "link the dotfiles into your home directory" ;;
     linux)         echo "Ubuntu-only shell fixes" ;;
-    inits)         echo "rtk, icm and worktrunk setup" ;;
+    inits)         echo "rtk, icm, Claude Code mods and worktrunk setup" ;;
     finish)        echo "login shell and a last check" ;;
   esac
 }
@@ -969,6 +969,29 @@ setup_pass_cli_completions() {
   fi
 }
 
+# Point CLAUDE_CODE_PLUGIN_DIRS in ~/.claude/settings.json at every mod in AI/.claude/mods.
+# settings.json stays out of git (Claude Code and other apps rewrite it), so only this key is set.
+setup_claude_mods() {
+  local settings="$HOME/.claude/settings.json" dirs="" mod
+  for mod in "$DOTFILES_DIR"/AI/.claude/mods/*/; do
+    dirs="$dirs${dirs:+:}~/.claude/mods/$(basename "$mod")"
+  done
+  [ -n "$dirs" ] || return 0
+  if [ "$DRY_RUN" = 1 ]; then
+    dry "set CLAUDE_CODE_PLUGIN_DIRS=$dirs in $settings"
+    return 0
+  fi
+  have python3 || { warn "python3 is not installed: Claude Code mods are not enabled"; return 1; }
+  python3 - "$settings" "$dirs" <<'PY'
+import json, os, sys
+path, dirs = sys.argv[1], sys.argv[2]
+data = json.load(open(path)) if os.path.exists(path) else {}
+data.setdefault("env", {})["CLAUDE_CODE_PLUGIN_DIRS"] = dirs
+open(path, "w").write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+PY
+  info "Claude Code mods enabled: $dirs"
+}
+
 step_inits() {
   local rc=0
   quiet mkdir -p "$HOME/.claude"    # rtk init exits 1 without it
@@ -1000,6 +1023,8 @@ step_inits() {
     warn "icm is not installed"
     [ "$DRY_RUN" = 1 ] || rc=1
   fi
+
+  setup_claude_mods || rc=1
 
   # pass-cli ships a completion generator, not a file. The result goes in ~/.zfunc,
   # which .zshrc puts on fpath before oh-my-zsh runs compinit.
