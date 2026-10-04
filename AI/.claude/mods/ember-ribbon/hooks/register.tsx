@@ -99,12 +99,14 @@ const MODEL = 'haiku'
 const RECENT_MESSAGES = 10
 const MESSAGE_CHARS = 2000
 const CONTEXT_CHARS = 12000
-// nf-md-creation (sparkles) and nf-md-check, from Symbols Nerd Font: a Mono face such as
+// The sparkle (U+F51B) and nf-md-check, from Symbols Nerd Font: a Mono face such as
 // CaskaydiaCove Nerd Font Mono squeezes icons into 1 cell. Ghostty draws one 2 cells wide only
 // when a blank cell follows it, which the Button's one-space label provides.
 // While enhancing, the icon plays Claude's own spinner frames (SPIN).
-const ICON = '\u{F0674}'
+const ICON = '\u{F51B}'
 const DONE_ICON = '\u{F012C}'
+// Shown while the enhanced text is current (Ctrl+E then reverts); also from Symbols Nerd Font.
+const ENHANCED_ICON = '\u{F0453}'
 const BLUE = '#89B4FA' // Catppuccin Mocha
 const GREEN = '#A6E3A1'
 const DONE_TICKS = 30 // the check stays 3s (the clock ticks every 100ms)
@@ -192,8 +194,29 @@ async function rewrite($: EngineInterface, draft: string, before: string) {
   const text = r.isAnswered ? r.text.trim().replace(/^```[^\n]*\n([\s\S]*?)\n```$/, '$1').trim() : ''
   if ((await $.prompt.read()).text !== before) return 'Kept what you typed; enhancement dropped'
   await $.prompt.fill({ text: text || draft })
-  if (!r.isAnswered) return `Enhance failed (${r.reason}); your draft is back in the box`
-  return 'Enhanced with Haiku: review it and press Enter'
+  if (!r.isAnswered || !text) return `Enhance failed (${r.isAnswered ? 'empty reply' : r.reason}); your draft is back in the box`
+  await $.state.set(previous, draft)
+  return 'Enhanced with Haiku: review it and press Enter, or Ctrl+E to undo'
+}
+
+// Held by the host, so undo survives a hot reload. Set once an enhancement lands; cleared by
+// undoing, editing the enhanced text (that accepts it) or sending it.
+const previous = { plugin: 'ember-ribbon', key: 'previous' } as const
+
+async function forget($: EngineInterface) {
+  const { value } = await $.state.get(previous)
+  if (value == null) return
+  await $.state.set(previous, null)
+  $.ui.invalidate('ui.render')
+}
+
+// Ctrl+E after an enhancement: the draft from before it goes back in the box.
+async function revert($: EngineInterface) {
+  const { value: draft } = await $.state.get(previous)
+  if (draft == null) return
+  await $.prompt.fill({ text: draft })
+  await forget($)
+  $.ui.toast('Back to your draft')
 }
 
 const tooShort = (draft: string) => draft.trim().split(/\s+/).length < 2
@@ -239,9 +262,18 @@ export const register: Register = on => {
   // Hide the mode labels.
   on('ui.render', { component: 'SessionMode' }, ($, e, next) => next({ ...e, props: { modes: [] } }))
 
-  // A draft ending in "::e" is enhanced instead of sent.
+  // Editing the enhanced text accepts it: the next Ctrl+E enhances again.
+  on('prompt.edit', async ($, e, next) => {
+    const r = await next(e)
+    if (r.text !== e.text) await forget($)
+    return r
+  })
+
+  // A draft ending in "::e" is enhanced instead of sent. Any send drops the undo.
   on('prompt.submit', async ($, e, next) => {
-    if (e.origin.kind !== 'composer' || !TRIGGER.test(e.text)) return next(e)
+    if (e.origin.kind !== 'composer') return next(e)
+    await forget($)
+    if (!TRIGGER.test(e.text)) return next(e)
     const draft = e.text.replace(TRIGGER, '')
     // Back in the box, so the rainbow has something to paint.
     await $.prompt.fill({ text: draft })
@@ -256,6 +288,7 @@ export const register: Register = on => {
     if (e.surface !== 'terminal' || e.props.hasSurvey) return next(e)
     const { value: history = [] } = await $.state.get(readings)
     const now = history[history.length - 1]
+    const canUndo = (await $.state.get(previous)).value != null
 
     const { Box, Button, Text } = $.ui.resolve(e)
     const f = now ? (HEAT.find(b => now.percent < b.upTo) ?? HEAT[HEAT.length - 1]!) : undefined
@@ -272,9 +305,9 @@ export const register: Register = on => {
           ) : doneTicks > 0 ? (
             <Text color={GREEN} bold>{DONE_ICON}</Text>
           ) : (
-            <Text color={BLUE}>{ICON}</Text>
+            <Text color={BLUE}>{canUndo ? ENHANCED_ICON : ICON}</Text>
           )}
-          <Button key="enhance" label=" " plain action="app:cycleDiffBase" onPress={() => enhanceBox($)} />
+          <Button key="enhance" label=" " plain action="app:cycleDiffBase" onPress={() => (canUndo ? revert($) : enhanceBox($))} />
         </Box>
         {now && f ? (
           <Box gap={2}>
