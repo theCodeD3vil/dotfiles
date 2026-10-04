@@ -1,1 +1,1 @@
-{ "name": "guard-rails", "version": "0.1.0", "description": "Dotfiles safety net and push gate: home config edits go through ~/dotfiles, settings.json edits ask first, every git push asks first" }
+{ "name": "guard-rails", "version": "0.1.0", "description": "Dotfiles safety net: home config edits go through ~/dotfiles, settings.json edits ask first" }

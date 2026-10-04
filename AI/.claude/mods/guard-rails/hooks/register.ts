@@ -3,7 +3,6 @@ import type { EngineInterface, Register } from 'claude-code'
 // Guard rails for this machine.
 //  - Dotfiles safety net: config files in the home folder may only be edited through ~/dotfiles.
 //    ~/.claude/settings.json stays out of git (apps rewrite it), so editing it asks you instead.
-//  - Push gate: every git push asks you first, even in auto mode.
 
 // Home-folder config that should only change through its stowed copy in ~/dotfiles.
 const WATCHED = ['/.zshrc', '/.gitconfig', '/.config/ghostty/config', '/.config/tmux/tmux.conf']
@@ -39,14 +38,5 @@ export const register: Register = on => {
   on('tool.call', { tool: 'Write' }, async ($, e, next) => {
     const reason = await editBlocked($, e.file_path)
     return reason ? { deny: reason } : next(e)
-  })
-
-  // tool.check's "ask" goes to the mode's decider (the classifier in auto mode), so ask the person directly.
-  on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
-    // Only a real push command: at the start, after `rtk`, or after &&, ||, ; or |.
-    // Text like a commit message that mentions pushing does not count.
-    if (!/(^|[;&|]\s*)(rtk\s+)?git\s+push\b/.test(e.command.trim())) return next(e)
-    const answer = await $.ui.ask(`Run this push? ${e.command}`, ['Push', 'Cancel']).catch(() => 'Cancel')
-    return answer === 'Push' ? next(e) : { deny: 'The user did not approve this git push.' }
   })
 }

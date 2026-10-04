@@ -1,1 +1,1 @@
-{"name": "ember-ribbon", "version": "0.1.0", "description": "Ember Pills footer (model, 5h / weekly usage with time left) and a Token Weather context forecast above the prompt; replaces Claude Code's default status UI", "types": "./types/index.d.ts"}
+{"name": "ember-ribbon", "version": "0.1.0", "description": "Ember Pills footer (model, 5h / weekly usage with time left) and the context's ember heat above the prompt; replaces Claude Code's default status UI", "types": "./types/index.d.ts"}

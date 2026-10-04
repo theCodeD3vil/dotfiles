@@ -2,9 +2,8 @@ import type { EngineInterface, Register, RenderChildren, SessionRateLimit } from
 
 import type { ContextReading } from '../types'
 
-// Ember Pills: Claude Code's footer, replaced, plus a context forecast in the band above the prompt
-// (Token Weather, from Anthropic's "Getting started with Claude Code mods" tutorial).
-//   above:   ☂  Showers  67% of context  134.4k / 200k   last turns ▁▂▃▅▆▇  ▲ +98.3k last turn
+// Ember Pills: Claude Code's footer, replaced, plus the context's heat in the band above the prompt.
+//   above:   ✻ Hot  134.4k / 200k   last turns ▁▂▃▅▆▇  ▲ +98.3k last turn
 //   below:  ✻ Opus 5.5   5h ▬▬▬▬▬▬▬▬▬▮▬▬▬▬▬▬▬▬▬▬▬▬ 41% 2h14m   wk ▬▬▬▬▮▬▬▬▬▬▬▬▬▬ 18% 3d05h
 // Usage bars fill with usage; the ▮ marker shows how much of the window has passed.
 // The ✻ spins while Claude works.
@@ -51,15 +50,15 @@ function timeLeft(limit: SessionRateLimit | undefined, now: number) {
   return `${Math.floor(mins / 60)}h${pad(mins % 60)}m`
 }
 
-// Token Weather: a forecast word by how full the context window is, the last 12 turns as a sparkline.
+// Ember heat (Catppuccin Mocha colours, Claude orange for Warm): a word by how full the context window is, the last 12 turns as a sparkline.
 const HISTORY = 12
 const BARS = '▁▂▃▄▅▆▇█'
-const FORECAST = [
-  { upTo: 25, icon: '☀', word: 'Clear', color: 'yellow' },
-  { upTo: 50, icon: '☁', word: 'Cloudy', color: 'cyan' },
-  { upTo: 75, icon: '☂', word: 'Showers', color: 'blue' },
-  { upTo: 90, icon: '☇', word: 'Storm', color: 'magenta' },
-  { upTo: Infinity, icon: '↯', word: 'Compact soon', color: 'red' },
+const HEAT = [
+  { upTo: 25, word: 'Fresh', color: '#A6E3A1' },
+  { upTo: 50, word: 'Warm', color: CLAUDE },
+  { upTo: 75, word: 'Hot', color: '#F9E2AF' },
+  { upTo: 90, word: 'Blazing', color: '#F5C2E7' },
+  { upTo: Infinity, word: 'Compact soon', color: '#F38BA8' },
 ]
 
 // Held by the host, so the history survives a hot reload of this file.
@@ -122,22 +121,21 @@ export const register: Register = on => {
   // Hide the mode labels.
   on('ui.render', { component: 'SessionMode' }, ($, e, next) => next({ ...e, props: { modes: [] } }))
 
-  // Context forecast at the far right of the band above the prompt.
+  // Context heat at the far right of the band above the prompt.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const { value: history = [] } = await $.state.get(readings)
     const now = history[history.length - 1]
     if (e.surface !== 'terminal' || e.props.hasSurvey || !now) return next(e)
 
     const { Box, Text } = $.ui.resolve(e)
-    const f = FORECAST.find(b => now.percent < b.upTo) ?? FORECAST[FORECAST.length - 1]!
+    const f = HEAT.find(b => now.percent < b.upTo) ?? HEAT[HEAT.length - 1]!
     const wide = e.props.bodyColumns >= 60
 
     // bodyColumns is the band's width less the engine's [-] marker, so this sits flush right.
     return (
       <Box width={e.props.bodyColumns} justifyContent="flex-end">
         <Box gap={2}>
-          <Text color={f.color} bold>{f.icon}  {f.word}</Text>
-          <Text>{now.percent}% of context</Text>
+          <Text color={f.color} bold>✻ {f.word}</Text>
           <Text dimColor>{short(now.tokens)} / {short(now.window)}</Text>
           {wide ? (
             <Box gap={1}>
