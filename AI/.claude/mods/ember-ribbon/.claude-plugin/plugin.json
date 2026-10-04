@@ -1,1 +1,1 @@
-{ "name": "ember-ribbon", "version": "0.1.0", "description": "Ribbon footer with model, context, 5h and weekly usage; replaces Claude Code's default status UI" }
+{ "name": "ember-ribbon", "version": "0.1.0", "description": "Ember Pills footer: model, context, and 5h / weekly usage with time left; replaces Claude Code's default status UI" }
