@@ -36,8 +36,8 @@ test('footer shows model, context and both usage windows', async ($, on) => {
     component: 'AbovePrompt',
     props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 120 } as never,
   })
-  expect(await band.find({ text: /Hot/ })).toBeDefined()
-  expect(await band.find({ text: /134|k \// })).toBeDefined()
-  expect(await band.find({ text: /124k \/ 200k/ })).toBeDefined()
+  expect(await band.find({ text: /Hot/ })).toBeUndefined()
+  expect(await band.find({ text: '124k' })).toBeDefined()
+  expect(await band.find({ text: / \/ 200k/ })).toBeDefined()
   expect(await band.find({ key: 'enhance' })).toBeDefined()
 })

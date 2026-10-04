@@ -4,7 +4,7 @@ import type { ContextReading } from '../types'
 
 // Ember Pills: Claude Code's footer, replaced, plus one row above the prompt with the prompt
 // enhance button and the context's heat.
-//   above:     ✻ Hot  134.4k / 200k   last turns ▁▂▃▅▆▇  ▲ +98.3k last turn
+//   above:     134.4k / 200k   last turns ▁▂▃▅▆▇  ▲ +98.3k last turn
 //   below:  ✻ Opus 5.5   5h ▬▬▬▬▬▬▬▬▬▮▬▬▬▬▬▬▬▬▬▬▬▬ 41% 2h14m   wk ▬▬▬▬▮▬▬▬▬▬▬▬▬▬ 18% 3d05h
 // Usage bars fill with usage; the ▮ marker shows how much of the window has passed.
 // The ✻ spins while Claude works.
@@ -51,15 +51,15 @@ function timeLeft(limit: SessionRateLimit | undefined, now: number) {
   return `${Math.floor(mins / 60)}h${pad(mins % 60)}m`
 }
 
-// Ember heat (Catppuccin Mocha colours, Claude orange for Warm): a word by how full the context window is, the last 12 turns as a sparkline.
+// Ember heat (Catppuccin Mocha colours, Claude orange at 25-50%): the used tokens coloured by how full the context window is, the last 12 turns as a sparkline.
 const HISTORY = 12
 const BARS = '▁▂▃▄▅▆▇█'
 const HEAT = [
-  { upTo: 25, word: 'Fresh', color: '#A6E3A1' },
-  { upTo: 50, word: 'Warm', color: CLAUDE },
-  { upTo: 75, word: 'Hot', color: '#F9E2AF' },
-  { upTo: 90, word: 'Blazing', color: '#F5C2E7' },
-  { upTo: Infinity, word: 'Compact soon', color: '#F38BA8' },
+  { upTo: 25, color: '#A6E3A1' },
+  { upTo: 50, color: CLAUDE },
+  { upTo: 75, color: '#F9E2AF' },
+  { upTo: 90, color: '#F5C2E7' },
+  { upTo: Infinity, color: '#F38BA8' },
 ]
 
 // Held by the host, so the history survives a hot reload of this file.
@@ -102,6 +102,7 @@ const CONTEXT_CHARS = 12000
 // nf-md-creation (sparkles) and nf-md-check, from Symbols Nerd Font: a Mono face such as
 // CaskaydiaCove Nerd Font Mono squeezes icons into 1 cell. Ghostty draws one 2 cells wide only
 // when a blank cell follows it, which the Button's one-space label provides.
+// While enhancing, the icon plays Claude's own spinner frames (SPIN).
 const ICON = '\u{F0674}'
 const DONE_ICON = '\u{F012C}'
 const BLUE = '#89B4FA' // Catppuccin Mocha
@@ -137,7 +138,7 @@ async function conversation($: EngineInterface) {
   return text.length > CONTEXT_CHARS ? '…' + text.slice(-CONTEXT_CHARS) : text
 }
 
-// The icon is blue while ready, cycles RAINBOW while Haiku works, then shows a green check
+// The icon is blue sparkles while ready, a RAINBOW spinner while Haiku works, then a green check
 // for DONE_TICKS; a sound plays when it is done.
 let busy = false
 let doneTicks = 0
@@ -267,7 +268,7 @@ export const register: Register = on => {
         <Box flexGrow={1}>
           {/* A Button's label takes no colour, so the glyph is Text and the Button is the blank cell after it. */}
           {busy ? (
-            <Text color={RAINBOW[Math.floor(tick / 2) % RAINBOW.length]} bold>{ICON}</Text>
+            <Text color={RAINBOW[Math.floor(tick / 2) % RAINBOW.length]} bold>{SPIN[tick % SPIN.length]}</Text>
           ) : doneTicks > 0 ? (
             <Text color={GREEN} bold>{DONE_ICON}</Text>
           ) : (
@@ -277,8 +278,10 @@ export const register: Register = on => {
         </Box>
         {now && f ? (
           <Box gap={2}>
-            <Text color={f.color} bold>✻ {f.word}</Text>
-            <Text dimColor>{short(now.tokens)} / {short(now.window)}</Text>
+            <Box>
+              <Text color={f.color} bold>{short(now.tokens)}</Text>
+              <Text dimColor> / {short(now.window)}</Text>
+            </Box>
             {wide ? (
               <Box gap={1}>
                 <Text dimColor> last turns</Text>
