@@ -3,13 +3,14 @@
    Cmd+Shift+P -> "Reload Custom CSS and JS". */
 
 /* apc.font.family / apc.stylesheet["*"] */
+
 .monaco-workbench,
 .monaco-workbench .part,
 .monaco-workbench .monaco-list,
 .monaco-workbench .monaco-menu,
 .monaco-workbench .quick-input-widget {
-  font-family:   'Operator Mono lig', monospace;
-}
+  font-family:   'Satoshi Variable', monospace;
+}  
 
 /* apc.stylesheet[".editor .title"] */
 .editor .title,
@@ -82,10 +83,10 @@
 }
 
 /* ---- Dim inactive editor groups (full brightness on hover) ---- */
-.monaco-workbench .editor-group-container.inactive > .editor-container {
+/*.monaco-workbench .editor-group-container.inactive > .editor-container {
   opacity: 0.55;
   transition: opacity 0.2s ease;
-}
+} */ 
 .monaco-workbench .editor-group-container.inactive:hover > .editor-container {
   opacity: 1;
 }

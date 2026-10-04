@@ -12,7 +12,7 @@
   "editor.cursorSmoothCaretAnimation": "on",
   "editor.cursorBlinking": "phase",
   "editor.formatOnPaste": true,
-  "editor.fontWeight": "500",
+  "editor.fontWeight": "300",
   "editor.inlineSuggest.enabled": true,
   "editor.bracketPairColorization.enabled": true,
   "editor.codeLensFontSize": 16,
@@ -140,7 +140,7 @@
   "accessibility.signals.terminalBell": {
     "sound": "on"
   },
-  "workbench.colorTheme": "Vesper Vibrant",
+  "workbench.colorTheme": "Mayukai Dark",
   "telemetry.telemetryLevel": "off",
   "extensions.experimental.deferredStartupFinishedActivation": true,
   "workbench.startupEditor": "none",
@@ -166,7 +166,7 @@
   "terminal.integrated.initialHint": false,
 
   // Git & GitHub
-  "git.suggestSmartCommit": false,
+  "git.suggestSmartCommit": true,
   "git.autofetch": true,
   "git.confirmSync": false,
   "githubPullRequests.remotes": [
