@@ -8,3 +8,4 @@ typescript-lsp@claude-plugins-official   anthropics/claude-plugins-official
 vercel@claude-plugins-official           anthropics/claude-plugins-official
 worktrunk@worktrunk                      max-sixty/worktrunk
 plan-progress@zycck-mods                 zycck/claude-mods
+clawd@raresmun-mods                      raresmun/claude-mods

@@ -1,4 +1,12 @@
-import type { Register } from 'claude-code'
+import type { Register, RenderChildren, RenderElement } from 'claude-code'
+
+// Every Raster in a drawn tree, in order: the pictures other plugins put beside the line.
+function rasters(node: RenderChildren): RenderElement[] {
+  if (Array.isArray(node)) return node.flatMap(rasters)
+  if (!node || typeof node !== 'object') return []
+  const el = node as RenderElement & { children?: RenderChildren }
+  return el.type === 'Raster' ? [el] : rasters(el.children)
+}
 
 // Turn insights: "✻ Baked for 12s · 6 tools · 1.2k out · $0.08" closes each turn.
 
@@ -53,14 +61,27 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'TurnDuration' }, async ($, e, next) => {
+    // Always run the hooks beneath: clawd tracks which line closes the turn from this call.
+    const below = await next(e)
     const receipt = receipts.find(r => Math.abs(r.ms - e.props.durationMs) < 1500)
-    if (!receipt) return next(e)
+    if (!receipt) return below
     // Drawn as one line of our own: wrapping Claude Code's line made it take the full row and wrap the receipt.
-    const { Text } = $.ui.resolve(e)
+    // What plugins beneath drew beside the line (clawd's stage, a Raster) stays beside the receipt.
+    const { Box, Text } = $.ui.resolve(e)
+    const stages = rasters(below)
     return (
-      <Text dimColor wrap="truncate-end">
-        ✻ {e.props.word} for {duration(e.props.durationMs)} · done {clockTime(receipt.at)} · {receipt.text}
-      </Text>
+      <Box flexDirection="row" alignItems="center">
+        <Box flexShrink={1}>
+          <Text dimColor wrap="truncate-end">
+            ✻ {e.props.word} for {duration(e.props.durationMs)} · done {clockTime(receipt.at)} · {receipt.text}
+          </Text>
+        </Box>
+        {stages.map((stage, i) => (
+          <Box key={`stage-${i}`} marginLeft={2} flexShrink={0}>
+            {stage}
+          </Box>
+        ))}
+      </Box>
     )
   })
 }
