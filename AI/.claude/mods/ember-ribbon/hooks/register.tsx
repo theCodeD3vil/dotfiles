@@ -34,10 +34,11 @@ function sevColor(pct: number) {
   return '#A3BA82'
 }
 
-// The 5h bar as a Raster of braille, after plan-progress's trackCells (MIT): the used part twinkling
-// dots in the usage tint, denser toward the head, the rest solid ⣿ in dim grey, a ▐ where the
-// window's time has got to, and dotted tips (⢾ ⡷) coloured like the part they touch. Every cell
-// sits on the terminal's own background.
+// The 5h bar as a Raster of braille, after plan-progress's trackCells (MIT): the used part solid
+// dots in a fully saturated usage hue, dim at rest with a pulse of light running forward to the head
+// over and over (repainted every 100 ms by the timer), the rest solid ⣿ in dim
+// grey, a ▐ where the window's time has got to, and dotted tips (⢾ ⡷) that, once the fill reaches
+// them, sweep a band of hues around the usage colour. Every cell sits on the terminal's own background.
 const hex = (h: string) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16))
 const mix = (a: number[], b: number[], m: number) => a.map((v, i) => Math.round(v + ((b[i] ?? 0) - v) * m))
 const pack = (c: number[]) => ((c[0] ?? 0) << 16) | ((c[1] ?? 0) << 8) | (c[2] ?? 0)
@@ -45,17 +46,40 @@ const hash = (a: number, b: number, k: number) => {
   const x = Math.sin(a * 127.1 + b * 311.7 + k * 74.7) * 43758.5453
   return x - Math.floor(x)
 }
-const wave = (t: number, periodMs: number, offset: number) => 0.5 + 0.5 * Math.sin((t / periodMs + offset) * Math.PI * 2)
 const BRAILLE_BITS = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]]
 const BACKGROUND = [10, 10, 10] // Ghostty's background, #0A0A0A
 const DEFAULT_COLOR = 0x01000000 // a Raster cell's "terminal default" colour
-const TWINKLE = [2200, 2800, 1900, 3300]
-const DELAY = [0, 700, 1300, 400]
+const PULSE_SPEED = 10 // cells a second: one cell per 100 ms repaint, so the front moves smoothly
+const PULSE_TAIL = 3 // cells the pulse's tail fades over
+const PULSE_GAP = 6 // cells of dark between one pulse leaving the head and the next starting
+
+// Where the pulse's front is, in cells from the bar's start: it crosses the used part, waits out the
+// gap, and starts again from the beginning.
+const pulseAt = (t: number, fx: number) => ((t / 1000) * PULSE_SPEED) % (fx + PULSE_GAP)
+
+const TIP_SWEEP = 25 // degrees either side of the usage hue the tips sweep through
+const TIP_PERIOD = 1400 // ms for one sweep
+
+// [r, g, b] 0-255 <-> [hue 0-360, saturation 0-1, lightness 0-1]
+function toHsl([r = 0, g = 0, b = 0]: number[]): [number, number, number] {
+  const [R, G, B] = [r / 255, g / 255, b / 255]
+  const max = Math.max(R, G, B), min = Math.min(R, G, B), l = (max + min) / 2, d = max - min
+  if (d === 0) return [0, 0, l]
+  const s = d / (1 - Math.abs(2 * l - 1))
+  const h = max === R ? ((G - B) / d) % 6 : max === G ? (B - R) / d + 2 : (R - G) / d + 4
+  return [(h * 60 + 360) % 360, s, l]
+}
+function fromHsl(h: number, s: number, l: number) {
+  const c = (1 - Math.abs(2 * l - 1)) * s, hp = (((h % 360) + 360) % 360) / 60
+  const x = c * (1 - Math.abs((hp % 2) - 1)), m = l - c / 2
+  const rgb: [number, number, number] = hp < 1 ? [c, x, 0] : hp < 2 ? [x, c, 0] : hp < 3 ? [0, c, x] : hp < 4 ? [0, x, c] : hp < 5 ? [x, 0, c] : [c, 0, x]
+  return rgb.map(v => Math.round((v + m) * 255))
+}
 
 function usageCells(pct: number, timePct: number, width: number, t: number) {
-  const acc = hex(sevColor(pct))
-  const light = mix(acc, [255, 255, 255], 0.35)
-  const dim = mix(BACKGROUND, acc, 0.55)
+  // The usage colour's hue at full strength: brightness varies by lightness alone, so nothing greys it.
+  const [hue] = toHsl(hex(sevColor(pct)))
+  const vivid = (l: number) => fromHsl(hue, 0.9, l)
   const grey = hex(TRACK)
   const fx = pct > 0 ? Math.max(1, (pct / 100) * width) : 0
   const words = new Uint32Array(width * 3)
@@ -67,28 +91,23 @@ function usageCells(pct: number, timePct: number, width: number, t: number) {
       continue
     }
     const u = Math.min(1, (x + 0.5) / fx)
-    const dense = 0.45 + 0.55 * Math.pow(u, 1.5)
-    let bits = 0
-    for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 2; c++) {
-        if (hash(x * 2 + c, r, 1) <= dense * 0.75) bits |= BRAILLE_BITS[r]![c]!
-      }
-    }
-    // A used cell never reads as a gap beside the solid grey.
-    if (bits === 0) bits = 0x24
-    const cls = Math.floor(hash(x, 0, 2) * 4)
-    const blink = 1 - 0.55 * wave(t + DELAY[cls]!, TWINKLE[cls]!, 0.25)
-    const tone = mix(dim, light, Math.min(1, Math.pow(u, 0.9) * 1.1))
-    set(x, 0x2800 + bits, mix(BACKGROUND, tone, (0.35 + 0.65 * dense) * blink))
+    // Every dot lit, dim at rest; a pulse of light runs from the start to the head and starts
+    // over, a sharp front with a longer fading tail so it reads as moving forward.
+    const behind = pulseAt(t, fx) - x
+    const pulse = behind >= 0 ? Math.exp(-behind / PULSE_TAIL) : Math.exp(-(behind * behind) / 0.8)
+    const glow = 0.28 + 0.12 * Math.pow(u, 0.9) + 0.6 * pulse
+    set(x, 0x28ff, vivid(0.12 + 0.58 * glow))
   }
 
   // A thick ▐, kept off the end cells, which become the tips.
   const marker = Math.max(1, Math.min(width - 2, Math.round((width * timePct) / 100)))
   set(marker, 0x2590, hex(sevColor(timePct)))
 
-  // Rounded ends: a half circle of dots, tinted once the fill reaches it, else grey.
-  set(0, 0x28be, pct > 0 ? acc : grey)
-  set(width - 1, 0x2877, fx >= width - 1 ? acc : grey)
+  // Rounded ends: a half circle of dots each. A tip the fill has reached sweeps a band of hues
+  // around the usage colour (the two out of phase); one it has not stays grey like the track.
+  const tip = (phase: number) => fromHsl(hue + TIP_SWEEP * Math.sin((t / TIP_PERIOD + phase) * Math.PI * 2), 0.95, 0.62)
+  set(0, 0x28be, pct > 0 ? tip(0) : grey)
+  set(width - 1, 0x2877, fx >= width - 1 ? tip(0.5) : grey)
 
   return (new Uint8Array(words.buffer) as Uint8Array & { toBase64: () => string }).toBase64()
 }
@@ -273,21 +292,94 @@ async function enhanceBox($: EngineInterface) {
   $.ui.toast(await enhance($, draft, draft))
 }
 
-export const register: Register = on => {
-  let working = false
-  let tick = 0
+const encode = (words: Uint32Array) => (new Uint8Array(words.buffer) as Uint8Array & { toBase64: () => string }).toBase64()
 
-  on('session.start', async ($, e, next) => {
+// Token stream: characters the main loop's reply streams in each 100 ms tick (text, thinking and
+// tool input; about four to a token), drawn as a 1-row braille chart at the far right of the row.
+const STREAM_CELLS = 16
+let stream: number[] = []
+let streaming = 0
+const tokensPerSecond = () => Math.round(stream.slice(-10).reduce((a, b) => a + b, 0) / 4)
+
+function streamCells(width: number) {
+  // Each dot column is the mean of five ticks (half a second), so the line reads as a rate.
+  const points = Array.from({ length: width * 2 }, (_, i) => {
+    const end = stream.length - (width * 2 - 1 - i)
+    const window = stream.slice(Math.max(0, end - 5), Math.max(0, end))
+    return window.length ? window.reduce((a, b) => a + b, 0) / window.length : 0
+  })
+  const top = Math.max(1, ...points)
+  const color = pack(hex('#CBA6F7')) // Catppuccin Mocha mauve
+  const words = new Uint32Array(width * 3)
+  for (let x = 0; x < width; x++) {
+    let bits = 0
+    for (let c = 0; c < 2; c++) {
+      const level = Math.round((points[x * 2 + c]! / top) * 4)
+      for (let r = 4 - level; r < 4; r++) bits |= BRAILLE_BITS[r]![c]!
+    }
+    words.set([bits ? 0x2800 + bits : 0x2800 + BRAILLE_BITS[3]![0]! + BRAILLE_BITS[3]![1]!, bits ? color : pack(hex(TRACK)), DEFAULT_COLOR], x * 3)
+  }
+  return encode(words)
+}
+
+let working = false
+let tick = 0
+let ticking = false
+// Where the 5h bar is mounted and what it shows, so the timer can repaint just its cells.
+let mountedBar: { requestId: string; pct: number; timePct: number; width: number } | undefined
+
+// One 100 ms timer, started from whichever hook runs first: session.start does not run again after
+// /reload-plugins, so the render hooks offer to start it too.
+function ensureTicking($: EngineInterface) {
+  if (ticking) return
+  ticking = true
+  try {
     $.clock.every(100, () => {
       tick++
+      if (working) {
+        stream.push(streaming)
+        streaming = 0
+        if (stream.length > STREAM_CELLS * 2 + 10) stream.shift()
+      }
       // Animate while working or enhancing; otherwise redraw once a minute for the countdowns.
       if (working || busy || tick % 600 === 0) $.ui.invalidate('ui.render')
       // Count the check down, redrawing once it is gone.
       if (doneTicks > 0 && --doneTicks === 0) $.ui.invalidate('ui.render')
+      // The 5h bar's dots move all the time: repaint its cells alone, without a redraw.
+      if (mountedBar) {
+        const { requestId, pct, timePct, width } = mountedBar
+        void $.ui.blit({ requestId, key: 'usage', cells: usageCells(pct, timePct, width, tick * 100) }).catch(() => {})
+      }
     })
+  } catch {
+    ticking = false
+  }
+}
+
+export const register: Register = on => {
+  on('session.start', async ($, e, next) => {
+    ensureTicking($)
     const result = await next(e)
     await takeReading($)
     return result
+  })
+
+  // A fresh chart for each turn of the main loop.
+  on('turn.start', ($, e, next) => {
+    stream = []
+    streaming = 0
+    return next(e)
+  })
+
+  // Count what the main loop's reply streams, passing every piece on untouched.
+  on('turn.step', async function* ($, e, next) {
+    for await (const chunk of next(e)) {
+      if (!e.agentId) {
+        if (chunk.kind === 'text' || chunk.kind === 'thinking') streaming += chunk.text.length
+        else if (chunk.kind === 'input') streaming += chunk.json.length
+      }
+      yield chunk
+    }
   })
 
   // One context reading per main-loop turn (not subagents).
@@ -330,17 +422,20 @@ export const register: Register = on => {
   // the engine sends that chord only to a mounted Button naming the action.
   // What plugins beneath draw here (plan-progress's bars) sits above the row.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    ensureTicking($)
     const below = await next(e)
     if (e.surface !== 'terminal' || e.props.hasSurvey) return below
     const { value: history = [] } = await $.state.get(readings)
     const now = history[history.length - 1]
     const canUndo = (await $.state.get(previous)).value != null
+    working = e.props.isWorking
 
-    const { Box, Button, Text } = $.ui.resolve(e)
+    const { Box, Button, Raster, Text } = $.ui.resolve(e)
     const f = now ? (HEAT.find(b => now.percent < b.upTo) ?? HEAT[HEAT.length - 1]!) : undefined
 
     // bodyColumns is the band's width less the engine's [-] marker, so the heat sits flush right.
-    // paddingTop keeps the conversation from sitting flush on the band.
+    // paddingTop keeps the conversation from sitting flush on the band. While Claude works, the
+    // token stream runs at the far right, after the context count.
     return (
       <Box flexDirection="column" paddingTop={2}>
         {below}
@@ -362,6 +457,13 @@ export const register: Register = on => {
             <Text dimColor> / {short(now.window)}</Text>
           </Box>
         ) : null}
+        {working ? (
+          <Box marginLeft={3} gap={1}>
+            <Raster key="stream" columns={STREAM_CELLS} rows={1} cells={streamCells(STREAM_CELLS)} />
+            {/* Padded to four digits (figure spaces are digit-wide) so the row stops shifting as it counts. */}
+            <Text dimColor>{String(Math.min(9999, tokensPerSecond())).padStart(4, '\u2007')} tok/s</Text>
+          </Box>
+        ) : null}
         </Box>
       </Box>
     )
@@ -370,7 +472,9 @@ export const register: Register = on => {
   // Draw the footer in place of the hint line.
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
     if (e.surface !== 'terminal') return next(e)
+    ensureTicking($)
     working = e.props.isWorking
+    mountedBar = undefined
 
     const { Box, Raster, Text } = $.ui.resolve(e)
     const usage = await $.session.usage()
@@ -382,6 +486,7 @@ export const register: Register = on => {
     const usageBar = (pct: number, limit: SessionRateLimit | undefined, windowMs: number, width: number) => {
       const resetsIn = limit?.resetsAt ? Date.parse(limit.resetsAt) - now : windowMs
       const timePct = 100 * (1 - resetsIn / windowMs)
+      mountedBar = { requestId: e.requestId, pct, timePct, width }
       return <Raster key="usage" columns={width} rows={1} cells={usageCells(pct, timePct, width, tick * 100)} />
     }
 
