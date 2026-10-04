@@ -35,6 +35,8 @@ function fakeSession(on: Parameters<Extract<Parameters<typeof test>[1], Function
   on('clock.sleep', () => ({ value: undefined }) as never)
   on('audio.play', () => ({ value: undefined }) as never)
   on('ui.toast', () => ({ value: undefined }) as never)
+  // Stands for what plugins beneath draw (plan-progress's bars); the band keeps it.
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Text({ children: 'beneath' }))
   return box
 }
 
@@ -64,7 +66,9 @@ test('sending the enhanced text drops the undo', async ($, on) => {
   expect(box.text).toBe('Fix the `KeyError` in `create_user`.')
 })
 
-test('the band shows the enhance button before any context reading', async $ => {
+test('the band shows the enhance button before any context reading', async ($, on) => {
+  // Stands for what plugins beneath draw (plan-progress's bars); the band keeps it.
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Text({ children: 'beneath' }))
   const band = await $.ui.mount({
     plugin: 'ember-ribbon',
     surface: 'terminal',
@@ -72,4 +76,5 @@ test('the band shows the enhance button before any context reading', async $ => 
     props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 80, scroll: { offset: 0, bodyRows: 9 }, view: {} } as never,
   })
   expect(await band.find({ key: 'enhance' })).toBeDefined()
+  expect(await band.find({ text: 'beneath' })).toBeDefined()
 })

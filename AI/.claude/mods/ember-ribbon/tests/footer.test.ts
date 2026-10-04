@@ -15,6 +15,8 @@ test('footer shows model, context and both usage windows', async ($, on) => {
       { kind: 'seven_day', percentUsed: 18, resetsAt: new Date(now + 3 * 24 * HOUR + 5 * HOUR + 30_000).toISOString() },
     ],
   } }))
+  // Stands for what plugins beneath draw (plan-progress's bars); the band keeps it.
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Text({ children: 'beneath' }))
   const ui = await $.ui.mount({
     plugin: 'ember-ribbon',
     surface: 'terminal',
@@ -24,6 +26,7 @@ test('footer shows model, context and both usage windows', async ($, on) => {
 
   expect(await ui.find({ text: 'Opus 5.5' })).toBeDefined()
   expect(await ui.find({ text: '41%' })).toBeDefined()
+  expect(await ui.find({ key: 'usage' })).toBeDefined()
   expect(await ui.find({ text: '2h14m' })).toBeDefined()
   expect(await ui.find({ text: '18%' })).toBeDefined()
   expect(await ui.find({ text: '3d05h' })).toBeDefined()
@@ -40,4 +43,5 @@ test('footer shows model, context and both usage windows', async ($, on) => {
   expect(await band.find({ text: '124k' })).toBeDefined()
   expect(await band.find({ text: / \/ 200k/ })).toBeDefined()
   expect(await band.find({ key: 'enhance' })).toBeDefined()
+  expect(await band.find({ text: 'beneath' })).toBeDefined()
 })

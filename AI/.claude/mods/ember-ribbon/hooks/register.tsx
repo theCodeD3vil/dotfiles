@@ -4,9 +4,9 @@ import type { ContextReading } from '../types'
 
 // Ember Pills: Claude Code's footer, replaced, plus one row above the prompt with the prompt
 // enhance button and the context's heat.
-//   above:     134.4k / 200k   last turns ▁▂▃▅▆▇  ▲ +98.3k last turn
-//   below:  ✻ Opus 5.5   5h ▬▬▬▬▬▬▬▬▬▮▬▬▬▬▬▬▬▬▬▬▬▬ 41% 2h14m   wk ▬▬▬▬▮▬▬▬▬▬▬▬▬▬ 18% 3d05h
-// Usage bars fill with usage; the ▮ marker shows how much of the window has passed.
+//   above:     134.4k / 200k
+//   below:  ✻ Opus 5.5   5h ⣿⣿⣿⣷⣿⣷⣿⣿│      41% 2h14m   wk 󰪟 18% 3d05h
+// The 5h bar fills with usage; the ▐ marker shows how much of the window has passed.
 // The ✻ spins while Claude works.
 
 const CLAUDE = '#D97757'
@@ -27,12 +27,70 @@ const MODE_LABEL = 26
 const ROW_INSET = 4
 
 const FIVE_HOURS = 5 * 3600_000
-const WEEK = 7 * 24 * 3600_000
 
 function sevColor(pct: number) {
   if (pct >= 85) return '#E2766A'
   if (pct >= 65) return '#E2B064'
   return '#A3BA82'
+}
+
+// The 5h bar as a Raster of braille, after plan-progress's trackCells (MIT): the used part twinkling
+// dots in the usage tint, denser toward the head, the rest solid ⣿ in dim grey, a ▐ where the
+// window's time has got to, and dotted tips (⢾ ⡷) coloured like the part they touch. Every cell
+// sits on the terminal's own background.
+const hex = (h: string) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16))
+const mix = (a: number[], b: number[], m: number) => a.map((v, i) => Math.round(v + ((b[i] ?? 0) - v) * m))
+const pack = (c: number[]) => ((c[0] ?? 0) << 16) | ((c[1] ?? 0) << 8) | (c[2] ?? 0)
+const hash = (a: number, b: number, k: number) => {
+  const x = Math.sin(a * 127.1 + b * 311.7 + k * 74.7) * 43758.5453
+  return x - Math.floor(x)
+}
+const wave = (t: number, periodMs: number, offset: number) => 0.5 + 0.5 * Math.sin((t / periodMs + offset) * Math.PI * 2)
+const BRAILLE_BITS = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]]
+const BACKGROUND = [10, 10, 10] // Ghostty's background, #0A0A0A
+const DEFAULT_COLOR = 0x01000000 // a Raster cell's "terminal default" colour
+const TWINKLE = [2200, 2800, 1900, 3300]
+const DELAY = [0, 700, 1300, 400]
+
+function usageCells(pct: number, timePct: number, width: number, t: number) {
+  const acc = hex(sevColor(pct))
+  const light = mix(acc, [255, 255, 255], 0.35)
+  const dim = mix(BACKGROUND, acc, 0.55)
+  const grey = hex(TRACK)
+  const fx = pct > 0 ? Math.max(1, (pct / 100) * width) : 0
+  const words = new Uint32Array(width * 3)
+  const set = (x: number, ch: number, fg: number[]) => words.set([ch, pack(fg), DEFAULT_COLOR], x * 3)
+
+  for (let x = 0; x < width; x++) {
+    if (x + 0.5 >= fx) {
+      set(x, 0x28ff, grey)
+      continue
+    }
+    const u = Math.min(1, (x + 0.5) / fx)
+    const dense = 0.45 + 0.55 * Math.pow(u, 1.5)
+    let bits = 0
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 2; c++) {
+        if (hash(x * 2 + c, r, 1) <= dense * 0.75) bits |= BRAILLE_BITS[r]![c]!
+      }
+    }
+    // A used cell never reads as a gap beside the solid grey.
+    if (bits === 0) bits = 0x24
+    const cls = Math.floor(hash(x, 0, 2) * 4)
+    const blink = 1 - 0.55 * wave(t + DELAY[cls]!, TWINKLE[cls]!, 0.25)
+    const tone = mix(dim, light, Math.min(1, Math.pow(u, 0.9) * 1.1))
+    set(x, 0x2800 + bits, mix(BACKGROUND, tone, (0.35 + 0.65 * dense) * blink))
+  }
+
+  // A thick ▐, kept off the end cells, which become the tips.
+  const marker = Math.max(1, Math.min(width - 2, Math.round((width * timePct) / 100)))
+  set(marker, 0x2590, hex(sevColor(timePct)))
+
+  // Rounded ends: a half circle of dots, tinted once the fill reaches it, else grey.
+  set(0, 0x28be, pct > 0 ? acc : grey)
+  set(width - 1, 0x2877, fx >= width - 1 ? acc : grey)
+
+  return (new Uint8Array(words.buffer) as Uint8Array & { toBase64: () => string }).toBase64()
 }
 
 // "claude-opus-5-5[1m]" -> "Opus 5.5"; anything else is shown as given
@@ -51,9 +109,7 @@ function timeLeft(limit: SessionRateLimit | undefined, now: number) {
   return `${Math.floor(mins / 60)}h${pad(mins % 60)}m`
 }
 
-// Ember heat (Catppuccin Mocha colours, Claude orange at 25-50%): the used tokens coloured by how full the context window is, the last 12 turns as a sparkline.
-const HISTORY = 12
-const BARS = '▁▂▃▄▅▆▇█'
+// Ember heat (Catppuccin Mocha colours, Claude orange at 25-50%): the used tokens coloured by how full the context window is.
 const HEAT = [
   { upTo: 25, color: '#A6E3A1' },
   { upTo: 50, color: CLAUDE },
@@ -62,7 +118,7 @@ const HEAT = [
   { upTo: Infinity, color: '#F38BA8' },
 ]
 
-// Held by the host, so the history survives a hot reload of this file.
+// Held by the host, so the latest reading survives a hot reload of this file.
 const readings = { plugin: 'ember-ribbon', key: 'readings' } as const
 
 async function takeReading($: EngineInterface) {
@@ -70,19 +126,7 @@ async function takeReading($: EngineInterface) {
   if (!context?.window) return
   const tokens = context.tokens ?? 0
   const percent = context.percent ?? Math.round((tokens / context.window) * 100)
-  const { value: history = [] } = await $.state.get(readings)
-  await $.state.set(readings, [...history, { tokens, window: context.window, percent }].slice(-HISTORY))
-}
-
-function sparkline(history: ContextReading[]) {
-  const top = Math.max(...history.map(r => r.tokens), 1)
-  return history.map(r => BARS[Math.floor((r.tokens / top) * (BARS.length - 1))]).join('')
-}
-
-function trend(history: ContextReading[]) {
-  const delta = (history[history.length - 1]?.tokens ?? 0) - (history[history.length - 2]?.tokens ?? 0)
-  if (delta === 0) return 'steady'
-  return delta > 0 ? `▲ +${short(delta)} last turn` : `▼ ${short(-delta)} last turn`
+  await $.state.set(readings, [{ tokens, window: context.window, percent }])
 }
 
 function short(n: number) {
@@ -284,20 +328,23 @@ export const register: Register = on => {
   // One row above the prompt: the enhance button at the left, the context heat at the right.
   // The button also carries Ctrl+E (bound to app:cycleDiffBase in ~/.claude/keybindings.json):
   // the engine sends that chord only to a mounted Button naming the action.
+  // What plugins beneath draw here (plan-progress's bars) sits above the row.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.surface !== 'terminal' || e.props.hasSurvey) return next(e)
+    const below = await next(e)
+    if (e.surface !== 'terminal' || e.props.hasSurvey) return below
     const { value: history = [] } = await $.state.get(readings)
     const now = history[history.length - 1]
     const canUndo = (await $.state.get(previous)).value != null
 
     const { Box, Button, Text } = $.ui.resolve(e)
     const f = now ? (HEAT.find(b => now.percent < b.upTo) ?? HEAT[HEAT.length - 1]!) : undefined
-    const wide = e.props.bodyColumns >= 60
 
     // bodyColumns is the band's width less the engine's [-] marker, so the heat sits flush right.
-    // paddingTop keeps the conversation from sitting flush on the bar.
+    // paddingTop keeps the conversation from sitting flush on the band.
     return (
-      <Box width={e.props.bodyColumns} paddingTop={2}>
+      <Box flexDirection="column" paddingTop={2}>
+        {below}
+        <Box width={e.props.bodyColumns}>
         <Box flexGrow={1}>
           {/* A Button's label takes no colour, so the glyph is Text and the Button is the blank cell after it. */}
           {busy ? (
@@ -310,20 +357,12 @@ export const register: Register = on => {
           <Button key="enhance" label=" " plain action="app:cycleDiffBase" onPress={() => (canUndo ? revert($) : enhanceBox($))} />
         </Box>
         {now && f ? (
-          <Box gap={2}>
-            <Box>
-              <Text color={f.color} bold>{short(now.tokens)}</Text>
-              <Text dimColor> / {short(now.window)}</Text>
-            </Box>
-            {wide ? (
-              <Box gap={1}>
-                <Text dimColor> last turns</Text>
-                <Text color={f.color}>{sparkline(history)}</Text>
-              </Box>
-            ) : null}
-            {wide && history.length > 1 ? <Text dimColor>{trend(history)}</Text> : null}
+          <Box>
+            <Text color={f.color} bold>{short(now.tokens)}</Text>
+            <Text dimColor> / {short(now.window)}</Text>
           </Box>
         ) : null}
+        </Box>
       </Box>
     )
   })
@@ -333,7 +372,7 @@ export const register: Register = on => {
     if (e.surface !== 'terminal') return next(e)
     working = e.props.isWorking
 
-    const { Box, Text } = $.ui.resolve(e)
+    const { Box, Raster, Text } = $.ui.resolve(e)
     const usage = await $.session.usage()
     const model = modelName(await $.session.model())
     const now = await $.clock.now()
@@ -341,17 +380,9 @@ export const register: Register = on => {
     // ▬▬▬▬▬▮▬▬▬▬ filled up to usage (severity colour); ▮ marks how much of the window has passed,
     // coloured like usage: olive early in the window, amber past 65%, red past 85%
     const usageBar = (pct: number, limit: SessionRateLimit | undefined, windowMs: number, width: number) => {
-      let filled = Math.min(width, Math.round((pct * width) / 100))
-      if (pct > 0 && filled === 0) filled = 1
       const resetsIn = limit?.resetsAt ? Date.parse(limit.resetsAt) - now : windowMs
       const timePct = 100 * (1 - resetsIn / windowMs)
-      const marker = Math.min(width - 1, Math.round((width * timePct) / 100))
-      const cells = []
-      for (let i = 0; i < width; i++) {
-        if (i === marker) cells.push(<Text color={sevColor(timePct)}>▮</Text>)
-        else cells.push(<Text color={i < filled ? sevColor(pct) : TRACK}>▬</Text>)
-      }
-      return <Box>{cells}</Box>
+      return <Raster key="usage" columns={width} rows={1} cells={usageCells(pct, timePct, width, tick * 100)} />
     }
 
     const ring = (pct: number) => {
@@ -378,12 +409,13 @@ export const register: Register = on => {
     // The footer gets exactly the row's width minus the longest mode label, so every label stays on
     // one line; everything is right-aligned in it. Widths are counted from the Boxes below: gap 3
     // between items, gap 1 inside one, plus 2 columns kept clear after the label. Pick the fullest
-    // layout that fits: usage bars become rings first, then time left goes.
+    // layout that fits: the 5h bar becomes a ring first, then time left goes. The weekly gauge is
+    // always a ring.
     const statWidth = (label: string, gauge: number, pct: number, time: string) =>
       label.length + 1 + gauge + 1 + `${pct}%`.length + (time ? 1 + time.length : 0)
     const layoutWidth = (full: boolean, showTime: boolean) =>
       2 + statWidth('5h', full ? 22 : 1, five, showTime ? fiveTime : '') + 3 +
-      statWidth('wk', full ? 14 : 1, week, showTime ? weekTime : '') + 3 + 2 + model.length
+      statWidth('wk', 1, week, showTime ? weekTime : '') + 3 + 2 + model.length
     const room = Math.max(0, (e.viewport?.columns ?? 200) - MODE_LABEL - ROW_INSET)
     const narrow = layoutWidth(true, true) > room
     const noTime = narrow && layoutWidth(false, true) > room
@@ -395,7 +427,7 @@ export const register: Register = on => {
           <Text color={INK}>{model}</Text>
         </Box>
         {stat('5h', five, narrow ? ring(five) : usageBar(five, fiveLimit, FIVE_HOURS, 22), noTime ? undefined : fiveTime)}
-        {stat('wk', week, narrow ? ring(week) : usageBar(week, weekLimit, WEEK, 14), noTime ? undefined : weekTime)}
+        {stat('wk', week, ring(week), noTime ? undefined : weekTime)}
       </Box>
     )
   })
