@@ -1,0 +1,1 @@
+{ "name": "agent-lanes", "version": "0.1.0", "description": "One row per running subagent above the prompt: its name, a braille trace of its live activity and the tool it is on" }
