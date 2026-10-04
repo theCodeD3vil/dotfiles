@@ -1,0 +1,9 @@
+# Claude Code plugins and mods installed from marketplaces, one
+# `plugin@marketplace  github-repo` per line (the repo is the marketplace).
+# Blank lines and # comments are ignored. The bootstrap adds each marketplace,
+# then installs the plugin at user scope. Our own mods live in AI/.claude/mods.
+caveman@caveman                          JuliusBrussee/caveman
+crayon@cc-crayon                         jonpojonpo/cc-crayon
+typescript-lsp@claude-plugins-official   anthropics/claude-plugins-official
+vercel@claude-plugins-official           anthropics/claude-plugins-official
+worktrunk@worktrunk                      max-sixty/worktrunk

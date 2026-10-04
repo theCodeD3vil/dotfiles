@@ -314,7 +314,7 @@ step_desc() {
     submodules)    echo "fill the plugin checkouts the repo tracks (fzf-git, tmux)" ;;
     stow)          echo "link the dotfiles into your home directory" ;;
     linux)         echo "Ubuntu-only shell fixes" ;;
-    inits)         echo "rtk, icm, Claude Code mods and worktrunk setup" ;;
+    inits)         echo "rtk, icm, Claude Code mods and plugins, worktrunk setup" ;;
     finish)        echo "login shell and a last check" ;;
   esac
 }
@@ -974,7 +974,8 @@ setup_pass_cli_completions() {
 setup_claude_mods() {
   local settings="$HOME/.claude/settings.json" dirs="" mod
   for mod in "$DOTFILES_DIR"/AI/.claude/mods/*/; do
-    dirs="$dirs${dirs:+:}~/.claude/mods/$(basename "$mod")"
+    # The real folder, not a stowed link: the loader won't read a symlinked hooks.json.
+    dirs="$dirs${dirs:+:}${mod%/}"
   done
   [ -n "$dirs" ] || return 0
   if [ "$DRY_RUN" = 1 ]; then
@@ -990,6 +991,28 @@ data.setdefault("env", {})["CLAUDE_CODE_PLUGIN_DIRS"] = dirs
 open(path, "w").write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 PY
   info "Claude Code mods enabled: $dirs"
+}
+
+# Plugins from marketplaces, listed in claude-plugins.txt. `claude plugin list`
+# names what is installed, so a re-run only installs what is missing.
+setup_claude_plugins() {
+  local rc=0 plugin repo installed markets
+  have claude || { warn "claude is not on PATH: plugins are not installed"; [ "$DRY_RUN" = 1 ] || rc=1; return "$rc"; }
+  installed=$(claude plugin list 2>/dev/null)
+  markets=$(claude plugin marketplace list 2>/dev/null)
+  while read -r plugin repo; do
+    [ -n "$repo" ] || continue
+    if printf '%s\n' "$installed" | grep -qF "❯ $plugin"; then
+      info "Claude Code plugin $plugin already installed"
+      continue
+    fi
+    if ! printf '%s\n' "$markets" | grep -qF "($repo)"; then
+      run_as "add marketplace $repo" claude plugin marketplace add "$repo" || { rc=1; continue; }
+      markets="$markets ($repo)"
+    fi
+    run_as "install plugin $plugin" claude plugin install "$plugin" || rc=1
+  done < <(list_items "$BOOT_DIR/claude-plugins.txt")
+  return "$rc"
 }
 
 step_inits() {
@@ -1025,6 +1048,7 @@ step_inits() {
   fi
 
   setup_claude_mods || rc=1
+  setup_claude_plugins || rc=1
 
   # pass-cli ships a completion generator, not a file. The result goes in ~/.zfunc,
   # which .zshrc puts on fpath before oh-my-zsh runs compinit.

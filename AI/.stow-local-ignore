@@ -4,3 +4,7 @@
 # Multiple Stow Directories marker (see info stow, §9) — declares this a
 # protected, cooperating stow directory. Not itself something to symlink.
 ^/\.stow$
+
+# Claude Code mods load straight from this repo (CLAUDE_CODE_PLUGIN_DIRS, set by
+# the bootstrap): the plugin loader won't read a hooks.json that is a symlink.
+^/\.claude/mods$
