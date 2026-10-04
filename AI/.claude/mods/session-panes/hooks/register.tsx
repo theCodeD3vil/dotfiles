@@ -2,7 +2,7 @@ import type { Register } from 'claude-code'
 
 // Session panes.
 //  - /files:  files Claude edited this session, with lines added and removed.
-//  - /recall: the ICM memories recalled for the last prompt.
+//  - /recalled: the ICM memories recalled for the last prompt.
 
 type Memory = { topic: string; summary: string }
 
@@ -21,7 +21,7 @@ export const register: Register = on => {
 
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'files', description: 'Show the files Claude edited this session' })
-    await $.command.register({ name: 'recall', description: 'Show the ICM memories recalled for the last prompt' })
+    await $.command.register({ name: 'recalled', description: 'Show the ICM memories recalled for the last prompt' })
     return next(e)
   })
 
@@ -30,7 +30,7 @@ export const register: Register = on => {
     return { text: 'Opened the files pane.' }
   })
 
-  on('command.run', { command: 'recall' }, async $ => {
+  on('command.run', { command: 'recalled' }, async $ => {
     await $.ui.open({ id: 'recall', title: 'Recalled for this prompt' })
     return { text: 'Opened the recall pane.' }
   })
