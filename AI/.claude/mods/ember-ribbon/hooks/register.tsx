@@ -137,15 +137,29 @@ const HEAT = [
   { upTo: Infinity, color: '#F38BA8' },
 ]
 
-// Held by the host, so the latest reading survives a hot reload of this file.
+// Held by the host, so the turns' readings survive a hot reload of this file.
 const readings = { plugin: 'ember-ribbon', key: 'readings' } as const
 
-async function takeReading($: EngineInterface) {
+// The context chart: one dot column per turn, two to a cell, the newest turn at the right.
+// FILL_ROWS cells tall, four dot rows to each, so a column has 4 * FILL_ROWS heights.
+const FILL_CELLS = 8
+const FILL_ROWS = 2
+const FILL_TURNS = FILL_CELLS * 2
+
+async function readContext($: EngineInterface): Promise<ContextReading | undefined> {
   const { context } = await $.session.usage()
   if (!context?.window) return
   const tokens = context.tokens ?? 0
   const percent = context.percent ?? Math.round((tokens / context.window) * 100)
-  await $.state.set(readings, [{ tokens, window: context.window, percent }])
+  return { tokens, window: context.window, percent }
+}
+
+// Called as a main-loop turn ends: adds that turn's reading, oldest first, keeping what the chart shows.
+async function takeReading($: EngineInterface) {
+  const reading = await readContext($)
+  if (!reading) return
+  const { value: history = [] } = await $.state.get(readings)
+  await $.state.set(readings, [...history, reading].slice(-FILL_TURNS))
 }
 
 function short(n: number) {
@@ -296,18 +310,62 @@ const encode = (words: Uint32Array) => (new Uint8Array(words.buffer) as Uint8Arr
 
 // Token stream: characters the main loop's reply streams in each 100 ms tick (text, thinking and
 // tool input; about four to a token), drawn as a 1-row braille chart at the far right of the row.
-const STREAM_CELLS = 16
+const STREAM_CELLS = 8
 let stream: number[] = []
 let streaming = 0
 const tokensPerSecond = () => Math.round(stream.slice(-10).reduce((a, b) => a + b, 0) / 4)
 
-function streamCells(width: number) {
-  // Each dot column is the mean of five ticks (half a second), so the line reads as a rate.
-  const points = Array.from({ length: width * 2 }, (_, i) => {
+// Each dot column is the mean of five ticks (half a second), so the line reads as a rate.
+function streamPoints(width: number) {
+  return Array.from({ length: width * 2 }, (_, i) => {
     const end = stream.length - (width * 2 - 1 - i)
     const window = stream.slice(Math.max(0, end - 5), Math.max(0, end))
     return window.length ? window.reduce((a, b) => a + b, 0) / window.length : 0
   })
+}
+
+// Context fill history, left of the used / window readout: a column per turn, as tall as the context
+// percent at the turn's end (the dots rise from the floor), green when low, yellow mid, red high.
+const FILL_GREEN = hex('#A6E3A1')
+const FILL_YELLOW = hex('#F9E2AF')
+const FILL_RED = hex('#F38BA8')
+
+const fillColor = (percent: number) => {
+  const t = Math.min(1, Math.max(0, percent / 100))
+  return t < 0.5 ? mix(FILL_GREEN, FILL_YELLOW, t * 2) : mix(FILL_YELLOW, FILL_RED, (t - 0.5) * 2)
+}
+
+// percents: one per turn, oldest first. Turns fill from the right; the cells before the first turn
+// are dim floor dots, and a cell is coloured by the higher of its two turns.
+function fillCells(width: number, rows: number, percents: number[]) {
+  const shown = percents.slice(-width * 2)
+  const first = width * 2 - shown.length
+  const track = pack(hex(TRACK))
+  const dots = rows * 4
+  const words = new Uint32Array(width * rows * 3)
+  for (let x = 0; x < width; x++) {
+    // How many dots tall each of this cell's two turns is; -1 for a column with no turn yet.
+    const levels = [0, 1].map(c => {
+      const p = shown[x * 2 + c - first]
+      return p === undefined ? -1 : Math.max(1, Math.round((Math.min(100, Math.max(0, p)) / 100) * dots))
+    })
+    const top = Math.max(...[0, 1].map(c => shown[x * 2 + c - first] ?? -1))
+    const color = top < 0 ? track : pack(fillColor(top))
+    for (let cr = 0; cr < rows; cr++) {
+      let bits = 0
+      for (let r = 0; r < 4; r++) {
+        // The dot's height above the floor; lit when within the column's level (a bare column keeps its floor dots).
+        const height = dots - 1 - (cr * 4 + r)
+        for (let c = 0; c < 2; c++) if (height < levels[c]! || (levels[c] === -1 && height === 0)) bits |= BRAILLE_BITS[r]![c]!
+      }
+      words.set([0x2800 + bits, color, DEFAULT_COLOR], (cr * width + x) * 3)
+    }
+  }
+  return encode(words)
+}
+
+function streamCells(width: number) {
+  const points = streamPoints(width)
   const top = Math.max(1, ...points)
   const color = pack(hex('#CBA6F7')) // Catppuccin Mocha mauve
   const words = new Uint32Array(width * 3)
@@ -336,13 +394,15 @@ function ensureTicking($: EngineInterface) {
   try {
     $.clock.every(100, () => {
       tick++
-      if (working) {
+      // The graph is always drawn, so idle ticks push zeros: it runs down to a flat line after a reply.
+      const live = streaming > 0 || stream.some(v => v > 0)
+      if (working || live) {
         stream.push(streaming)
         streaming = 0
         if (stream.length > STREAM_CELLS * 2 + 10) stream.shift()
       }
-      // Animate while working or enhancing; otherwise redraw once a minute for the countdowns.
-      if (working || busy || tick % 600 === 0) $.ui.invalidate('ui.render')
+      // Animate while working, enhancing or running down; otherwise redraw once a minute for the countdowns.
+      if (working || live || busy || tick % 600 === 0) $.ui.invalidate('ui.render')
       // Count the check down, redrawing once it is gone.
       if (doneTicks > 0 && --doneTicks === 0) $.ui.invalidate('ui.render')
       // The 5h bar's dots move all the time: repaint its cells alone, without a redraw.
@@ -359,9 +419,7 @@ function ensureTicking($: EngineInterface) {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     ensureTicking($)
-    const result = await next(e)
-    await takeReading($)
-    return result
+    return next(e)
   })
 
   // A fresh chart for each turn of the main loop.
@@ -426,7 +484,9 @@ export const register: Register = on => {
     const below = await next(e)
     if (e.surface !== 'terminal' || e.props.hasSurvey) return below
     const { value: history = [] } = await $.state.get(readings)
-    const now = history[history.length - 1]
+    // No turn has finished yet: the readout takes the live context so it shows from the first draw.
+    // The chart has no column for it, since it is not a turn's end.
+    const now = history[history.length - 1] ?? (await readContext($))
     const canUndo = (await $.state.get(previous)).value != null
     working = e.props.isWorking
 
@@ -434,12 +494,12 @@ export const register: Register = on => {
     const f = now ? (HEAT.find(b => now.percent < b.upTo) ?? HEAT[HEAT.length - 1]!) : undefined
 
     // bodyColumns is the band's width less the engine's [-] marker, so the heat sits flush right.
-    // paddingTop keeps the conversation from sitting flush on the band. While Claude works, the
-    // token stream runs at the far right, after the context count.
+    // paddingTop keeps the conversation from sitting flush on the band. The token stream is always
+    // drawn at the far right, after the context count: flat while idle, moving while Claude works.
     return (
       <Box flexDirection="column" paddingTop={2}>
         {below}
-        <Box width={e.props.bodyColumns}>
+        <Box width={e.props.bodyColumns} alignItems="flex-end">
         <Box flexGrow={1}>
           {/* A Button's label takes no colour, so the glyph is Text and the Button is the blank cell after it. */}
           {busy ? (
@@ -451,19 +511,22 @@ export const register: Register = on => {
           )}
           <Button key="enhance" label=" " plain action="app:cycleDiffBase" onPress={() => (canUndo ? revert($) : enhanceBox($))} />
         </Box>
+        <Box marginRight={1}>
+          <Raster key="fill" columns={FILL_CELLS} rows={FILL_ROWS} cells={fillCells(FILL_CELLS, FILL_ROWS, history.map(r => r.percent))} />
+        </Box>
         {now && f ? (
           <Box>
             <Text color={f.color} bold>{short(now.tokens)}</Text>
             <Text dimColor> / {short(now.window)}</Text>
           </Box>
-        ) : null}
-        {working ? (
-          <Box marginLeft={3} gap={1}>
-            <Raster key="stream" columns={STREAM_CELLS} rows={1} cells={streamCells(STREAM_CELLS)} />
-            {/* Padded to four digits (figure spaces are digit-wide) so the row stops shifting as it counts. */}
-            <Text dimColor>{String(Math.min(9999, tokensPerSecond())).padStart(4, '\u2007')} tok/s</Text>
-          </Box>
-        ) : null}
+        ) : (
+          <Text dimColor>– / –</Text>
+        )}
+        <Box marginLeft={3} gap={1}>
+          <Raster key="stream" columns={STREAM_CELLS} rows={1} cells={streamCells(STREAM_CELLS)} />
+          {/* Padded to four digits (figure spaces are digit-wide) so the row stops shifting as it counts. */}
+          <Text dimColor>{String(Math.min(9999, tokensPerSecond())).padStart(4, '\u2007')} tok/s</Text>
+        </Box>
         </Box>
       </Box>
     )
