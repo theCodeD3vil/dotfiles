@@ -329,7 +329,7 @@ autostart = true
 ## The list of enabled filter modes, in order of priority.
 ## The "workspace" mode is skipped when not in a workspace or workspaces = false.
 ## Default filter mode can be overridden with the filter_mode setting.
-filters = ["workspace","global", "host", "session", "directory", "session-preload"]
+filters = ["workspace", "global"]
 
 ## Filter interactive search results by the shell used to run the command:
 ##
