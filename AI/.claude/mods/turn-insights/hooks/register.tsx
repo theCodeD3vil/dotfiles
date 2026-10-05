@@ -133,11 +133,6 @@ export const register: Register = on => {
             ✻ {e.props.word} for {duration(e.props.durationMs)} · done {clockTime(receipt.at)} · {receipt.text}
           </Text>
         </Box>
-        {hasShape ? (
-          <Box marginLeft={1} flexShrink={0}>
-            <t.Raster key="tokens" columns={SHAPE_CELLS} rows={1} cells={shapeCells(receipt.shape)} />
-          </Box>
-        ) : null}
         {stages.map((stage, i) => (
           <Box key={`stage-${i}`} marginLeft={2} flexShrink={0}>
             {stage}
