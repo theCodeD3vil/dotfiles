@@ -90,10 +90,10 @@ alias claude2='CLAUDE_CONFIG_DIR=~/.config/claude-code-sub2 claude'
 unalias gco gbclean 2>/dev/null
 
 # git: fuzzy-checkout a local branch
-gco() { git checkout "$(git branch --sort=-committerdate | sed 's/^[* ] //' | gum filter --placeholder 'branch')" }
+git-checkout() { git checkout "$(git branch --sort=-committerdate | sed 's/^[* ] //' | gum filter --placeholder 'branch')" }
 
 # git: multi-select merged local branches to delete
-gbclean() {
+git-branch-clean() {
   local merged br
   merged=$(git branch --merged | grep -vE '^\*|main|master')
   [ -n "$merged" ] || { echo "nothing to clean"; return 0; }
@@ -103,7 +103,7 @@ gbclean() {
 }
 
 # gh: pick an open PR, open it in the browser
-ghpv() {
+gh-prs() {
   local prs; prs=$(gh pr list --json number,title -q '.[]|"\(.number)\t\(.title)"')
   [ -n "$prs" ] || { echo "no open PRs"; return 0; }
   echo "$prs" | gum filter | cut -f1 | xargs -r gh pr view --web
@@ -122,10 +122,12 @@ dsh() {
 }
 
 # worktrunk: pick a worktree branch to switch to
-wtsw() {
+wt-switch() {
   local b; b=$(wt list --format json 2>/dev/null | jq -r '.items[] | select(.branch != null) | .branch')
   [ -n "$b" ] || { echo "no worktree branches"; return 0; }
-  echo "$b" | gum filter | xargs -r wt switch
+  # no xargs: it would bypass the wt shell function, which does the cd
+  local sel; sel=$(echo "$b" | gum filter)
+  [ -n "$sel" ] && wt switch "$sel"
 }
 
 # pass-cli: pick a secret, copy its password to the clipboard (macOS only; field
@@ -144,10 +146,19 @@ passc() {
 }
 
 # homebrew: pick a leaf package (nothing else depends on it) to uninstall
-brmv() { brew leaves | gum filter --placeholder 'uninstall which?' | xargs -r brew uninstall }
+brew-remove() { brew leaves | gum filter --placeholder 'uninstall which?' | xargs -r brew uninstall }
 
 # guarded rm -rf
 rmi() { gum confirm "rm -rf $*?" && rm -rf "$@" }
+
+# nuxt-workspace plugin, per project only (--scope project writes to ./.claude/settings.json,
+# never user-wide). Run from a project root; re-run to update the rules.
+nuxt-setup() {
+  [ -f package.json ] || { echo "run from a project root (no package.json here)"; return 1; }
+  claude plugin marketplace add theCodeD3vil/nuxt-workspace --scope project || return 1
+  claude plugin install nuxt-workspace@nuxt-workspace --scope project || return 1
+  npx degit theCodeD3vil/nuxt-workspace/rules .claude/rules --force
+}
 
 # *****************************************************************************
 # RUNTIME VERSION MANAGER (MISE)
