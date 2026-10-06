@@ -1,7 +1,17 @@
 import { Plugin } from "@opencode/plugin"
+import { usageRpc } from "./rpc"
+import { createUsageReader } from "./usage"
 
-// Server half is intentionally empty; the footer lives in ./tui.tsx.
 export default Plugin.define({
   id: "statusline",
-  setup() {},
+  async setup(context) {
+    const usage = createUsageReader(context.integration.connection)
+    const registration = await context.rpc.register(usageRpc, {
+      get: (input, call) => usage.get(input.providerID, call.signal, input.force),
+    })
+    return async () => {
+      usage.dispose()
+      await registration.dispose()
+    }
+  },
 })

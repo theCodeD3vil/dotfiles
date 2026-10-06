@@ -53,27 +53,37 @@ config.colors = {
 	brights = { "#45454A", "#c85e60", "#a3c679", "#d5b05f", "#6a90d0", "#a178c4", "#6ebad7", "#ffffff" },
 }
 
--- Operator Mono has no Nerd Font glyphs, and the Symbols Nerd Font bundled with
+-- Cartograph CF has no Nerd Font glyphs, and the Symbols Nerd Font bundled with
 -- WezTerm 20240203 predates some of the ones starship.toml uses (U+E91B, U+EC6F),
 -- which show up as placeholder boxes. Name the installed Nerd Font as a fallback and
 -- keep the bundled symbols font last for anything it does not cover.
 config.font = wezterm.font_with_fallback({
-	"Operator Mono Lig",
+	"Cartograph CF",
 	"CaskaydiaCove Nerd Font Mono",
 	"Symbols Nerd Font Mono",
 })
 config.font_size = 16
 
-config.enable_tab_bar = true
+config.enable_tab_bar = false
 
-config.window_decorations = "RESIZE"
-config.window_background_opacity = 0.8
-config.macos_window_background_blur = 10
+config.window_decorations = "TITLE | RESIZE"
+config.window_padding = {
+	left = 10,
+	right = 10,
+	top = 10,
+	bottom = 10,
+}
+config.window_background_opacity = 0.7
+config.macos_window_background_blur = 20
 
 
 -- BEGIN Factory Droid terminal setup
 config.enable_kitty_keyboard = true
 config.keys = config.keys or {}
+table.insert(config.keys, { key = 't', mods = 'CMD', action = act.DisableDefaultAssignment })
+table.insert(config.keys, { key = 't', mods = 'CTRL|SHIFT', action = act.DisableDefaultAssignment })
+table.insert(config.keys, { key = 'T', mods = 'CTRL', action = act.DisableDefaultAssignment })
+table.insert(config.keys, { key = 'T', mods = 'CTRL|SHIFT', action = act.DisableDefaultAssignment })
 table.insert(config.keys, 1, { key = 'Enter', mods = 'CTRL', action = wezterm.action.SendString '\x1b[13;5u' })
 table.insert(config.keys, 1, { key = 'Enter', mods = 'SHIFT', action = wezterm.action.SendString '\x1b[13;2u' })
 -- END Factory Droid terminal setup

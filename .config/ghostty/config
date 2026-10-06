@@ -14,7 +14,7 @@ background-blur-radius = 20
 
 # Vira Theme - Carbon (vira-theme-for-terminals/ghostty/Vira-Theme-Carbon.conf)
 background = #0A0A0A
-foreground = #D9D9D9
+foreground = #FFFFFF
 
 cursor-color = #FFCC00
 cursor-text = #0A0A0A
@@ -29,7 +29,7 @@ palette = 3=#d5b05f
 palette = 4=#6a90d0
 palette = 5=#a178c4
 palette = 6=#6ebad7
-palette = 7=#D9D9D9
+palette = 7=#FFFFFF
 
 palette = 8=#45454A
 palette = 9=#c85e60

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Build the statusline TUI plugin and (re)install it into OpenCode V2.
-# V2 only loads TUI plugins from npm/Git specifiers, and the Solid JSX transform
-# only runs outside node_modules, so we compile here and install the result from
-# a local git repo in the data dir. Requires bun, npm and node.
+# Build the Ember Ribbon footer and (re)install it into OpenCode V2.
+# Compile Solid JSX before installing the server and TUI entrypoints as the
+# existing local Git package. Requires bun, npm and node.
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -13,7 +12,6 @@ cd "$here"
 npm install --silent
 bun run build
 
-rm -rf "$out"
 mkdir -p "$out/dist"
 cp dist/*.js "$out/dist/"
 node -e '
@@ -24,11 +22,18 @@ require("fs").writeFileSync(process.argv[1], JSON.stringify(p, null, 2))
 ' "$out/package.json"
 
 git -C "$out" init -q
-git -C "$out" add -A
-git -C "$out" -c user.name=statusline -c user.email=statusline@localhost commit -qm "build $(date -u +%FT%TZ)"
-
-if grep -q "opencode-statusline" "$HOME/.config/opencode/opencode.json"; then
-  opencode plugin update
-else
-  opencode plugin add "$spec"
+git -C "$out" add -- dist package.json
+if ! git -C "$out" diff --cached --quiet; then
+  git -C "$out" -c user.name=statusline -c user.email=statusline@localhost commit -qm "build(statusline): install Ember Ribbon footer"
 fi
+
+# Run from HOME: the dotfiles opencode.json beside this package is a bootstrap
+# template and would shadow the live global configuration in this directory.
+(
+  cd "$HOME"
+  if grep -q "opencode-statusline" "$HOME/.config/opencode/opencode.json"; then
+    opencode plugin update "$spec"
+  else
+    opencode plugin add "$spec"
+  fi
+)

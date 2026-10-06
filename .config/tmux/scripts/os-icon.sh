@@ -1,5 +1,5 @@
 #!/bin/sh
-# Print the Nerd Font logo of the OS/distro tmux runs on, for the session pill.
+# Print the Nerd Font logo of the OS/distro tmux runs on, for the session label.
 # macOS -> apple, Windows (WSL, MSYS2/Git Bash, Cygwin) -> windows, Linux ->
 # its distro logo (by /etc/os-release ID) or tux when Nerd Fonts has none.
 
