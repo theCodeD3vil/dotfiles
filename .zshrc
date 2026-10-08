@@ -130,6 +130,16 @@ wt-switch() {
   [ -n "$sel" ] && wt switch "$sel"
 }
 
+# tmux: pick a running session, attach to it (from outside tmux)
+tmux-attach() {
+  [ -z "$TMUX" ] || { echo "already inside tmux"; return 1; }
+  local s; s=$(tmux list-sessions -F '#{session_name}' 2>/dev/null)
+  [ -n "$s" ] || { echo "no tmux sessions"; return 0; }
+  local sel; sel=$(echo "$s" | gum filter --placeholder 'session')
+  [ -n "$sel" ] || return 0
+  tmux attach-session -t "=$sel"
+}
+
 # pass-cli: pick a secret, copy its password to the clipboard (macOS only; field
 # names below are best-effort from `pass-cli item list --help` since listing real
 # vault contents to verify the JSON shape needs a live vault, not tested end-to-end)
