@@ -19,7 +19,7 @@ const NAME_COLUMNS = 9
 const TOOL_SPIKE = 120 // a tool call counts like a burst of streamed text
 const ACTIVE = 160 // characters a second that count as fully busy
 const DEFAULT_COLOR = 0x01000000 // a Raster cell's "terminal default" colour
-// The pulse and tips, as ember-ribbon's 5h bar has them
+// The pulse and tips
 const PULSE_SPEED = 10 // cells a second: one cell per 100 ms tick
 const PULSE_TAIL = 3
 const PULSE_GAP = 6

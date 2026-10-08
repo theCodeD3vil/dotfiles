@@ -31,7 +31,7 @@ function resample(bins: number[], points: number) {
   })
 }
 
-function shapeCells(shape: number[]) {
+function _shapeCells(shape: number[]) {
   const top = Math.max(1, ...shape)
   const words = new Uint32Array(SHAPE_CELLS * 3)
   for (let x = 0; x < SHAPE_CELLS; x++) {

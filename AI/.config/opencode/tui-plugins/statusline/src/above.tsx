@@ -13,7 +13,7 @@ import { rasterCells } from './view'
 
 const DEFAULT_BG = RGBA.defaultBackground()
 
-// Blank lines between the conversation and the row, as Claude keeps it off the band.
+// Blank lines between the conversation and the row.
 export const ROW_PAD = 1
 
 export type ContextFrame = {
