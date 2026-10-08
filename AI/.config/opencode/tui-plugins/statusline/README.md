@@ -1,7 +1,7 @@
 # Ember Ribbon footer for OpenCode
 
 Ports Ember Ribbon's five-hour animated braille bar and weekly Nerd Font ring
-from `AI/.claude/mods/ember-ribbon/hooks/register.tsx` into OpenCode 2.0.22.
+from the `AI/.claude/mods/ember-ribbon/hooks/` modules into OpenCode 2.0.22.
 The plugin replaces `prompt.footer`, so none of OpenCode's native footer (working
 spinner, location label) renders; only the stage spinner, pinned to the far left,
 and the quota stats, at the right, remain. The prompt enhancement is not ported.

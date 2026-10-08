@@ -1,6 +1,6 @@
 // Ember Ribbon's row above the prompt: the context window's fill history, the used / window
 // readout and the token stream. Keep the arithmetic identical to
-// AI/.claude/mods/ember-ribbon/hooks/register.tsx; only the source of the numbers differs.
+// AI/.claude/mods/ember-ribbon/hooks/ (band.tsx, rasters.ts, stream.ts); only the source of the numbers differs.
 import { COLORS, DEFAULT_COLOR, hex, mix, pack } from './footer'
 
 // Catppuccin Mocha

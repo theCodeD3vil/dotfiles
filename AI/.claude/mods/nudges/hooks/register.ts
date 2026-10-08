@@ -1,50 +1,60 @@
-import type { Register } from 'claude-code'
+import type { EngineInterface, Register, SessionRateLimit } from 'claude-code'
 
 // Nudges.
 //  - Done chime: a sound and a toast when a turn takes longer than a minute.
 //  - Limit toasts: one toast when 5h or weekly usage crosses 75% and again at 90%.
 
 const LONG_TURN_MS = 60_000
-const MARKS = [75, 90]
-const NAMES: Record<string, string> = { five_hour: '5h', seven_day: 'Weekly' }
+const WARNING_PERCENTS = [75, 90]
+const LIMIT_LABELS: Record<string, string> = { five_hour: '5h', seven_day: 'Weekly' }
+const MINUTES_PER_DAY = 1440
 
-function duration(ms: number) {
-  const s = Math.round(ms / 1000)
-  return s >= 60 ? `${Math.floor(s / 60)}m${String(s % 60).padStart(2, '0')}s` : `${s}s`
+// "kind:percent" of each mark already toasted in the current window.
+const warned = new Set<string>()
+
+const padTwo = (value: number) => String(value).padStart(2, '0')
+
+function formatDuration(ms: number) {
+  const seconds = Math.round(ms / 1000)
+  return seconds >= 60 ? `${Math.floor(seconds / 60)}m${padTwo(seconds % 60)}s` : `${seconds}s`
 }
 
-function resetsIn(iso: string | undefined, now: number) {
-  if (!iso) return ''
-  const mins = Math.max(0, Math.floor((Date.parse(iso) - now) / 60000))
-  const left = mins >= 1440 ? `${Math.floor(mins / 1440)}d${Math.floor((mins % 1440) / 60)}h` : `${Math.floor(mins / 60)}h${String(mins % 60).padStart(2, '0')}m`
-  return ` · resets in ${left}`
+function formatResetsIn(resetsAt: string | undefined, now: number) {
+  if (!resetsAt) return ''
+  const minutes = Math.max(0, Math.floor((Date.parse(resetsAt) - now) / 60000))
+  const timeLeft =
+    minutes >= MINUTES_PER_DAY
+      ? `${Math.floor(minutes / MINUTES_PER_DAY)}d${Math.floor((minutes % MINUTES_PER_DAY) / 60)}h`
+      : `${Math.floor(minutes / 60)}h${padTwo(minutes % 60)}m`
+  return ` · resets in ${timeLeft}`
+}
+
+// One toast per mark crossed; falling back under a mark (the window reset) re-arms it.
+function warnOnCrossings(engine: EngineInterface, limit: SessionRateLimit, now: number) {
+  const label = LIMIT_LABELS[limit.kind] ?? limit.kind
+  for (const percent of WARNING_PERCENTS) {
+    const warningKey = `${limit.kind}:${percent}`
+    if (limit.percentUsed < percent) {
+      warned.delete(warningKey)
+    } else if (!warned.has(warningKey)) {
+      warned.add(warningKey)
+      engine.ui.toast(`${label} usage at ${percent}%${formatResetsIn(limit.resetsAt, now)}`)
+    }
+  }
 }
 
 export const register: Register = on => {
-  const warned = new Set<string>()
-
-  on('turn.complete', ($, e, next) => {
-    if (!e.agentId && e.reason === 'answer' && e.durationMs > LONG_TURN_MS) {
-      $.ui.toast(`Done in ${duration(e.durationMs)}`)
-      void $.audio.play({ asset: 'sounds/done.wav' }).catch(() => {})
+  on('turn.complete', (engine, event, next) => {
+    if (!event.agentId && event.reason === 'answer' && event.durationMs > LONG_TURN_MS) {
+      engine.ui.toast(`Done in ${formatDuration(event.durationMs)}`)
+      void engine.audio.play({ asset: 'sounds/done.wav' }).catch(() => {})
     }
-    return next(e)
+    return next(event)
   })
 
-  on('session.measure', async ($, e, next) => {
-    const now = await $.clock.now()
-    for (const r of e.rateLimits) {
-      const name = NAMES[r.kind] ?? r.kind
-      for (const mark of MARKS) {
-        const key = `${r.kind}:${mark}`
-        if (r.percentUsed >= mark && !warned.has(key)) {
-          warned.add(key)
-          $.ui.toast(`${name} usage at ${mark}%${resetsIn(r.resetsAt, now)}`)
-        }
-        // Back under the mark (the window reset): warn again next time.
-        if (r.percentUsed < mark) warned.delete(key)
-      }
-    }
-    return next(e)
+  on('session.measure', async (engine, event, next) => {
+    const now = await engine.clock.now()
+    for (const limit of event.rateLimits) warnOnCrossings(engine, limit, now)
+    return next(event)
   })
 }

@@ -1,5 +1,5 @@
 // Ember Ribbon's quota gauges. Keep its glyphs and raster arithmetic identical
-// to AI/.claude/mods/ember-ribbon/hooks/register.tsx.
+// to AI/.claude/mods/ember-ribbon/hooks/ (footer.tsx, rasters.ts, colors.ts, format.ts).
 export const COLORS = {
   claude: '#D97757',
   ink: '#E9E6DC',
