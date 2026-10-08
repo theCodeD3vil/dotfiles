@@ -16,7 +16,7 @@ Write the least code that solves the problem as asked. A reader should follow it
 ## Rules
 
 - **No speculative generality.** No flags, options, parameters, hooks, or "extensible" structure for needs that don't exist yet. Add it when the second use shows up.
-- **No single-use wrappers.** Inline a helper with one caller. Extract only when it removes real repetition (about three similar uses) or gives a confusing block a clear name.
+- **No single-use wrappers.** Inline a helper with one caller. Extract when it removes real repetition (the second repeat, per the `clean-code` DRY rule) or gives a confusing block a clear name.
 - **Flat over nested.** Early returns and `continue` instead of deep `if` pyramids.
 - **Plain over clever.** No one-liners that need decoding, nested ternaries, regex where `case` or a string op works, or metaprogramming where a list or table works.
 - **Data over branching.** A list or map beats an `if/elif` chain whose branches differ only by value.
