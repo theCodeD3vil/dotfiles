@@ -8,3 +8,14 @@
 # worktrunk keeps per-machine state (command approvals, lock files) next to its config
 .config/worktrunk/approvals.toml
 .config/worktrunk/*.lock
+
+# Test suites are kept locally but are not part of the dotfiles repository.
+**/test/
+**/tests/
+**/__tests__/
+**/spec/
+**/specs/
+**/*.test.*
+**/*.spec.*
+**/test_*
+**/*_test.*
