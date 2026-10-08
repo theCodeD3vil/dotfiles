@@ -13,10 +13,17 @@ const CLAUDE = '#D97757'
 const INK = '#E9E6DC'
 const DIM = '#7C776D'
 const TRACK = '#3A3733'
+// Catppuccin Mocha
+const RED = '#F38BA8'
+const PEACH = '#FAB387'
+const YELLOW = '#F9E2AF'
+const GREEN = '#A6E3A1'
+const SKY = '#89DCEB'
+const BLUE = '#89B4FA'
+const MAUVE = '#CBA6F7'
 
 // Claude's own spinner frames, played forward and back while it works
 const SPIN = ['·', '✢', '✳', '✶', '✻', '✽', '✻', '✶', '✳', '✢']
-
 
 // "Ember pie" rings for narrow terminals: empty circle, a solid wedge filling in 7 steps, a fire circle at 100%.
 const RINGS = ['\u{F0766}', '\u{F0A9E}', '\u{F0A9F}', '\u{F0AA0}', '\u{F0AA1}', '\u{F0AA2}', '\u{F0AA3}', '\u{F0AA4}', '\u{F1807}']
@@ -42,12 +49,8 @@ function sevColor(pct: number) {
 const hex = (h: string) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16))
 const mix = (a: number[], b: number[], m: number) => a.map((v, i) => Math.round(v + ((b[i] ?? 0) - v) * m))
 const pack = (c: number[]) => ((c[0] ?? 0) << 16) | ((c[1] ?? 0) << 8) | (c[2] ?? 0)
-const hash = (a: number, b: number, k: number) => {
-  const x = Math.sin(a * 127.1 + b * 311.7 + k * 74.7) * 43758.5453
-  return x - Math.floor(x)
-}
+const encode = (words: Uint32Array) => (new Uint8Array(words.buffer) as Uint8Array & { toBase64: () => string }).toBase64()
 const BRAILLE_BITS = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]]
-const BACKGROUND = [10, 10, 10] // Ghostty's background, #0A0A0A
 const DEFAULT_COLOR = 0x01000000 // a Raster cell's "terminal default" colour
 const PULSE_SPEED = 10 // cells a second: one cell per 100 ms repaint, so the front moves smoothly
 const PULSE_TAIL = 3 // cells the pulse's tail fades over
@@ -109,7 +112,7 @@ function usageCells(pct: number, timePct: number, width: number, t: number) {
   set(0, 0x28be, pct > 0 ? tip(0) : grey)
   set(width - 1, 0x2877, fx >= width - 1 ? tip(0.5) : grey)
 
-  return (new Uint8Array(words.buffer) as Uint8Array & { toBase64: () => string }).toBase64()
+  return encode(words)
 }
 
 // "claude-opus-5-5[1m]" -> "Opus 5.5"; anything else is shown as given
@@ -128,17 +131,24 @@ function timeLeft(limit: SessionRateLimit | undefined, now: number) {
   return `${Math.floor(mins / 60)}h${pad(mins % 60)}m`
 }
 
-// Ember heat (Catppuccin Mocha colours, Claude orange at 25-50%): the used tokens coloured by how full the context window is.
+// Ember heat (Claude orange at 25-50%): the used tokens coloured by how full the context window is.
 const HEAT = [
-  { upTo: 25, color: '#A6E3A1' },
+  { upTo: 25, color: GREEN },
   { upTo: 50, color: CLAUDE },
-  { upTo: 75, color: '#F9E2AF' },
+  { upTo: 75, color: YELLOW },
   { upTo: 90, color: '#F5C2E7' },
-  { upTo: Infinity, color: '#F38BA8' },
+  { upTo: Infinity, color: RED },
 ]
+const heatColor = (percent: number) => (HEAT.find(band => percent < band.upTo) ?? HEAT[HEAT.length - 1]!).color
 
-// Held by the host, so the turns' readings survive a hot reload of this file.
+// Held by the host, so they survive a hot reload of this file. `readings` is each turn's context
+// reading; `previous` is the draft from before an enhancement, set once one lands and cleared by
+// undoing, editing the enhanced text (that accepts it) or sending it.
 const readings = { plugin: 'ember-ribbon', key: 'readings' } as const
+const previous = { plugin: 'ember-ribbon', key: 'previous' } as const
+const readHistory = async ($: EngineInterface) => (await $.state.get(readings)).value ?? []
+
+const redraw = ($: EngineInterface) => $.ui.invalidate('ui.render')
 
 // The context chart: one dot column per turn, two to a cell, the newest turn at the right.
 // FILL_ROWS cells tall, four dot rows to each, so a column has 4 * FILL_ROWS heights.
@@ -158,8 +168,7 @@ async function readContext($: EngineInterface): Promise<ContextReading | undefin
 async function takeReading($: EngineInterface) {
   const reading = await readContext($)
   if (!reading) return
-  const { value: history = [] } = await $.state.get(readings)
-  await $.state.set(readings, [...history, reading].slice(-FILL_TURNS))
+  await $.state.set(readings, [...(await readHistory($)), reading].slice(-FILL_TURNS))
 }
 
 function short(n: number) {
@@ -184,8 +193,6 @@ const ICON = '\u{F51B}'
 const DONE_ICON = '\u{F012C}'
 // Shown while the enhanced text is current (Ctrl+E then reverts); also from Symbols Nerd Font.
 const ENHANCED_ICON = '\u{F0453}'
-const BLUE = '#89B4FA' // Catppuccin Mocha
-const GREEN = '#A6E3A1'
 const DONE_TICKS = 30 // the check stays 3s (the clock ticks every 100ms)
 
 const SYSTEM = `You rewrite a developer's draft prompt for Claude Code into the prompt they would have written with more time and the whole session in view. You get the recent conversation, then the draft.
@@ -221,7 +228,7 @@ async function conversation($: EngineInterface) {
 // for DONE_TICKS; a sound plays when it is done.
 let busy = false
 let doneTicks = 0
-const RAINBOW = ['#F38BA8', '#FAB387', '#F9E2AF', '#A6E3A1', '#89DCEB', '#89B4FA', '#CBA6F7']
+const RAINBOW = [RED, PEACH, YELLOW, GREEN, SKY, BLUE, MAUVE]
 
 async function enhance($: EngineInterface, draft: string, before: string) {
   busy = true
@@ -231,7 +238,7 @@ async function enhance($: EngineInterface, draft: string, before: string) {
   } finally {
     busy = false
     doneTicks = DONE_TICKS
-    $.ui.invalidate('ui.render')
+    redraw($)
     void $.audio.play({ asset: 'sounds/done.wav' }).catch(() => {})
   }
 }
@@ -276,15 +283,11 @@ async function rewrite($: EngineInterface, draft: string, before: string) {
   return 'Enhanced with Haiku: review it and press Enter, or Ctrl+E to undo'
 }
 
-// Held by the host, so undo survives a hot reload. Set once an enhancement lands; cleared by
-// undoing, editing the enhanced text (that accepts it) or sending it.
-const previous = { plugin: 'ember-ribbon', key: 'previous' } as const
-
 async function forget($: EngineInterface) {
   const { value } = await $.state.get(previous)
   if (value == null) return
   await $.state.set(previous, null)
-  $.ui.invalidate('ui.render')
+  redraw($)
 }
 
 // Ctrl+E after an enhancement: the draft from before it goes back in the box.
@@ -306,8 +309,6 @@ async function enhanceBox($: EngineInterface) {
   $.ui.toast(await enhance($, draft, draft))
 }
 
-const encode = (words: Uint32Array) => (new Uint8Array(words.buffer) as Uint8Array & { toBase64: () => string }).toBase64()
-
 // Token stream: characters the main loop's reply streams in each 100 ms tick (text, thinking and
 // tool input; about four to a token), drawn as a 1-row braille chart at the far right of the row.
 const STREAM_CELLS = 8
@@ -326,9 +327,9 @@ function streamPoints(width: number) {
 
 // Context fill history, left of the used / window readout: a column per turn, as tall as the context
 // percent at the turn's end (the dots rise from the floor), green when low, yellow mid, red high.
-const FILL_GREEN = hex('#A6E3A1')
-const FILL_YELLOW = hex('#F9E2AF')
-const FILL_RED = hex('#F38BA8')
+const FILL_GREEN = hex(GREEN)
+const FILL_YELLOW = hex(YELLOW)
+const FILL_RED = hex(RED)
 
 const fillColor = (percent: number) => {
   const t = Math.min(1, Math.max(0, percent / 100))
@@ -367,7 +368,7 @@ function fillCells(width: number, rows: number, percents: number[]) {
 function streamCells(width: number) {
   const points = streamPoints(width)
   const top = Math.max(1, ...points)
-  const color = pack(hex('#CBA6F7')) // Catppuccin Mocha mauve
+  const color = pack(hex(MAUVE))
   const words = new Uint32Array(width * 3)
   for (let x = 0; x < width; x++) {
     let bits = 0
@@ -402,9 +403,9 @@ function ensureTicking($: EngineInterface) {
         if (stream.length > STREAM_CELLS * 2 + 10) stream.shift()
       }
       // Animate while working, enhancing or running down; otherwise redraw once a minute for the countdowns.
-      if (working || live || busy || tick % 600 === 0) $.ui.invalidate('ui.render')
+      if (working || live || busy || tick % 600 === 0) redraw($)
       // Count the check down, redrawing once it is gone.
-      if (doneTicks > 0 && --doneTicks === 0) $.ui.invalidate('ui.render')
+      if (doneTicks > 0 && --doneTicks === 0) redraw($)
       // The 5h bar's dots move all the time: repaint its cells alone, without a redraw.
       if (mountedBar) {
         const { requestId, pct, timePct, width } = mountedBar
@@ -449,7 +450,7 @@ export const register: Register = on => {
 
   // New usage figures arrived: redraw.
   on('session.measure', ($, e, next) => {
-    $.ui.invalidate('ui.render')
+    redraw($)
     return next(e)
   })
 
@@ -483,7 +484,7 @@ export const register: Register = on => {
     ensureTicking($)
     const below = await next(e)
     if (e.surface !== 'terminal' || e.props.hasSurvey) return below
-    const { value: history = [] } = await $.state.get(readings)
+    const history = await readHistory($)
     // No turn has finished yet: the readout takes the live context so it shows from the first draw.
     // The chart has no column for it, since it is not a turn's end.
     const now = history[history.length - 1] ?? (await readContext($))
@@ -491,7 +492,6 @@ export const register: Register = on => {
     working = e.props.isWorking
 
     const { Box, Button, Raster, Text } = $.ui.resolve(e)
-    const f = now ? (HEAT.find(b => now.percent < b.upTo) ?? HEAT[HEAT.length - 1]!) : undefined
 
     // bodyColumns is the band's width less the engine's [-] marker, so the heat sits flush right.
     // paddingTop keeps the conversation from sitting flush on the band. The token stream is always
@@ -514,9 +514,9 @@ export const register: Register = on => {
         <Box marginRight={1}>
           <Raster key="fill" columns={FILL_CELLS} rows={FILL_ROWS} cells={fillCells(FILL_CELLS, FILL_ROWS, history.map(r => r.percent))} />
         </Box>
-        {now && f ? (
+        {now ? (
           <Box>
-            <Text color={f.color} bold>{short(now.tokens)}</Text>
+            <Text color={heatColor(now.percent)} bold>{short(now.tokens)}</Text>
             <Text dimColor> / {short(now.window)}</Text>
           </Box>
         ) : (
@@ -558,12 +558,13 @@ export const register: Register = on => {
       return <Text color={step === 0 ? TRACK : sevColor(pct)}>{RINGS[step]}</Text>
     }
 
-    const stat = (label: string, pct: number, gauge: RenderChildren, time?: string) => (
+    // `noTime` (below) drops the time left from both stats at once.
+    const stat = (label: string, pct: number, gauge: RenderChildren, time: string) => (
       <Box gap={1}>
         <Text color={DIM}>{label}</Text>
         {gauge}
         <Text color={sevColor(pct)}>{pct}%</Text>
-        {time ? <Text color={DIM}>{time}</Text> : null}
+        {time && !noTime ? <Text color={DIM}>{time}</Text> : null}
       </Box>
     )
 
@@ -594,8 +595,8 @@ export const register: Register = on => {
           <Text color={CLAUDE} bold>{working ? SPIN[tick % SPIN.length] : '✻'}</Text>
           <Text color={INK}>{model}</Text>
         </Box>
-        {stat('5h', five, narrow ? ring(five) : usageBar(five, fiveLimit, FIVE_HOURS, 22), noTime ? undefined : fiveTime)}
-        {stat('wk', week, ring(week), noTime ? undefined : weekTime)}
+        {stat('5h', five, narrow ? ring(five) : usageBar(five, fiveLimit, FIVE_HOURS, 22), fiveTime)}
+        {stat('wk', week, ring(week), weekTime)}
       </Box>
     )
   })

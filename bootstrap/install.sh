@@ -35,7 +35,24 @@ PLAIN=0
 DEMO=0
 ASSUME_YES=0
 SKIP=" "
-STEPS="preflight prerequisites brew toolchains agents globals omz submodules stow linux inits finish"
+# name|what it does (shown under the step's header). STEPS, in this order, comes from it.
+STEP_TABLE=(
+  'preflight|check the OS, sudo and this checkout'
+  'prerequisites|Xcode tools or apt basics, then Homebrew'
+  'brew|install everything in the Brewfiles'
+  'toolchains|bun, pnpm and nvm (Node LTS plus npm.txt)'
+  'agents|the Claude Code and opencode CLIs'
+  'globals|global bun and pnpm packages'
+  'omz|oh-my-zsh and its plugins'
+  'submodules|fill the plugin checkouts the repo tracks (fzf-git, tmux)'
+  'stow|link the dotfiles into your home directory'
+  'linux|Ubuntu-only shell fixes'
+  'inits|rtk, icm, Claude Code mods and plugins, worktrunk setup'
+  'finish|login shell and a last check'
+)
+STEPS=()
+for row in "${STEP_TABLE[@]}"; do STEPS+=("${row%%|*}"); done
+unset row
 
 # Pinned on 2026-09-20. Bump on purpose, not by accident.
 NVM_VERSION="v0.40.7"
@@ -176,10 +193,17 @@ trunc() {
   fi
 }
 
-# Last non-empty line of a growing log, with ANSI codes and carriage returns
-# (curl progress meters) stripped. Reads only the tail, so it stays cheap.
+# Seconds since START (a $SECONDS reading), formatted.
+since() { fmt_secs $((SECONDS - $1)); }
+
+# Stdin with ANSI codes and carriage returns (curl progress meters) stripped and blank lines dropped.
+clean_output() {
+  tr '\r' '\n' | sed "s/${ESC}\[[0-9;?]*[A-Za-z]//g" | grep -v '^[[:space:]]*$'
+}
+
+# Last non-empty line of a growing log. Reads only the tail, so it stays cheap.
 last_line() {
-  tail -c 600 "$1" 2>/dev/null | tr '\r' '\n' | sed "s/${ESC}\[[0-9;?]*[A-Za-z]//g" | grep -v '^[[:space:]]*$' | tail -n 1
+  tail -c 600 "$1" 2>/dev/null | clean_output | tail -n 1
 }
 
 kill_tree() {
@@ -196,11 +220,7 @@ cleanup_ui() {
     kill_tree "$BG_PID"
     BG_PID=""
   fi
-  if [ -n "$SUDO_KEEPALIVE_PID" ]; then
-    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
-    SUDO_KEEPALIVE_PID=""
-    sudo -k 2>/dev/null || true
-  fi
+  [ -z "$SUDO_KEEPALIVE_PID" ] || release_sudo
   if [ "$UI_FANCY" = 1 ]; then
     printf '%s' "$CURSOR_SHOW"
   fi
@@ -218,7 +238,7 @@ on_interrupt() {
 # With SPIN_TOTAL and SPIN_REGEX set, also draws a bar of matching lines / total.
 # Plain mode just streams the output. Returns the command's exit status.
 spin() {
-  local label=$1 log start rc i=0 n=0 frame elapsed last line pct used avail label_t
+  local label=$1 log start rc i=0 n=0 frame elapsed last line pct used avail label_t color icon
   shift
   start=$SECONDS
 
@@ -227,7 +247,7 @@ spin() {
     ( "$@" ) 2>&1 | tee -a "$LOG_FILE" | sed 's/^/        /'
     rc=${PIPESTATUS[0]}
     if [ "$rc" = 0 ]; then
-      printf '    %s %s (%s)\n' "$OK" "$label" "$(fmt_secs $((SECONDS - start)))"
+      printf '    %s %s (%s)\n' "$OK" "$label" "$(since "$start")"
     else
       printf '    %s %s failed (exit %s)\n' "$FAIL" "$label" "$rc"
     fi
@@ -243,7 +263,7 @@ spin() {
 
   while kill -0 "$BG_PID" 2>/dev/null; do
     frame=${FRAMES[$((i % ${#FRAMES[@]}))]}
-    elapsed=$(fmt_secs $((SECONDS - start)))
+    elapsed=$(since "$start")
     used=$((4 + 2 + ${#label_t} + 2 + ${#elapsed}))
     line="    ${C_TEAL}${frame}${C_RESET} ${label_t}  ${C_GREY}${elapsed}${C_RESET}"
     if [ -n "$SPIN_TOTAL" ] && [ "$SPIN_TOTAL" -gt 0 ] 2>/dev/null; then
@@ -269,13 +289,16 @@ spin() {
   wait "$BG_PID"
   rc=$?
   BG_PID=""
-  elapsed=$(fmt_secs $((SECONDS - start)))
+  elapsed=$(since "$start")
   printf '\r%s' "$CLR"
   if [ "$rc" = 0 ]; then
-    printf '    %s%s%s %s  %s%s%s\n' "$C_GREEN" "$OK" "$C_RESET" "$label_t" "$C_GREY" "$elapsed" "$C_RESET"
+    color=$C_GREEN icon=$OK
   else
-    printf '    %s%s%s %s  %s%s%s\n' "$C_RED" "$FAIL" "$C_RESET" "$label_t" "$C_GREY" "$elapsed" "$C_RESET"
-    tail -n 40 "$log" | tr '\r' '\n' | sed "s/${ESC}\[[0-9;?]*[A-Za-z]//g" | grep -v '^[[:space:]]*$' | tail -n 15 |
+    color=$C_RED icon=$FAIL
+  fi
+  printf '    %s%s%s %s  %s%s%s\n' "$color" "$icon" "$C_RESET" "$label_t" "$C_GREY" "$elapsed" "$C_RESET"
+  if [ "$rc" != 0 ]; then
+    tail -n 40 "$log" | clean_output | tail -n 15 |
       while IFS= read -r last; do
         printf '        %s%s%s\n' "$C_GREY" "$(trunc "$last" $((COLS - 10)))" "$C_RESET"
       done
@@ -303,20 +326,13 @@ spin_progress() {
 }
 
 step_desc() {
-  case "$1" in
-    preflight)     echo "check the OS, sudo and this checkout" ;;
-    prerequisites) echo "Xcode tools or apt basics, then Homebrew" ;;
-    brew)          echo "install everything in the Brewfiles" ;;
-    toolchains)    echo "bun, pnpm and nvm (Node LTS plus npm.txt)" ;;
-    agents)        echo "the Claude Code and opencode CLIs" ;;
-    globals)       echo "global bun and pnpm packages" ;;
-    omz)           echo "oh-my-zsh and its plugins" ;;
-    submodules)    echo "fill the plugin checkouts the repo tracks (fzf-git, tmux)" ;;
-    stow)          echo "link the dotfiles into your home directory" ;;
-    linux)         echo "Ubuntu-only shell fixes" ;;
-    inits)         echo "rtk, icm, Claude Code mods and plugins, worktrunk setup" ;;
-    finish)        echo "login shell and a last check" ;;
-  esac
+  local row
+  for row in "${STEP_TABLE[@]}"; do
+    if [ "${row%%|*}" = "$1" ]; then
+      echo "${row#*|}"
+      return
+    fi
+  done
 }
 
 step_header() {
@@ -330,6 +346,10 @@ step_header() {
   log_plain "== [$idx/$total] $name"
 }
 
+# The framed panels (banner and summary): a title line, then rows behind a left edge.
+box_top() { printf '\n  %s%s%s%s%s %s%s%s\n' "$C_MAUVE" "$BOX_TL" "$BOX_H" "$BOX_H" "$C_RESET" "$C_BOLD" "$1" "$C_RESET"; }
+box_row() { printf '  %s%s%s  %s\n' "$C_MAUVE" "$BOX_V" "$C_RESET" "$1"; }
+
 print_banner() {
   local osname mode="live"
   if [ "$OS" = mac ]; then
@@ -341,10 +361,10 @@ print_banner() {
     osname="${OS:-unknown}"
   fi
   [ "$DRY_RUN" = 1 ] && mode="dry run (changes nothing)"
-  printf '\n  %s%s%s%s%s %sdotfiles bootstrap%s\n' "$C_MAUVE" "$BOX_TL" "$BOX_H" "$BOX_H" "$C_RESET" "$C_BOLD" "$C_RESET"
-  printf '  %s%s%s  %s\n' "$C_MAUVE" "$BOX_V" "$C_RESET" "$osname"
-  printf '  %s%s%s  %s%s%s\n' "$C_MAUVE" "$BOX_V" "$C_RESET" "$C_GREY" "$DOTFILES_DIR" "$C_RESET"
-  printf '  %s%s%s  %s%s%s\n' "$C_MAUVE" "$BOX_V" "$C_RESET" "$C_GREY" "$mode" "$C_RESET"
+  box_top "dotfiles bootstrap"
+  box_row "$osname"
+  box_row "$C_GREY$DOTFILES_DIR$C_RESET"
+  box_row "$C_GREY$mode$C_RESET"
   printf '  %s%s%s%s%s%s\n' "$C_MAUVE" "$BOX_BL" "$BOX_H" "$BOX_H" "$BOX_H" "$C_RESET"
   log_plain "dotfiles bootstrap: $osname, $DOTFILES_DIR, $mode"
 }
@@ -355,7 +375,7 @@ record() { SUMMARY="$SUMMARY${SUMMARY:+$'\n'}$1|$2|$3"; }
 print_summary() {
   local status name secs ndone=0 nfail=0 nskip=0 icon color note total pad
   total=$((SECONDS - RUN_START))
-  printf '\n  %s%s%s%s%s %ssummary%s\n' "$C_MAUVE" "$BOX_TL" "$BOX_H" "$BOX_H" "$C_RESET" "$C_BOLD" "$C_RESET"
+  box_top "summary"
   while IFS='|' read -r status name secs; do
     [ -n "$status" ] || continue
     case "$status" in
@@ -365,7 +385,7 @@ print_summary() {
     esac
     pad=""
     if [ "${#icon}" -lt 2 ]; then pad=" "; fi
-    printf '  %s%s%s  %s%s%s%s %s%-14s%s %s%s%s\n' "$C_MAUVE" "$BOX_V" "$C_RESET" "$color" "$icon" "$C_RESET" "$pad" "$C_RESET" "$name" "$C_RESET" "$C_GREY" "$note" "$C_RESET"
+    box_row "$(printf '%s%s%s%s %s%-14s%s %s%s%s' "$color" "$icon" "$C_RESET" "$pad" "$C_RESET" "$name" "$C_RESET" "$C_GREY" "$note" "$C_RESET")"
   done <<EOF
 $SUMMARY
 EOF
@@ -378,38 +398,43 @@ EOF
   fi
 }
 
+bold() { printf '%s%s%s' "$C_BOLD" "$1" "$C_RESET"; }
+bullet() { printf '      %s%s%s %s\n' "$C_TEAL" "$DOT" "$C_RESET" "$*"; }
+
 print_next_steps() {
   printf '\n  %s%s next steps%s  %s(none of these can be scripted)%s\n' "$C_MAUVE" "$ARROW" "$C_RESET" "$C_GREY" "$C_RESET"
   if [ "$SHELL_CHANGED" = 1 ]; then
-    printf '      %s%s%s your login shell is now zsh, but this terminal is still on the old one. Run %sexec zsh%s or log in again; do not %ssource ~/.zshrc%s from bash\n' "$C_TEAL" "$DOT" "$C_RESET" "$C_BOLD" "$C_RESET" "$C_BOLD" "$C_RESET"
+    bullet "your login shell is now zsh, but this terminal is still on the old one. Run $(bold 'exec zsh') or log in again; do not $(bold 'source ~/.zshrc') from bash"
   fi
-  printf '      %s%s%s log in to %sclaude%s and %sopencode%s\n' "$C_TEAL" "$DOT" "$C_RESET" "$C_BOLD" "$C_RESET" "$C_BOLD" "$C_RESET"
-  printf '      %s%s%s GitHub: %sgh auth login%s\n' "$C_TEAL" "$DOT" "$C_RESET" "$C_BOLD" "$C_RESET"
-  printf '      %s%s%s SSH keys and the SSH agent\n' "$C_TEAL" "$DOT" "$C_RESET"
-  printf '      %s%s%s macOS only: sign in to the App Store, then re-run for the mas apps\n' "$C_TEAL" "$DOT" "$C_RESET"
-  printf '      %s%s%s open a new terminal (or run %sexec zsh%s) so the new PATH and shell config load\n\n' "$C_TEAL" "$DOT" "$C_RESET" "$C_BOLD" "$C_RESET"
+  bullet "log in to $(bold claude) and $(bold opencode)"
+  bullet "GitHub: $(bold 'gh auth login')"
+  bullet "SSH keys and the SSH agent"
+  bullet "macOS only: sign in to the App Store, then re-run for the mas apps"
+  bullet "open a new terminal (or run $(bold 'exec zsh')) so the new PATH and shell config load"
+  printf '\n'
 }
 
 # ---------------------------------------------------------------- helpers ---
+
+# In a dry run, say what would happen and succeed. Use as: dry_skip "what" && return 0
+dry_skip() { [ "$DRY_RUN" = 1 ] || return 1; dry "$*"; }
+
+# A tool a later step needs is missing: only a warning in a dry run (the step that
+# installs it may not have run yet), a failure otherwise.
+tool_missing() { warn "$1"; [ "$DRY_RUN" = 1 ]; }
 
 # A long-running command: spinner in a real run, printed in a dry run.
 # run_as LABEL CMD...
 run_as() {
   local label=$1
   shift
-  if [ "$DRY_RUN" = 1 ]; then
-    dry "$*"
-    return 0
-  fi
+  dry_skip "$*" && return 0
   spin "$label" "$@"
 }
 
 # A quick command that needs no spinner (mkdir, ln, touch).
 quiet() {
-  if [ "$DRY_RUN" = 1 ]; then
-    dry "$*"
-    return 0
-  fi
+  dry_skip "$*" && return 0
   "$@"
 }
 
@@ -435,11 +460,72 @@ _fetch_and_run() {
 fetch_run() {
   local label=$1 envs=$2 interp=$3 url=$4
   shift 4
-  if [ "$DRY_RUN" = 1 ]; then
-    dry "download $url and run: ${envs:+$envs }$interp $*"
-    return 0
-  fi
+  dry_skip "download $url and run: ${envs:+$envs }$interp $*" && return 0
   spin "$label" _fetch_and_run "$envs" "$interp" "$url" "$@"
+}
+
+# Is NAME installed? Some installers put it where PATH doesn't reach yet.
+installed() {
+  case "$1" in
+    bun)      have bun || [ -x "$HOME/.bun/bin/bun" ] ;;
+    pnpm)     have pnpm || [ -x "$(pnpm_home_dir)/bin/pnpm" ] || [ -x "$(pnpm_home_dir)/pnpm" ] ;;
+    nvm)      [ -s "$NVM_DIR/nvm.sh" ] ;;
+    claude)   have claude || [ -x "$HOME/.local/bin/claude" ] ;;
+    opencode) have opencode || [ -x "$HOME/.opencode/bin/opencode" ] ;;
+  esac
+}
+
+# usage: install_missing NAME <fetch_run args>   (does nothing when NAME is installed)
+install_missing() {
+  local name=$1
+  shift
+  if installed "$name"; then
+    info "$name already installed"
+  else
+    fetch_run "$@"
+  fi
+}
+
+# git clone URL into DEST unless it is already there. NAME is how it is shown.
+clone_missing() {
+  local name=$1 url=$2 dest=$3
+  if [ -d "$dest" ]; then
+    info "$name already installed"
+  else
+    run_as "clone $name" git clone --depth=1 "$url" "$dest"
+  fi
+}
+
+# Is global package PKG already installed for TOOL?
+global_installed() {
+  case "$1" in
+    bun)  grep -qF "\"$2\"" "$HOME/.bun/install/global/package.json" 2>/dev/null ;;
+    pnpm) pnpm ls -g --depth=0 2>/dev/null | awk '{print $1}' | grep -Fxq "$2" ;;
+    npm)  npm ls -g --depth=0 "$2" >/dev/null 2>&1 ;;
+  esac
+}
+
+# Install the packages listed in LIST_FILE with `TOOL add -g`, skipping those already there.
+install_globals() {
+  local tool=$1 list=$2 rc=0 pkg
+  have "$tool" || { tool_missing "$tool is not available, skipping $(basename "$list")"; return; }
+  for pkg in $(list_items "$list"); do
+    if global_installed "$tool" "$pkg"; then
+      info "$tool: $pkg already installed"
+    else
+      run_as "$tool add -g $pkg" "$tool" add -g "$pkg" || { warn "$tool add -g $pkg failed"; rc=1; }
+    fi
+  done
+  return "$rc"
+}
+
+# brew without auto-update and hints, so read-only calls don't touch Homebrew's own index.
+brew_quiet() { HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 brew "$@"; }
+
+# The Brewfiles that apply to this OS.
+brewfiles() {
+  echo Brewfile
+  if [ "$OS" = mac ]; then echo Brewfile.mac; fi
 }
 
 # Non-comment, non-blank lines of a list file.
@@ -569,11 +655,9 @@ step_prerequisites() {
     done
     if [ -n "$missing" ]; then
       need_sudo
-      run_as "apt-get update" sudo apt-get update || rc=1
       # shellcheck disable=SC2086  # $missing is a list of package names
-      if [ "$rc" = 0 ]; then
+      run_as "apt-get update" sudo apt-get update &&
         run_as "apt-get install$missing" sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y $missing || rc=1
-      fi
     else
       info "apt prerequisites already installed"
     fi
@@ -603,20 +687,15 @@ step_brew() {
     verb="install or upgrade"
   fi
   if ! load_brew_env 2>/dev/null; then
-    if [ "$DRY_RUN" = 1 ]; then
-      dry "brew bundle (Homebrew is not installed yet)"
-      return 0
-    fi
+    dry_skip "brew bundle (Homebrew is not installed yet)" && return 0
     warn "Homebrew not found"
     return 1
   fi
-  for f in Brewfile Brewfile.mac; do
-    [ "$f" = Brewfile.mac ] && [ "$OS" != mac ] && continue
+  for f in $(brewfiles); do
     if [ "$DRY_RUN" = 1 ]; then
       info "checking $f ..."
-      # No auto-update: a dry run must not touch Homebrew's own index either.
       # shellcheck disable=SC2086  # $upflag is empty or one option
-      out=$(HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 brew bundle check $upflag --verbose --file "$BOOT_DIR/$f" 2>&1)
+      out=$(brew_quiet bundle check $upflag --verbose --file "$BOOT_DIR/$f" 2>&1)
       check_rc=$?
       plan=$(printf '%s\n' "$out" | sed -n 's/^→ /        /p')
       # Besides the "→ ..." plan lines, a check that finds missing entries also
@@ -639,10 +718,9 @@ step_brew() {
       else
         dry "$f: nothing to $verb"
       fi
-    elif [ "$UPGRADE" = 1 ]; then
-      spin_progress "$(count_entries "$BOOT_DIR/$f")" "$BREW_PROGRESS_REGEX" "brew bundle $f" brew bundle --file "$BOOT_DIR/$f" || rc=1
     else
-      spin_progress "$(count_entries "$BOOT_DIR/$f")" "$BREW_PROGRESS_REGEX" "brew bundle $f" brew bundle --no-upgrade --file "$BOOT_DIR/$f" || rc=1
+      # shellcheck disable=SC2086  # $upflag is empty or one option
+      spin_progress "$(count_entries "$BOOT_DIR/$f")" "$BREW_PROGRESS_REGEX" "brew bundle $f" brew bundle $upflag --file "$BOOT_DIR/$f" || rc=1
     fi
   done
   if [ "$rc" != 0 ]; then
@@ -652,28 +730,14 @@ step_brew() {
 }
 
 step_toolchains() {
-  local rc=0 pkg
+  local rc=0
 
   # bun and pnpm append to ~/.zshrc, which is stowed from the repo, so this step
   # has to run before stow. Whatever they add lands in a file stow will back up.
-  if have bun || [ -x "$HOME/.bun/bin/bun" ]; then
-    info "bun already installed"
-  else
-    fetch_run "install bun" "" bash https://bun.sh/install || rc=1
-  fi
-
-  if have pnpm || [ -x "$(pnpm_home_dir)/bin/pnpm" ] || [ -x "$(pnpm_home_dir)/pnpm" ]; then
-    info "pnpm already installed"
-  else
-    fetch_run "install pnpm" "" sh https://get.pnpm.io/install.sh || rc=1
-  fi
-
+  install_missing bun "install bun" "" bash https://bun.sh/install || rc=1
+  install_missing pnpm "install pnpm" "" sh https://get.pnpm.io/install.sh || rc=1
   # nvm: PROFILE=/dev/null stops its installer appending to ~/.zshrc.
-  if [ -s "$NVM_DIR/nvm.sh" ]; then
-    info "nvm already installed"
-  else
-    fetch_run "install nvm $NVM_VERSION" "PROFILE=/dev/null" bash "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_VERSION/install.sh" || rc=1
-  fi
+  install_missing nvm "install nvm $NVM_VERSION" "PROFILE=/dev/null" bash "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_VERSION/install.sh" || rc=1
   # default-packages must be linked AFTER the installer: it git-clones into ~/.nvm
   # and fails if that directory already exists. nvm installs everything listed in
   # it after every `nvm install`, which is how npm.txt gets applied.
@@ -694,13 +758,7 @@ step_toolchains() {
     if nvm use --silent default; then
       # default-packages runs only during nvm install. Also fill gaps on existing
       # LTS installations and retries after a failed global package install.
-      for pkg in $(list_items "$BOOT_DIR/npm.txt"); do
-        if npm ls -g --depth=0 "$pkg" >/dev/null 2>&1; then
-          info "npm: $pkg already installed"
-        else
-          run_as "npm install -g $pkg" npm install -g "$pkg" || rc=1
-        fi
-      done
+      install_globals npm "$BOOT_DIR/npm.txt" || rc=1
     else
       warn "nvm's default Node is not usable"
       rc=1
@@ -716,66 +774,26 @@ step_agents() {
   local rc=0
   # Claude Code and opencode. The rtk and icm inits need them present, but no login.
   # Skipped when already installed, so a re-run never upgrades them.
-  if have claude || [ -x "$HOME/.local/bin/claude" ]; then
-    info "claude already installed"
-  else
-    fetch_run "install Claude Code" "" bash https://claude.ai/install.sh || rc=1
-  fi
-  if have opencode || [ -x "$HOME/.opencode/bin/opencode" ]; then
-    info "opencode already installed"
-  else
-    fetch_run "install opencode" "" bash https://opencode.ai/install --no-modify-path || rc=1
-  fi
+  install_missing claude "install Claude Code" "" bash https://claude.ai/install.sh || rc=1
+  install_missing opencode "install opencode" "" bash https://opencode.ai/install --no-modify-path || rc=1
   return "$rc"
 }
 
 step_globals() {
-  local rc=0 pkg
+  local rc=0
   # npm globals are handled by nvm (default-packages, see the toolchains step).
-  if have bun; then
-    for pkg in $(list_items "$BOOT_DIR/bun.txt"); do
-      if grep -qF "\"$pkg\"" "$HOME/.bun/install/global/package.json" 2>/dev/null; then
-        info "bun: $pkg already installed"
-      else
-        run_as "bun add -g $pkg" bun add -g "$pkg" || { warn "bun add -g $pkg failed"; rc=1; }
-      fi
-    done
-  else
-    warn "bun is not available, skipping bun.txt"
-    [ "$DRY_RUN" = 1 ] || rc=1
-  fi
-
-  if have pnpm; then
-    for pkg in $(list_items "$BOOT_DIR/pnpm.txt"); do
-      if pnpm ls -g --depth=0 2>/dev/null | awk '{print $1}' | grep -Fxq "$pkg"; then
-        info "pnpm: $pkg already installed"
-      else
-        run_as "pnpm add -g $pkg" pnpm add -g "$pkg" || { warn "pnpm add -g $pkg failed"; rc=1; }
-      fi
-    done
-  else
-    warn "pnpm is not available, skipping pnpm.txt"
-    [ "$DRY_RUN" = 1 ] || rc=1
-  fi
+  install_globals bun "$BOOT_DIR/bun.txt" || rc=1
+  install_globals pnpm "$BOOT_DIR/pnpm.txt" || rc=1
   return "$rc"
 }
 
 step_omz() {
-  local rc=0 zdir="$HOME/.oh-my-zsh" name url dest
-  if [ -d "$zdir" ]; then
-    info "oh-my-zsh already installed"
-  else
-    # A plain clone, not its installer: the installer replaces ~/.zshrc.
-    run_as "clone oh-my-zsh" git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$zdir" || return 1
-  fi
+  local rc=0 zdir="$HOME/.oh-my-zsh" name url
+  # A plain clone, not its installer: the installer replaces ~/.zshrc.
+  clone_missing oh-my-zsh https://github.com/ohmyzsh/ohmyzsh.git "$zdir" || return 1
   while read -r name url; do
     [ -n "$name" ] || continue
-    dest="$zdir/custom/plugins/$name"
-    if [ -d "$dest" ]; then
-      info "omz plugin $name already installed"
-    else
-      run_as "clone plugin $name" git clone --depth=1 "$url" "$dest" || { warn "could not clone $name"; rc=1; }
-    fi
+    clone_missing "omz plugin $name" "$url" "$zdir/custom/plugins/$name" || { warn "could not clone $name"; rc=1; }
   done < <(list_items "$BOOT_DIR/omz-plugins.txt")
   return "$rc"
 }
@@ -806,13 +824,14 @@ stow_run() {
   (
     cd "$DOTFILES_DIR" || exit 1
     export LC_ALL=C
+    local args=(-t "$HOME" "${STOW_IGNORES[@]}")
     if [ "$1" = simulate ]; then
-      stow --simulate --no-folding -t "$HOME" "${STOW_IGNORES[@]}" . AI
+      stow --simulate --no-folding "${args[@]}" . AI
     else
-      stow -t "$HOME" "${STOW_IGNORES[@]}" . || exit 1
+      stow "${args[@]}" . || exit 1
       # Also unfolds an opencode directory linked by a previous manual stow.
       # mkdir -p alone follows that symlink, letting init tools write into git.
-      stow --restow --no-folding -t "$HOME" "${STOW_IGNORES[@]}" AI
+      stow --restow --no-folding "${args[@]}" AI
     fi
   ) 2>&1
 }
@@ -899,10 +918,7 @@ seed_opencode_config() {
     info "opencode.json already present, leaving it"
     return 0
   fi
-  if [ "$DRY_RUN" = 1 ]; then
-    dry "copy $src to $dest"
-    return 0
-  fi
+  dry_skip "copy $src to $dest" && return 0
   rm -f "$dest" && cp "$src" "$dest" || return 1
   info "copied opencode.json into ~/.config/opencode"
 }
@@ -910,10 +926,7 @@ seed_opencode_config() {
 step_stow() {
   local out
   if ! have stow; then
-    if [ "$DRY_RUN" = 1 ]; then
-      dry "stow is not installed yet, so the link plan can't be simulated"
-      return 0
-    fi
+    dry_skip "stow is not installed yet, so the link plan can't be simulated" && return 0
     warn "stow not found (did brew bundle fail?)"
     return 1
   fi
@@ -936,10 +949,7 @@ step_stow() {
   # opencode are linked; init tools can create plugins/skills outside the repo.
   quiet mkdir -p "$HOME/.config" "$HOME/.config/opencode" || return 1
   seed_opencode_config || return 1
-  if [ "$DRY_RUN" = 1 ]; then
-    dry "stow simulation reports no other problems"
-    return 0
-  fi
+  dry_skip "stow simulation reports no other problems" && return 0
   out=$(stow_run real) || { printf '%s\n' "$out" | sed 's/^/      /' >&2; return 1; }
   info "stowed into $HOME"
   if [ "$BACKED_UP" = 1 ]; then
@@ -970,10 +980,7 @@ step_linux() {
 # empty _pass-cli behind.
 setup_pass_cli_completions() {
   local dir="$HOME/.zfunc" tmp
-  if [ "$DRY_RUN" = 1 ]; then
-    dry "pass-cli completions zsh > $dir/_pass-cli"
-    return 0
-  fi
+  dry_skip "pass-cli completions zsh > $dir/_pass-cli" && return 0
   mkdir -p "$dir" || return 1
   # compinit refuses group-writable directories, and Ubuntu's umask makes new ones so.
   chmod go-w "$dir"
@@ -1001,10 +1008,7 @@ setup_claude_mods() {
     dirs="$dirs${dirs:+:}${mod%/}"
   done
   [ -n "$dirs" ] || return 0
-  if [ "$DRY_RUN" = 1 ]; then
-    dry "set CLAUDE_CODE_PLUGIN_DIRS=$dirs in $settings"
-    return 0
-  fi
+  dry_skip "set CLAUDE_CODE_PLUGIN_DIRS=$dirs in $settings" && return 0
   have python3 || { warn "python3 is not installed: Claude Code mods are not enabled"; return 1; }
   python3 - "$settings" "$dirs" <<'PY'
 import json, os, sys
@@ -1020,7 +1024,7 @@ PY
 # names what is installed, so a re-run only installs what is missing.
 setup_claude_plugins() {
   local rc=0 plugin repo installed markets
-  have claude || { warn "claude is not on PATH: plugins are not installed"; [ "$DRY_RUN" = 1 ] || rc=1; return "$rc"; }
+  have claude || { tool_missing "claude is not on PATH: plugins are not installed"; return; }
   installed=$(claude plugin list 2>/dev/null)
   markets=$(claude plugin marketplace list 2>/dev/null)
   while read -r plugin repo; do
@@ -1052,8 +1056,7 @@ step_inits() {
       run_as "rtk init (opencode)" rtk init --global --opencode --auto-patch || rc=1
     fi
   else
-    warn "rtk is not installed"
-    [ "$DRY_RUN" = 1 ] || rc=1
+    tool_missing "rtk is not installed" || rc=1
   fi
 
   if have icm; then
@@ -1066,8 +1069,7 @@ step_inits() {
       run_as "icm init" icm init || rc=1
     fi
   else
-    warn "icm is not installed"
-    [ "$DRY_RUN" = 1 ] || rc=1
+    tool_missing "icm is not installed" || rc=1
   fi
 
   setup_claude_mods || rc=1
@@ -1078,8 +1080,7 @@ step_inits() {
   if have pass-cli; then
     setup_pass_cli_completions || rc=1
   else
-    warn "pass-cli is not installed"
-    [ "$DRY_RUN" = 1 ] || rc=1
+    tool_missing "pass-cli is not installed" || rc=1
   fi
 
   # No-op once .zshrc is stowed (it already has the integration line).
@@ -1121,17 +1122,16 @@ step_finish() {
 # ------------------------------------------------------------ check-cleanup ---
 
 check_cleanup() {
-  local tmp
+  local tmp f
   detect_os
   load_brew_env || die "Homebrew is not installed"
   tmp=$(mktemp)
-  cat "$BOOT_DIR/Brewfile" > "$tmp"
-  if [ "$OS" = mac ]; then
-    printf '\n' >> "$tmp"
-    cat "$BOOT_DIR/Brewfile.mac" >> "$tmp"
-  fi
+  for f in $(brewfiles); do
+    cat "$BOOT_DIR/$f"
+    echo
+  done > "$tmp"
   say "Installed but not in the Brewfiles (nothing is removed):"
-  HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 brew bundle cleanup --file "$tmp" || true
+  brew_quiet bundle cleanup --file "$tmp" || true
   rm -f "$tmp"
 }
 
@@ -1161,17 +1161,17 @@ run_demo() {
   RUN_START=$SECONDS
   print_banner
   DRY_RUN=0
-  step_header prerequisites 2 12
+  step_header prerequisites 2 "${#STEPS[@]}"
   info "Homebrew already installed"
   spin "apt-get update" sleep 1.2
   spin "install Homebrew" sleep 1.5
-  step_header brew 3 12
+  step_header brew 3 "${#STEPS[@]}"
   spin_progress 40 '^Installing ' "brew bundle Brewfile" demo_progress
-  step_header toolchains 4 12
+  step_header toolchains 4 "${#STEPS[@]}"
   spin "install bun" sleep 1
   warn "example warning: pnpm was skipped"
   spin "install nvm $NVM_VERSION" demo_fail
-  step_header stow 9 12
+  step_header stow 9 "${#STEPS[@]}"
   info "backed up ~/.zshrc"
   info "stowed into $HOME"
   record "done" preflight 0
@@ -1187,7 +1187,7 @@ run_demo() {
 # ------------------------------------------------------------------- main ---
 
 main() {
-  local s known ok t0 idx=0 total=0 failed=0 stow_failed=0
+  local s ok t0 skipped idx=0 total=${#STEPS[@]} failed=0 stow_failed=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --dry-run)       DRY_RUN=1 ;;
@@ -1198,9 +1198,10 @@ main() {
       --yes)           ASSUME_YES=1 ;;
       --skip)
         [ $# -ge 2 ] || die "--skip needs a step name"
-        known=0
-        for s in $STEPS; do [ "$s" = "$2" ] && known=1; done
-        [ "$known" = 1 ] || die "unknown step '$2'. Steps: $STEPS"
+        case " ${STEPS[*]} " in
+          *" $2 "*) ;;
+          *) die "unknown step '$2'. Steps: ${STEPS[*]}" ;;
+        esac
         SKIP="$SKIP$2 "
         shift
         ;;
@@ -1231,19 +1232,20 @@ main() {
   RUN_START=$SECONDS
   print_banner
 
-  for s in $STEPS; do total=$((total + 1)); done
-  for s in $STEPS; do
+  for s in "${STEPS[@]}"; do
     idx=$((idx + 1))
     step_header "$s" "$idx" "$total"
+    skipped=""
     case "$SKIP" in
-      *" $s "*)
-        info "skipped (--skip)"
-        record skipped "$s" 0
-        continue
+      *" $s "*) skipped="--skip" ;;
+      *)
+        if [ "$stow_failed" = 1 ] && { [ "$s" = inits ] || [ "$s" = finish ]; }; then
+          skipped="stow failed"
+        fi
         ;;
     esac
-    if [ "$stow_failed" = 1 ] && { [ "$s" = inits ] || [ "$s" = finish ]; }; then
-      info "skipped (stow failed)"
+    if [ -n "$skipped" ]; then
+      info "skipped ($skipped)"
       record skipped "$s" 0
       continue
     fi

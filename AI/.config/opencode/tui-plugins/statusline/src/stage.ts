@@ -1,6 +1,6 @@
 /**
  * Which stage of the conversation the session is in, read from its messages.
- * The Scanner takes its colour from this, so a glance at the footer says whether
+ * The footer spinner takes its animation and colour from this, so a glance says whether
  * the model is thinking, running a tool, writing, or waiting on you.
  */
 

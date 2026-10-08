@@ -6,6 +6,13 @@ import type { Register } from 'claude-code'
 
 type Memory = { topic: string; summary: string }
 
+// Each pane: the slash command that opens it and what that command says. `id` is the Pane
+// component's requestId, drawn by the ui.render hooks below.
+const PANES = [
+  { command: 'files', id: 'files', title: 'Edited this session', description: 'Show the files Claude edited this session', opened: 'Opened the files pane.' },
+  { command: 'recalled', id: 'recall', title: 'Recalled for this prompt', description: 'Show the ICM memories recalled for the last prompt', opened: 'Opened the recall pane.' },
+] as const
+
 // One row of `icm recall` output: score,id,topic,importance,weight,"summary"
 function parseRecall(stdout: string): Memory[] {
   return stdout
@@ -20,20 +27,16 @@ export const register: Register = on => {
   let recalled: Memory[] = []
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'files', description: 'Show the files Claude edited this session' })
-    await $.command.register({ name: 'recalled', description: 'Show the ICM memories recalled for the last prompt' })
+    for (const { command, description } of PANES) await $.command.register({ name: command, description })
     return next(e)
   })
 
-  on('command.run', { command: 'files' }, async $ => {
-    await $.ui.open({ id: 'files', title: 'Edited this session' })
-    return { text: 'Opened the files pane.' }
-  })
-
-  on('command.run', { command: 'recalled' }, async $ => {
-    await $.ui.open({ id: 'recall', title: 'Recalled for this prompt' })
-    return { text: 'Opened the recall pane.' }
-  })
+  for (const { command, id, title, opened } of PANES) {
+    on('command.run', { command }, async $ => {
+      await $.ui.open({ id, title })
+      return { text: opened }
+    })
+  }
 
   // Remember every file an Edit or Write actually changed.
   on('tool.call', async ($, e, next) => {

@@ -1,15 +1,20 @@
 // Ember Ribbon's row above the prompt: the context window's fill history, the used / window
 // readout and the token stream. Keep the arithmetic identical to
 // AI/.claude/mods/ember-ribbon/hooks/register.tsx; only the source of the numbers differs.
-import { COLORS, hex, pack } from './footer'
+import { COLORS, DEFAULT_COLOR, hex, mix, pack } from './footer'
 
-// Catppuccin Mocha colours, Claude orange at 25-50%: the used tokens coloured by how full the window is.
+// Catppuccin Mocha
+const GREEN = '#A6E3A1'
+const YELLOW = '#F9E2AF'
+const RED = '#F38BA8'
+
+// Claude orange at 25-50%: the used tokens coloured by how full the window is.
 export const HEAT: ReadonlyArray<{ upTo: number; color: string }> = [
-  { upTo: 25, color: '#A6E3A1' },
+  { upTo: 25, color: GREEN },
   { upTo: 50, color: COLORS.claude },
-  { upTo: 75, color: '#F9E2AF' },
+  { upTo: 75, color: YELLOW },
   { upTo: 90, color: '#F5C2E7' },
-  { upTo: Infinity, color: '#F38BA8' },
+  { upTo: Infinity, color: RED },
 ]
 
 export const heatColor = (percent: number) => (HEAT.find(band => percent < band.upTo) ?? HEAT[HEAT.length - 1]!).color
@@ -22,14 +27,12 @@ export const FILL_TURNS = FILL_CELLS * 2
 // Token stream: 1 braille row at the far right of the row.
 export const STREAM_CELLS = 8
 
-const DEFAULT_COLOR = 0x01000000
 const BRAILLE_BITS = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]] as const
-const STREAM_COLOR = '#CBA6F7' // Catppuccin Mocha mauve
-const FILL_GREEN = hex('#A6E3A1')
-const FILL_YELLOW = hex('#F9E2AF')
-const FILL_RED = hex('#F38BA8')
-
-const mix = (a: number[], b: number[], m: number) => a.map((v, i) => Math.round(v + ((b[i] ?? 0) - v) * m))
+const TRACK = pack(hex(COLORS.track))
+const STREAM_COLOR = pack(hex('#CBA6F7')) // Catppuccin Mocha mauve
+const FILL_GREEN = hex(GREEN)
+const FILL_YELLOW = hex(YELLOW)
+const FILL_RED = hex(RED)
 
 export function short(n: number) {
   if (n >= 1_000_000) return `${+(n / 1_000_000).toFixed(1)}M`
@@ -55,17 +58,14 @@ export const fillColor = (percent: number) => {
 export function fillCells(width: number, rows: number, percents: number[]) {
   const shown = percents.slice(-width * 2)
   const first = width * 2 - shown.length
-  const track = pack(hex(COLORS.track))
   const dots = rows * 4
   const words = new Uint32Array(width * rows * 3)
   for (let x = 0; x < width; x++) {
+    const turns = [0, 1].map(c => shown[x * 2 + c - first])
     // How many dots tall each of this cell's two turns is; -1 for a column with no turn yet.
-    const levels = [0, 1].map(c => {
-      const p = shown[x * 2 + c - first]
-      return p === undefined ? -1 : Math.max(1, Math.round((Math.min(100, Math.max(0, p)) / 100) * dots))
-    })
-    const top = Math.max(...[0, 1].map(c => shown[x * 2 + c - first] ?? -1))
-    const color = top < 0 ? track : pack(fillColor(top))
+    const levels = turns.map(p => p === undefined ? -1 : Math.max(1, Math.round((Math.min(100, Math.max(0, p)) / 100) * dots)))
+    const top = Math.max(...turns.map(p => p ?? -1))
+    const color = top < 0 ? TRACK : pack(fillColor(top))
     for (let cr = 0; cr < rows; cr++) {
       let bits = 0
       for (let r = 0; r < 4; r++) {
@@ -97,7 +97,6 @@ export function streamPoints(stream: readonly number[], width: number) {
 export function streamCells(stream: readonly number[], width: number) {
   const points = streamPoints(stream, width)
   const top = Math.max(1, ...points)
-  const color = pack(hex(STREAM_COLOR))
   const words = new Uint32Array(width * 3)
   for (let x = 0; x < width; x++) {
     let bits = 0
@@ -105,7 +104,7 @@ export function streamCells(stream: readonly number[], width: number) {
       const level = Math.round((points[x * 2 + c]! / top) * 4)
       for (let r = 4 - level; r < 4; r++) bits |= BRAILLE_BITS[r]![c]!
     }
-    words.set([bits ? 0x2800 + bits : 0x2800 + BRAILLE_BITS[3]![0]! + BRAILLE_BITS[3]![1]!, bits ? color : pack(hex(COLORS.track)), DEFAULT_COLOR], x * 3)
+    words.set([bits ? 0x2800 + bits : 0x2800 + BRAILLE_BITS[3]![0]! + BRAILLE_BITS[3]![1]!, bits ? STREAM_COLOR : TRACK, DEFAULT_COLOR], x * 3)
   }
   return words
 }

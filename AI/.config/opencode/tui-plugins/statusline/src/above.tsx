@@ -5,13 +5,11 @@
  * Context fill history, the used / window readout coloured by heat, and the token stream.
  * All cells use the terminal-default background so transparent themes remain transparent.
  */
-import { RGBA, TextAttributes } from '@opentui/core'
+import { TextAttributes } from '@opentui/core'
 import { Index, Show } from 'solid-js'
 import { FILL_CELLS, FILL_ROWS, STREAM_CELLS, fillCells, heatColor, rowFit, short, streamCells, tokensPerSecond, type ContextReading } from './context'
 import { COLORS } from './footer'
-import { rasterCells } from './view'
-
-const DEFAULT_BG = RGBA.defaultBackground()
+import { Cells, DEFAULT_BG, rasterCells } from './view'
 
 // Blank lines between the conversation and the row.
 export const ROW_PAD = 1
@@ -25,14 +23,6 @@ export type ContextFrame = {
   stream: number[]
   /** Columns the row has to draw in. */
   columns: number
-}
-
-function Cells(props: { cells: ReturnType<typeof rasterCells> }) {
-  return (
-    <text width={props.cells.length} height={1} bg={DEFAULT_BG}>
-      <Index each={props.cells}>{cell => <span style={{ fg: cell().fg, bg: DEFAULT_BG, attributes: TextAttributes.NONE }}>{cell().text}</span>}</Index>
-    </text>
-  )
 }
 
 function FillChart(props: { history: number[] }) {

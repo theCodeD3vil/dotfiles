@@ -385,5 +385,6 @@
   "workbench.notifications.position": "top-right",
   "githubPullRequests.experimental.notificationsMarkPullRequests": "markAsDone",
   "githubPullRequests.notifications": "pullRequests",
-  "extensions.ignoreRecommendations": true
+  "extensions.ignoreRecommendations": true,
+  "scm.repositories.selectionMode": "single"
 }

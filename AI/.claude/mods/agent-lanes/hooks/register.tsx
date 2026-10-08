@@ -56,6 +56,9 @@ let tick = 0
 
 type AgentInfo = Awaited<ReturnType<EngineInterface['agent']['list']>>[number]
 
+// The lane of the subagent an event came from; none for the main loop or an unknown one.
+const laneOf = (agentId: string | undefined) => (agentId ? lanes.get(agentId) : undefined)
+
 // A lane's label: the subagent's type, or the start of its description for a general one.
 const nameOf = (info?: AgentInfo) => {
   const label = info?.type && info.type !== 'general-purpose' ? info.type : info?.description
@@ -146,7 +149,7 @@ export const register: Register = on => {
   // Count what each subagent's replies stream, passing every piece on untouched.
   on('turn.step', async function* ($, e, next) {
     ensureTicking($)
-    const lane = e.agentId ? lanes.get(e.agentId) : undefined
+    const lane = laneOf(e.agentId)
     for await (const chunk of next(e)) {
       if (lane) {
         if (chunk.kind === 'text' || chunk.kind === 'thinking') lane.pending += chunk.text.length
@@ -159,7 +162,7 @@ export const register: Register = on => {
   // A subagent's tool call: a spike, and its name beside the trace.
   on('tool.call', async ($, e, next) => {
     ensureTicking($)
-    const lane = e.agentId ? lanes.get(e.agentId) : undefined
+    const lane = laneOf(e.agentId)
     if (lane) {
       lane.tool = String(e.tool)
       lane.pending += TOOL_SPIKE
@@ -169,7 +172,7 @@ export const register: Register = on => {
 
   // A subagent's run is over: its lane shows how it ended, then leaves 30 s later.
   on('turn.complete', ($, e, next) => {
-    const lane = e.agentId ? lanes.get(e.agentId) : undefined
+    const lane = laneOf(e.agentId)
     if (lane) {
       finish(lane, e.reason !== 'answer')
       $.ui.invalidate('ui.render')

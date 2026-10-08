@@ -9,7 +9,7 @@ export const COLORS = {
 
 export const RINGS = ['\u{F0766}', '\u{F0A9E}', '\u{F0A9F}', '\u{F0AA0}', '\u{F0AA1}', '\u{F0AA2}', '\u{F0AA3}', '\u{F0AA4}', '\u{F1807}']
 const FIVE_HOURS = 5 * 3600_000
-const DEFAULT_COLOR = 0x01000000
+export const DEFAULT_COLOR = 0x01000000 // a Raster cell's "terminal default" colour
 const PULSE_SPEED = 10
 const PULSE_TAIL = 3
 const PULSE_GAP = 6
@@ -26,6 +26,8 @@ export function sevColor(pct: number) {
 
 export const hex = (h: string) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16))
 export const pack = (c: number[]) => ((c[0] ?? 0) << 16) | ((c[1] ?? 0) << 8) | (c[2] ?? 0)
+// Each channel of `a`, `m` of the way (0 to 1) to `b`.
+export const mix = (a: readonly number[], b: readonly number[], m: number) => a.map((v, i) => Math.round(v + ((b[i] ?? 0) - v) * m))
 const pulseAt = (t: number, fx: number) => ((t / 1000) * PULSE_SPEED) % (fx + PULSE_GAP)
 
 function toHsl([r = 0, g = 0, b = 0]: number[]): [number, number, number] {
@@ -101,8 +103,9 @@ export function footerLayout(input: {
   tick: number
 }): FooterLayout {
   const { fiveLimit, weekLimit, now, tick } = input
-  const five = Math.round(fiveLimit?.percentUsed ?? 0)
-  const week = Math.round(weekLimit?.percentUsed ?? 0)
+  const percentOf = (limit?: RateLimit) => Math.round(limit?.percentUsed ?? 0)
+  const five = percentOf(fiveLimit)
+  const week = percentOf(weekLimit)
   const fiveTime = timeLeft(fiveLimit, now)
   const weekTime = timeLeft(weekLimit, now)
   const statWidth = (label: string, gauge: number, pct: number, time: string) =>
@@ -119,14 +122,11 @@ export function footerLayout(input: {
   }
   const resetsIn = fiveLimit?.resetsAt ? Date.parse(fiveLimit.resetsAt) - now : FIVE_HOURS
   const timePct = 100 * (1 - resetsIn / FIVE_HOURS)
+  const stat = (pct: number, time: string, gauge: Ring | Raster): FooterStat => ({ pct, time: noTime ? undefined : time, gauge })
 
   return {
     room, narrow, noTime,
-    five: {
-      pct: five,
-      time: noTime ? undefined : fiveTime,
-      gauge: narrow ? ring(five) : { kind: 'raster', columns: 22, pct: five, timePct, words: usageCells(five, timePct, 22, tick * 100) },
-    },
-    week: { pct: week, time: noTime ? undefined : weekTime, gauge: ring(week) },
+    five: stat(five, fiveTime, narrow ? ring(five) : { kind: 'raster', columns: 22, pct: five, timePct, words: usageCells(five, timePct, 22, tick * 100) }),
+    week: stat(week, weekTime, ring(week)),
   }
 }

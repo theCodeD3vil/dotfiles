@@ -31,3 +31,6 @@ _darcs
 
 # bootstrap/ holds the machine-setup lists and script; it is not a $HOME mirror.
 ^/bootstrap$
+
+# .claude/ here is this repo's own project config (skills), not a mirror of ~/.claude.
+^/\.claude$

@@ -1,20 +1,21 @@
 /** @jsxImportSource @opentui/solid */
 /**
- * OpenTUI view for the quota gauges and the Scanner working indicator.
- * Usage cells and the scanner both retain the terminal-default background.
- * The scanner's dim track is made of separate square glyphs, never one solid rectangle.
+ * OpenTUI view for the quota gauges and the stage spinner.
+ * Usage cells and the spinner both retain the terminal-default background.
  */
 import { RGBA, TextAttributes } from '@opentui/core'
 import { Index, Show } from 'solid-js'
-import { COLORS, sevColor, usageCells, type FooterLayout, type FooterStat } from './footer'
-import { scannerRows, scannerWidth, SCANNER, SCANNER_GAP, type ScannerMode } from './scanner'
-import type { ConversationStage } from './stage'
+import { COLORS, mix, sevColor, usageCells, type FooterLayout, type FooterStat } from './footer'
+import { PANEL, ROWS, SPINNER_GAP, type Frame } from './spinners'
 
-const DEFAULT_BG = RGBA.defaultBackground()
+export const DEFAULT_BG = RGBA.defaultBackground()
 type Readable<T> = T | (() => T)
 const read = <T,>(value: Readable<T>) => typeof value === 'function' ? (value as () => T)() : value
-function scannerColor(color: readonly [number, number, number]) {
-  return RGBA.fromInts(color[0], color[1], color[2])
+
+// A cell's colour: the panel at level 0, the stage's tone at level 1.
+function shade(tone: readonly number[], level: number) {
+  const [r, g, b] = mix(PANEL, tone, Math.min(1, level))
+  return RGBA.fromInts(r!, g!, b!)
 }
 
 // Preserve the Raster's terminal-default background intent, including on an
@@ -27,6 +28,15 @@ export function rasterCells(words: Uint32Array) {
       fg: RGBA.fromInts((fg >> 16) & 255, (fg >> 8) & 255, fg & 255),
     }
   })
+}
+
+// One row of Raster cells on the terminal-default background.
+export function Cells(props: { cells: ReturnType<typeof rasterCells> }) {
+  return (
+    <text width={props.cells.length} height={1} bg={DEFAULT_BG}>
+      <Index each={props.cells}>{cell => <span style={{ fg: cell().fg, bg: DEFAULT_BG, attributes: TextAttributes.NONE }}>{cell().text}</span>}</Index>
+    </text>
+  )
 }
 
 function Gauge(props: { stat: FooterStat; animationTick: number }) {
@@ -44,9 +54,7 @@ function Gauge(props: { stat: FooterStat; animationTick: number }) {
     <Show when={props.stat.gauge.kind === 'raster'} fallback={
       <text bg={DEFAULT_BG} fg={ring()?.color ?? COLORS.track}>{ring()?.glyph}</text>
     }>
-      <text width={22} height={1} bg={DEFAULT_BG}>
-        <Index each={raster()}>{cell => <span style={{ fg: cell().fg, bg: DEFAULT_BG, attributes: TextAttributes.NONE }}>{cell().text}</span>}</Index>
-      </text>
+      <Cells cells={raster()} />
     </Show>
   )
 }
@@ -62,43 +70,36 @@ function Stat(props: { label: string; stat: FooterStat; animationTick: number })
   )
 }
 
-export function Scanner(props: { animationTick: number; working: boolean; mode: ScannerMode; stage?: ConversationStage; animate?: boolean }) {
-  const rows = () => scannerRows(props.animationTick, props.working, { mode: props.mode, animate: props.animate, stage: props.stage })
+export function Spinner(props: { strip: Frame; tone: readonly number[]; cells: number }) {
   return (
-    // The block keeps its mode's size whatever the state, so nothing moves when
-    // work starts; inactive state is intentionally blank. Its background stays
-    // transparent to the terminal, leaving only separate square cells visible.
-    // Explicit zero gaps prevent Yoga layout from inserting a blank raster row.
-    <box flexDirection="column" gap={0} rowGap={0} width={scannerWidth(props.mode)} height={SCANNER[props.mode].rows} flexShrink={0}>
-      <Index each={rows()}>{row => (
+    // The block keeps its size whatever the state, so nothing moves when work starts; the
+    // idle strip is blank. Its background stays transparent to the terminal. Explicit zero
+    // gaps prevent Yoga layout from inserting a blank row.
+    <box flexDirection="column" gap={0} rowGap={0} width={props.cells} height={ROWS} flexShrink={0}>
+      <Index each={props.strip}>{row => (
         <text height={1}>
-          <Index each={row()}>{cell => <span style={{ fg: scannerColor(cell().color), attributes: TextAttributes.NONE }}>{cell().glyph}</span>}</Index>
+          <Index each={row().slice(0, props.cells)}>{cell => <span style={{ fg: shade(props.tone, cell()[1]), attributes: TextAttributes.NONE }}>{cell()[0]}</span>}</Index>
         </text>
       )}</Index>
     </box>
   )
 }
 
-// The scanner owns the far left and the quota stats stay right, so the free
+// The spinner owns the far left and the quota stats stay right, so the free
 // space opens between them.
 export function FooterView(props: {
   frame: Readable<FooterLayout>
   animationTick: Readable<number>
-  working: Readable<boolean>
-  mode?: Readable<ScannerMode | undefined>
-  stage?: Readable<ConversationStage | undefined>
-  animate?: Readable<boolean | undefined>
+  strip: Readable<Frame>
+  tone: Readable<readonly number[]>
+  cells: Readable<number>
   onWidthChange?: (width: number) => void
 }) {
   const frame = () => read(props.frame)
   const animationTick = () => read(props.animationTick)
-  const working = () => read(props.working)
-  const mode = (): ScannerMode => read(props.mode ?? 'full') ?? 'full'
-  const stage = () => read(props.stage ?? undefined)
-  const animate = () => read(props.animate ?? undefined)
   return (
-    <box flexDirection="row" alignItems="flex-end" justifyContent="space-between" gap={SCANNER_GAP} flexGrow={1} flexShrink={1} minWidth={0} backgroundColor={DEFAULT_BG} onSizeChange={function () { props.onWidthChange?.(this.width) }}>
-      <Scanner animationTick={animationTick()} working={working()} mode={mode()} stage={stage()} animate={animate()} />
+    <box flexDirection="row" alignItems="flex-end" justifyContent="space-between" gap={SPINNER_GAP} flexGrow={1} flexShrink={1} minWidth={0} backgroundColor={DEFAULT_BG} onSizeChange={function () { props.onWidthChange?.(this.width) }}>
+      <Spinner strip={read(props.strip)} tone={read(props.tone)} cells={read(props.cells)} />
       <box flexDirection="row" gap={3} flexShrink={1} minWidth={0}>
         <Stat label="5h" stat={frame().five} animationTick={animationTick()} />
         <Stat label="wk" stat={frame().week} animationTick={animationTick()} />

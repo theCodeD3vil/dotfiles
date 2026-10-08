@@ -3,8 +3,8 @@
 Ports Ember Ribbon's five-hour animated braille bar and weekly Nerd Font ring
 from `AI/.claude/mods/ember-ribbon/hooks/register.tsx` into OpenCode 2.0.22.
 The plugin replaces `prompt.footer`, so none of OpenCode's native footer (working
-spinner, location label) renders; only Scanner, pinned to the far left, and
-the quota stats, at the right, remain. The prompt enhancement is not ported.
+spinner, location label) renders; only the stage spinner, pinned to the far left,
+and the quota stats, at the right, remain. The prompt enhancement is not ported.
 
 ## Context and tokens above the prompt
 
@@ -39,33 +39,40 @@ The row gives up the stream under about 44 columns and the chart under about 22,
 counted with a `134.4k / 200k` readout (Claude's has no narrow layout), and keeps one blank line above and below it (`ROW_PAD`
 in `src/above.tsx` and `PROMPT_PAD` in `src/tui.tsx`; Claude keeps two above).
 
-Scanner is the selected **Ribbon**: a three-row, 10-column raster of compact
-small-square cells (`▪`). Two bright heads braid across the top and bottom rails,
-meet through the middle row, then separate again. It advances on *every* shared
-100ms timer tick; the visible 20-step (2 second) loop has no held frames. Each
-head carries a two-point tail at 61% and 46%, blended toward the panel colour.
-Every unlit cell remains a faint 8%-strength square glyph on the terminal-default
-background, so the raster reads as distinct cells rather than a single grey box.
-The inactive session state is blank. The block remains three rows tall in every
-state, so starting work never moves the prompt; the quota stats remain aligned to
-its bottom row. The tests exercise the path, colours, and all frames over 400 ticks.
+## Stage spinners
 
-The colour follows the stage of the conversation, read from the session's
-messages on the same tick (`src/stage.ts`). Waiting is the scanner's own red
-`FF5A5A`: a prompt just sent, a tool that returned and the model's next step, or
-a reply that has not started. Thinking is violet `B794F6`: the last part of the
-reply is reasoning that has not completed. A tool call is amber `F0B35A`: the
-last part is a tool that is streaming or running. Writing is green `7EE787`: the
-last part is text. Approval is pink `F472B6`: a permission request is open, and
-it wins over every other stage. Compacting is blue `79B8FF`: the latest message
-is a compaction that is running.
+The footer shows a different spinner, in a different colour, for each stage of the
+conversation, read from the session's messages on the shared timer (`src/stage.ts`).
+Each is a 16 by 2 cell strip: braille (a 32 by 8 dot field, each cell coloured by its
+strongest dot) or glyphs. They are ported frame for frame from the spinner picker they
+were chosen in, one module each in `src/spinners/`, and the registry in
+`src/spinners/index.ts` says which stage gets which:
 
-Under 33 columns the scanner narrows to a one-column, three-row vertical pulse,
-so the quota gauges keep their room. The dot is `▪` (U+25AA), one cell wide in
-the usual terminal fonts. For a still frame, give the
-plugin the option `animate: false` (read from `context.options`); the working
-scanner then shows both outer-rail heads at tick 4, still in the stage colour.
-The tests exercise this option and the stage colours through a mocked context.
+| Stage | Spinner | Colour (Catppuccin Mocha) | The stage is |
+| --- | --- | --- | --- |
+| waiting | Matrix Rain (`matrix-rain.ts`) | blue `89B4FA` | a prompt just sent, a tool that returned and the model's next step, or a reply that has not started |
+| thinking | Life (`life.ts`) | peach `FAB387` | the last part of the reply is reasoning that has not completed |
+| tool | Braid (`braid.ts`) | mauve `CBA6F7` | the last part is a tool that is streaming or running |
+| writing | Data Stream (`data-stream.ts`) | green `A6E3A1` | the last part is text |
+| approval | Warp (`warp.ts`) | yellow `F9E2AF` | a permission request is open; it wins over every other stage |
+| compacting | Flame (`flame.ts`) | red `F38BA8` | the latest message is a compaction that is running |
+
+Braid and mauve for a tool call are the plugin's own choice: it is the old scanner's
+successor, and the colour keeps the six stages apart.
+
+One timer runs at 30 frames a second (`FPS`), the rate OpenTUI paints at by default.
+Every third frame is also the 100 ms tick that the gauges, the token stream and the
+polling run on. A spinner is a function of the seconds since it started, so its speed
+does not depend on the frame rate; Life also keeps state, so it starts afresh each time
+its stage begins. Dots are lit above a brightness of 0.16, and the spinners that sit on
+an LED matrix keep a faint full block in unlit cells.
+
+The inactive session state is blank. The strip is two rows tall in every state, so starting
+work never moves the prompt, and the quota stats stay aligned to its bottom row. When the
+footer is narrow the strip gives up cells from its right edge first, down to one, so the
+gauges keep their room (below about 24 columns). For a still frame, give the plugin the
+option `animate: false` (read from `context.options`): the working spinner then shows its
+state 1.5 seconds into its run, in the stage colour.
 
 The server reads the active provider's OAuth subscription usage: OpenAI's
 five-hour/weekly windows or Anthropic's `five_hour`/`seven_day` windows. Only
@@ -94,8 +101,9 @@ bun --conditions=browser tests/preview.tsx
 
 The oracle executes the untouched Claude source for gauge calculations. Tests
 compare original raster words, then check the native OpenTUI footer's glyphs,
-positions, RGB colors, the scanner's separate-cell track, terminal-default backgrounds, and provider lifecycle
-behavior.
+positions, RGB colors, terminal-default backgrounds, and provider lifecycle behavior.
+`tests/spinners.test.ts` runs each stage's spinner beside the picker's own frame code
+(`tests/artifact-spinners.js`) for thirty seconds and compares every frame.
 
 The preview command writes OpenCode cell evidence to
 `/private/tmp/opencode-ember-footer-preview`. It does not compare screenshots
