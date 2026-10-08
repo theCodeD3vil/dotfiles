@@ -82,6 +82,25 @@
   background: transparent !important;
 }
 
+/* ---- Bottom activity bar icons.
+        With workbench.activityBar.location "bottom" VS Code draws the icons in the
+        sidebar footer at 16px (the default-location bar uses 24px) and caps each
+        item at 28px wide. Raise the glyph and widen the items so it is not clipped.
+        Change --bottom-bar-icon-size to tune. ---- */
+.monaco-workbench {
+  --bottom-bar-icon-size: 24px;
+}
+.monaco-workbench .pane-composite-part > .header-or-footer > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.icon {
+  flex: 0 0 calc(var(--bottom-bar-icon-size) + 12px) !important;
+  width: calc(var(--bottom-bar-icon-size) + 12px) !important;
+  min-width: calc(var(--bottom-bar-icon-size) + 12px) !important;
+  max-width: calc(var(--bottom-bar-icon-size) + 12px) !important;
+}
+.monaco-workbench .pane-composite-part > .header-or-footer > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.icon .action-label.codicon {
+  font-size: var(--bottom-bar-icon-size) !important;
+  line-height: 1 !important;
+}
+
 /* ---- Dim inactive editor groups (full brightness on hover) ---- */
 /*.monaco-workbench .editor-group-container.inactive > .editor-container {
   opacity: 0.55;
@@ -118,13 +137,4 @@
 .monaco-editor .lines-content .core-guide,
 .monaco-editor .lines-content .cigr {
   opacity: 0.35;
-}
-
-/* ---- Fade line numbers except the current line ---- */
-.monaco-editor .margin-view-overlays .line-numbers {
-  opacity: 0.5;
-  transition: opacity 0.15s ease;
-}
-.monaco-editor .margin-view-overlays .line-numbers.active-line-number {
-  opacity: 1;
 }

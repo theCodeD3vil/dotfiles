@@ -141,6 +141,20 @@
     "sound": "on"
   },
   "workbench.colorTheme": "Mayukai Dark",
+  // Mayukai Dark ships #3d424d (about 2:1) as its text colour, so lift the dim slots.
+  "workbench.colorCustomizations": {
+    "[Mayukai Dark]": {
+      "foreground": "#8a93a6",
+      "descriptionForeground": "#8a93a6",
+      "editorLineNumber.foreground": "#6b7385",
+      "editorLineNumber.activeForeground": "#b8b0b0",
+      "statusBar.foreground": "#8a93a6",
+      "tab.inactiveForeground": "#8a93a6",
+      "panelTitle.inactiveForeground": "#8a93a6",
+      "sideBarSectionHeader.foreground": "#8a93a6",
+      "gitDecoration.ignoredResourceForeground": "#6b7385"
+    }
+  },
   "telemetry.telemetryLevel": "off",
   "extensions.experimental.deferredStartupFinishedActivation": true,
   "workbench.startupEditor": "none",
