@@ -50,15 +50,15 @@ were chosen in, one module each in `src/spinners/`, and the registry in
 
 | Stage | Spinner | Colour (Catppuccin Mocha) | The stage is |
 | --- | --- | --- | --- |
-| waiting | Matrix Rain (`matrix-rain.ts`) | blue `89B4FA` | a prompt just sent, a tool that returned and the model's next step, or a reply that has not started |
+| waiting | Bouncing Balls (`bouncing-balls.ts`) | blue `89B4FA` | a prompt just sent, a tool that returned and the model's next step, or a reply that has not started |
 | thinking | Life (`life.ts`) | peach `FAB387` | the last part of the reply is reasoning that has not completed |
-| tool | Braid (`braid.ts`) | mauve `CBA6F7` | the last part is a tool that is streaming or running |
+| tool | Raindrops (`raindrops.ts`) | mauve `CBA6F7` | the last part is a tool that is streaming or running |
 | writing | Data Stream (`data-stream.ts`) | green `A6E3A1` | the last part is text |
 | approval | Warp (`warp.ts`) | yellow `F9E2AF` | a permission request is open; it wins over every other stage |
 | compacting | Flame (`flame.ts`) | red `F38BA8` | the latest message is a compaction that is running |
 
-Braid and mauve for a tool call are the plugin's own choice: it is the old scanner's
-successor, and the colour keeps the six stages apart.
+Mauve for a tool call is the plugin's own choice, since none was picked for it; it keeps
+the six stages apart.
 
 One timer runs at 30 frames a second (`FPS`), the rate OpenTUI paints at by default.
 Every third frame is also the 100 ms tick that the gauges, the token stream and the

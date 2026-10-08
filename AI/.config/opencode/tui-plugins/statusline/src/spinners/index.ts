@@ -1,10 +1,10 @@
 import { hex } from '../footer'
 import type { ConversationStage } from '../stage'
-import { braid } from './braid'
+import { bouncingBalls } from './bouncing-balls'
 import { dataStream } from './data-stream'
 import { flame } from './flame'
 import { life } from './life'
-import { matrixRain } from './matrix-rain'
+import { raindrops } from './raindrops'
 import { COLS, ROWS, type Frame, type SpinnerFactory } from './types'
 import { warp } from './warp'
 
@@ -20,9 +20,9 @@ export const PANEL = [10, 13, 18]
 // waiting, orange (peach) while thinking, mauve for a tool, green while writing, yellow for an
 // approval, red while compacting.
 export const STAGE_SPINNERS: Record<ConversationStage, { make: SpinnerFactory; tone: number[] }> = {
-  waiting: { make: matrixRain, tone: hex('#89B4FA') },
+  waiting: { make: bouncingBalls, tone: hex('#89B4FA') },
   thinking: { make: life, tone: hex('#FAB387') },
-  tool: { make: braid, tone: hex('#CBA6F7') },
+  tool: { make: raindrops, tone: hex('#CBA6F7') },
   writing: { make: dataStream, tone: hex('#A6E3A1') },
   approval: { make: warp, tone: hex('#F9E2AF') },
   compacting: { make: flame, tone: hex('#F38BA8') },

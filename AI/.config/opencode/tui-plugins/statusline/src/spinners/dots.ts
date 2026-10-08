@@ -17,7 +17,7 @@ export function field() {
   }
   return { px, set, clear: () => px.fill(0) }
 }
-export type Field = ReturnType<typeof field>
+type Field = ReturnType<typeof field>
 
 // Dots to braille cells: a dot is lit above LIT, and a cell takes its brightness from its
 // strongest dot. With `grid`, unlit cells keep a faint full block, like an LED matrix.
