@@ -1,4 +1,4 @@
-import type { EngineInterface, Register, RenderChildren, RenderElement } from 'claude-code'
+import type { EngineInterface, Register } from 'claude-code'
 
 // Turn insights: "✻ Baked for 12s · done 11:57 AM · 6 tools · 1.2k out · $0.08" closes each turn.
 
@@ -7,14 +7,6 @@ type Receipt = { durationMs: number; finishedAt: number; summary: string }
 const MAX_RECEIPTS = 50
 // The "Baked for" line shows a rounded duration, so it matches a receipt within this much.
 const MATCH_TOLERANCE_MS = 1500
-
-// Every Raster in a drawn tree, in order: the pictures other plugins put beside the line.
-function findRasters(node: RenderChildren): RenderElement[] {
-  if (Array.isArray(node)) return node.flatMap(findRasters)
-  if (!node || typeof node !== 'object') return []
-  const element = node as RenderElement & { children?: RenderChildren }
-  return element.type === 'Raster' ? [element] : findRasters(element.children)
-}
 
 // "12s", "1m 52s", "1h 4m": the same shape Claude Code uses for the line
 function formatDuration(ms: number) {
@@ -63,25 +55,15 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'TurnDuration' }, async (engine, event, next) => {
-    // Always run the hooks beneath: clawd tracks which line closes the turn from this call.
-    const below = await next(event)
     const receipt = receipts.find(candidate => Math.abs(candidate.durationMs - event.props.durationMs) < MATCH_TOLERANCE_MS)
-    if (!receipt) return below
+    if (!receipt) return next(event)
     // Drawn as one line of our own: wrapping Claude Code's line made it take the full row and wrap the receipt.
-    // What plugins beneath drew beside the line (clawd's stage, a Raster) stays beside the receipt.
     const { Box, Text } = engine.ui.resolve(event)
     return (
-      <Box flexDirection="row" alignItems="center">
-        <Box flexShrink={1}>
-          <Text dimColor wrap="truncate-end">
-            ✻ {event.props.word} for {formatDuration(event.props.durationMs)} · done {formatClock(receipt.finishedAt)} · {receipt.summary}
-          </Text>
-        </Box>
-        {findRasters(below).map((stage, index) => (
-          <Box key={`stage-${index}`} marginLeft={2} flexShrink={0}>
-            {stage}
-          </Box>
-        ))}
+      <Box flexShrink={1}>
+        <Text dimColor wrap="truncate-end">
+          ✻ {event.props.word} for {formatDuration(event.props.durationMs)} · done {formatClock(receipt.finishedAt)} · {receipt.summary}
+        </Text>
       </Box>
     )
   })
