@@ -1,6 +1,6 @@
 /**
- * Wick, the desk pet, above the prompt at the right. It is drawn by the Claude Code mod's own
- * module, unchanged, at Claude Code's size and facing, so both hosts show the same pet.
+ * Wick, the desk pet, at the right of the context row above the prompt. It is drawn by the Claude
+ * Code mod's own module, unchanged, at Claude Code's size and facing, so both hosts show the same pet.
  */
 import { petCells, type Facing, type PetFrame } from '../../../../../.claude/mods/desk-pet/hooks/wick'
 
@@ -9,8 +9,6 @@ export const COLS = 12
 export const ROWS = 4
 /** Placed at the right, the pet faces left, into the line, as the Claude Code mod's does. */
 export const FACING: Facing = -1
-/** How many of the strip's columns fit in a row `columns` wide. */
-export const petCellsFor = (columns: number) => Math.min(COLS, Math.max(1, columns))
 
 export { DONE_SECONDS, petClock, type PetFrame, type PetState } from '../../../../../.claude/mods/desk-pet/hooks/wick'
 

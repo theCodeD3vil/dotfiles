@@ -69,14 +69,14 @@ function Stat(props: { label: string; stat: FooterStat; animationTick: number })
 
 const STRIP_ROWS = Array.from({ length: ROWS }, (_, row) => row)
 
-// The pet's strip, COLS × ROWS Raster words, cut to its leftmost `cells` columns.
-export function Pet(props: { strip: Uint32Array; cells: number }) {
+// The pet's strip, COLS × ROWS Raster words.
+export function Pet(props: { strip: Uint32Array }) {
   const cells = () => rasterCells(props.strip)
   return (
     // The block keeps its size whatever the state, so nothing moves when work starts. Explicit
     // zero gaps prevent Yoga layout from inserting a blank row.
-    <box flexDirection="column" gap={0} rowGap={0} width={props.cells} height={ROWS} flexShrink={0}>
-      <Index each={STRIP_ROWS}>{row => <Cells cells={cells().slice(row() * COLS, row() * COLS + props.cells)} />}</Index>
+    <box flexDirection="column" gap={0} rowGap={0} width={COLS} height={ROWS} flexShrink={0}>
+      <Index each={STRIP_ROWS}>{row => <Cells cells={cells().slice(row() * COLS, (row() + 1) * COLS)} />}</Index>
     </box>
   )
 }

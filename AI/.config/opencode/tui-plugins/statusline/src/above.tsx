@@ -3,18 +3,20 @@
  * OpenTUI view for the row above the prompt, after Ember Ribbon's AbovePrompt:
  *   ⣿⣿⣿⣷⣿⣷⣿⣿  134.4k / 200k   ⣀⣤⣶⣿⣦⣀⣀⣀   412 tok/s
  * Context fill history, the used / window readout coloured by heat, and the token stream,
- * with Wick, the desk pet, over its right end, as Claude Code has it above the Ember ribbon.
+ * with Wick, the desk pet, at the far right of the row, his feet on it, as Claude Code has him.
  * All cells use the terminal-default background so transparent themes remain transparent.
  */
 import { TextAttributes } from '@opentui/core'
 import { Index, Show } from 'solid-js'
 import { FILL_CELLS, FILL_ROWS, STREAM_CELLS, fillCells, heatColor, rowFit, short, streamCells, tokensPerSecond, type ContextReading } from './context'
 import { COLORS } from './footer'
-import { ROWS } from './pet'
+import { COLS } from './pet'
 import { Cells, DEFAULT_BG, Pet, rasterCells } from './view'
 
 // Blank lines between the conversation and the pet.
 export const ROW_PAD = 1
+// Clear columns between the context row and Wick, whose props reach his leftmost cells.
+export const PET_GAP = 2
 
 export type ContextFrame = {
   /** Context percent at the end of each turn, oldest first. */
@@ -69,15 +71,18 @@ export function ContextRow(props: { frame: ContextFrame }) {
   )
 }
 
-// The pet stands on the context row at the right; it keeps its size in every state, so starting
-// work never moves the prompt.
-export function AboveView(props: { strip: Uint32Array; cells: number; frame: ContextFrame }) {
+// The pet stands at the right of the context row, his feet on it, PET_GAP columns away; he keeps
+// his size in every state, so starting work never moves the prompt. He comes only when the whole
+// row, stream included, still fits beside him: a narrower terminal gets the row alone.
+export function AboveView(props: { strip: Uint32Array; frame: ContextFrame }) {
+  const room = () => props.frame.columns - COLS - PET_GAP
+  const beside = () => rowFit(room(), readoutWidth(props.frame.now)).stream
   return (
-    <box flexDirection="column" gap={0} rowGap={0} flexGrow={1} flexShrink={1} minWidth={0} paddingTop={ROW_PAD} backgroundColor={DEFAULT_BG}>
-      <box flexDirection="row" justifyContent="flex-end" height={ROWS} flexShrink={0} backgroundColor={DEFAULT_BG}>
-        <Pet strip={props.strip} cells={props.cells} />
-      </box>
-      <ContextRow frame={props.frame} />
+    <box flexDirection="row" alignItems="flex-end" gap={PET_GAP} flexGrow={1} flexShrink={1} minWidth={0} paddingTop={ROW_PAD} backgroundColor={DEFAULT_BG}>
+      <ContextRow frame={beside() ? { ...props.frame, columns: room() } : props.frame} />
+      <Show when={beside()}>
+        <Pet strip={props.strip} />
+      </Show>
     </box>
   )
 }

@@ -4,7 +4,8 @@ Ports Ember Ribbon's five-hour animated braille bar and weekly Nerd Font ring
 from the `AI/.claude/mods/ember-ribbon/hooks/` modules into OpenCode 2.0.22.
 The plugin replaces `prompt.footer`, so none of OpenCode's native footer (working
 spinner, location label) renders; only the quota stats, at the right, remain. Wick,
-the desk pet, stands above the prompt at the right. The prompt enhancement is not ported.
+the desk pet, stands at the right of the context row above the prompt. The prompt
+enhancement is not ported.
 
 ## Context and tokens above the prompt
 
@@ -36,14 +37,17 @@ ends; before any turn has, the readout shows the live context. Without a known
 window the readout is `– / –`.
 
 The row gives up the stream under about 44 columns and the chart under about 22,
-counted with a `134.4k / 200k` readout (Claude's has no narrow layout). The pet stands on
-it, and the slot keeps one blank line above the pet and one below the row (`ROW_PAD`
-in `src/above.tsx` and `PROMPT_PAD` in `src/tui.tsx`; Claude keeps two above).
+counted with a `134.4k / 200k` readout (Claude's has no narrow layout). The pet stands
+at its right end with two clear columns between them (`PET_GAP`), and only when the
+whole row, stream included, still fits beside him (about 58 columns with that readout):
+a narrower row gets no pet and keeps its width. The slot keeps one blank line above the
+pet and one below the row (`ROW_PAD` in `src/above.tsx` and `PROMPT_PAD` in
+`src/tui.tsx`; Claude keeps two above).
 
 ## The pet
 
-Above the prompt, at the right of the context row, is Wick, the desk pet Claude Code
-shows above its Ember ribbon (`AI/.claude/mods/desk-pet`). Both hosts draw it with that
+At the far right of the context row, his feet on it, is Wick, the desk pet Claude Code
+has there too (`AI/.claude/mods/desk-pet`). Both hosts draw it with that
 mod's own module, `hooks/wick.ts`, which `src/pet.ts` imports, so the two are the same
 pet: 12 by 4 cells of octants (Unicode 16's 2 × 4 blocks, U+1CD00), 24 by 16 pixels, at
 the right, facing left (`COLS`, `ROWS` and `FACING` in `src/pet.ts`). A cell holds two
@@ -73,7 +77,7 @@ seconds its timer has run (blinks and the flame), so its speed does not depend o
 frame rate. Clear pixels keep the terminal-default background.
 
 The strip is four rows tall in every state, so starting work never moves the prompt.
-In a row narrower than the pet it shows only its leftmost cells. `session.composer.top`
+In a row too narrow for the context row and the pet, he is left out. `session.composer.top`
 exists only in a session, so the home screen has no pet. For a still frame, give the plugin the option `animate: false` (read
 from `context.options`): the pet then shows its state 1.5 seconds in.
 

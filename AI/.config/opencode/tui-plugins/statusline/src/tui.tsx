@@ -1,8 +1,8 @@
 /** @jsxImportSource @opentui/solid */
 /**
  * OpenCode TUI statusline plugin: replaces the native prompt footer with the quota gauges at
- * the right, and puts Wick, the desk pet, above the prompt at the right, acting out each stage
- * of the conversation over the context and token row.
+ * the right, and puts Wick, the desk pet, at the right of the context and token row above the
+ * prompt, acting out each stage of the conversation.
  */
 import { Plugin, usePlugin } from '@opencode/plugin/tui'
 import { createEffect, createMemo, createSignal, onCleanup, untrack, type Accessor } from 'solid-js'
@@ -10,7 +10,7 @@ import { AboveView, type ContextFrame } from './above'
 import { createTokenStream, liveReading, turnReadings, type ContextWindows, type TokenStream } from './context'
 import { footerLayout } from './footer'
 import { usageRpc } from './rpc'
-import { lastTurnEnd, petCellsFor, petClock, petStrip } from './pet'
+import { lastTurnEnd, petClock, petStrip } from './pet'
 import { FPS } from './spinners'
 import { conversationStage } from './stage'
 import { FooterView } from './view'
@@ -140,14 +140,13 @@ function Footer(props: {
   )
 }
 
-// Above the prompt: the pet, then context fill history, used / window, token stream. The stream
+// Above the prompt: context fill history, used / window, token stream, then the pet. The stream
 // is plugin state (it fills from events and survives the row remounting); the readings are read
 // from the session's messages twice a second.
 function AboveRow(props: { sessionID: Accessor<string>; tick: Accessor<number>; frames: Accessor<number>; animate: boolean; stream: TokenStream }) {
   const context = usePlugin()
   const [columns, syncColumns] = useColumns()
   const strip = usePet(props)
-  const cells = createMemo(() => petCellsFor(columns()))
   // This row lives in `session.composer.top`; its bottom padding is therefore
   // the blank line between the context module and OpenCode's composer.
   const windows = (): ContextWindows => {
@@ -176,7 +175,7 @@ function AboveRow(props: { sessionID: Accessor<string>; tick: Accessor<number>; 
 
   return (
     <box flexGrow={1} flexDirection="row" minWidth={0} paddingBottom={PROMPT_PAD} onSizeChange={function () { syncColumns(this.width) }}>
-      <AboveView strip={strip()} cells={cells()} frame={frame()} />
+      <AboveView strip={strip()} frame={frame()} />
     </box>
   )
 }
