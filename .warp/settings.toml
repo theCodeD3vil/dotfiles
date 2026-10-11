@@ -82,8 +82,8 @@ should_dim_inactive_panes = true
 cursor_display_type = "block"
 
 [appearance.themes.theme.custom]
-name = "Vira-Theme-Carbon"
-path = "~/.warp/themes/Vira-Theme-Carbon.yaml"
+name = "Vira-Theme-Deepforest"
+path = "~/.warp/themes/Vira-Theme-Deepforest.yaml"
 
 [notifications]
 toast_duration_secs = 8

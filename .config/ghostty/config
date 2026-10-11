@@ -12,30 +12,30 @@ macos-option-as-alt = true
 background-opacity = 0.7
 background-blur-radius = 20
 
-# Vira Theme - Carbon (vira-theme-for-terminals/ghostty/Vira-Theme-Carbon.conf)
-background = #0A0A0A
-foreground = #FFFFFF
+# Vira Theme - Deepforest (vira-theme-for-terminals/ghostty/Vira-Theme-Deepforest.conf)
+background = #111816
+foreground = #CAE5D5
 
 cursor-color = #FFCC00
-cursor-text = #0A0A0A
+cursor-text = #111816
 
-selection-background = #f9e2af
-selection-foreground = #11111b
+selection-background = #4B7253
+selection-foreground = #CAE5D5
 
-palette = 0=#45454A
-palette = 1=#c85e60
-palette = 2=#a3c679
-palette = 3=#d5b05f
-palette = 4=#6a90d0
-palette = 5=#a178c4
-palette = 6=#6ebad7
-palette = 7=#FFFFFF
+palette = 0=#3B544D
+palette = 1=#f07178
+palette = 2=#C3E88D
+palette = 3=#FFCB6B
+palette = 4=#6FA0DE
+palette = 5=#A68DCD
+palette = 6=#74C9DE
+palette = 7=#CAE5D5
 
-palette = 8=#45454A
-palette = 9=#c85e60
-palette = 10=#a3c679
-palette = 11=#d5b05f
-palette = 12=#6a90d0
-palette = 13=#a178c4
-palette = 14=#6ebad7
+palette = 8=#3B544D
+palette = 9=#f07178
+palette = 10=#C3E88D
+palette = 11=#FFCB6B
+palette = 12=#6FA0DE
+palette = 13=#A68DCD
+palette = 14=#74C9DE
 palette = 15=#ffffff

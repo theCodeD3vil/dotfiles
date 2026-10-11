@@ -52,6 +52,21 @@ end
 -- 'Kaku Light', or 'Auto' to follow macOS appearance.
 config.color_scheme = 'Kaku Dark'
 
+-- Vira Theme - Deepforest (vira-theme-for-terminals/ghostty/Vira-Theme-Deepforest.conf).
+-- `colors` overrides the matching keys of the scheme above, so Kaku Dark still
+-- supplies everything not listed here (tab bar, scrollbar, and so on).
+config.colors = {
+  foreground = '#CAE5D5',
+  background = '#111816',
+  cursor_bg = '#FFCC00',
+  cursor_border = '#FFCC00',
+  cursor_fg = '#111816',
+  selection_bg = '#4B7253',
+  selection_fg = '#CAE5D5',
+  ansi = { '#3B544D', '#f07178', '#C3E88D', '#FFCB6B', '#6FA0DE', '#A68DCD', '#74C9DE', '#CAE5D5' },
+  brights = { '#3B544D', '#f07178', '#C3E88D', '#FFCB6B', '#6FA0DE', '#A68DCD', '#74C9DE', '#ffffff' },
+}
+
 -- User overrides:
 -- Kaku intentionally keeps WezTerm-compatible Lua API names
 -- for maximum compatibility, so `wezterm.*` here is expected.

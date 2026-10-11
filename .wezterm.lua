@@ -39,18 +39,18 @@ end)
 config.send_composed_key_when_left_alt_is_pressed = false
 config.send_composed_key_when_right_alt_is_pressed = false
 
--- Vira Theme - Carbon (vira-theme-for-terminals/ghostty/Vira-Theme-Carbon.conf,
+-- Vira Theme - Deepforest (vira-theme-for-terminals/ghostty/Vira-Theme-Deepforest.conf,
 -- no wezterm variant ships in the pack, translated from the ghostty one)
 config.colors = {
-	foreground = "#D9D9D9",
-	background = "#0A0A0A",
+	foreground = "#CAE5D5",
+	background = "#111816",
 	cursor_bg = "#FFCC00",
 	cursor_border = "#FFCC00",
-	cursor_fg = "#0A0A0A",
-	selection_bg = "#474747",
-	selection_fg = "#D9D9D9",
-	ansi = { "#45454A", "#c85e60", "#a3c679", "#d5b05f", "#6a90d0", "#a178c4", "#6ebad7", "#D9D9D9" },
-	brights = { "#45454A", "#c85e60", "#a3c679", "#d5b05f", "#6a90d0", "#a178c4", "#6ebad7", "#ffffff" },
+	cursor_fg = "#111816",
+	selection_bg = "#4B7253",
+	selection_fg = "#CAE5D5",
+	ansi = { "#3B544D", "#f07178", "#C3E88D", "#FFCB6B", "#6FA0DE", "#A68DCD", "#74C9DE", "#CAE5D5" },
+	brights = { "#3B544D", "#f07178", "#C3E88D", "#FFCB6B", "#6FA0DE", "#A68DCD", "#74C9DE", "#ffffff" },
 }
 
 -- Cartograph CF has no Nerd Font glyphs, and the Symbols Nerd Font bundled with
