@@ -2,16 +2,18 @@
 /**
  * OpenTUI view for the row above the prompt, after Ember Ribbon's AbovePrompt:
  *   ⣿⣿⣿⣷⣿⣷⣿⣿  134.4k / 200k   ⣀⣤⣶⣿⣦⣀⣀⣀   412 tok/s
- * Context fill history, the used / window readout coloured by heat, and the token stream.
+ * Context fill history, the used / window readout coloured by heat, and the token stream,
+ * with Wick, the desk pet, over its right end, as Claude Code has it above the Ember ribbon.
  * All cells use the terminal-default background so transparent themes remain transparent.
  */
 import { TextAttributes } from '@opentui/core'
 import { Index, Show } from 'solid-js'
 import { FILL_CELLS, FILL_ROWS, STREAM_CELLS, fillCells, heatColor, rowFit, short, streamCells, tokensPerSecond, type ContextReading } from './context'
 import { COLORS } from './footer'
-import { Cells, DEFAULT_BG, rasterCells } from './view'
+import { ROWS } from './pet'
+import { Cells, DEFAULT_BG, Pet, rasterCells } from './view'
 
-// Blank lines between the conversation and the row.
+// Blank lines between the conversation and the pet.
 export const ROW_PAD = 1
 
 export type ContextFrame = {
@@ -42,7 +44,7 @@ export function readoutWidth(now: ContextReading | undefined) {
 export function ContextRow(props: { frame: ContextFrame }) {
   const fit = () => rowFit(props.frame.columns, readoutWidth(props.frame.now))
   return (
-    <box flexDirection="row" alignItems="flex-end" justifyContent="flex-end" flexGrow={1} flexShrink={1} minWidth={0} paddingTop={ROW_PAD} backgroundColor={DEFAULT_BG}>
+    <box flexDirection="row" alignItems="flex-end" justifyContent="flex-end" flexGrow={1} flexShrink={1} minWidth={0} backgroundColor={DEFAULT_BG}>
       <Show when={fit().chart}>
         <box marginRight={1} flexShrink={0}>
           <FillChart history={props.frame.history} />
@@ -63,6 +65,19 @@ export function ContextRow(props: { frame: ContextFrame }) {
           <text bg={DEFAULT_BG} fg={COLORS.dim}>{`${String(Math.min(9999, tokensPerSecond(props.frame.stream))).padStart(4, ' ')} tok/s`}</text>
         </box>
       </Show>
+    </box>
+  )
+}
+
+// The pet stands on the context row at the right; it keeps its size in every state, so starting
+// work never moves the prompt.
+export function AboveView(props: { strip: Uint32Array; cells: number; frame: ContextFrame }) {
+  return (
+    <box flexDirection="column" gap={0} rowGap={0} flexGrow={1} flexShrink={1} minWidth={0} paddingTop={ROW_PAD} backgroundColor={DEFAULT_BG}>
+      <box flexDirection="row" justifyContent="flex-end" height={ROWS} flexShrink={0} backgroundColor={DEFAULT_BG}>
+        <Pet strip={props.strip} cells={props.cells} />
+      </box>
+      <ContextRow frame={props.frame} />
     </box>
   )
 }

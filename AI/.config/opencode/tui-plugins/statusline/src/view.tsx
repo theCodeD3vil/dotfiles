@@ -1,40 +1,37 @@
 /** @jsxImportSource @opentui/solid */
 /**
- * OpenTUI view for the quota gauges and the stage spinner.
- * Usage cells and the spinner both retain the terminal-default background.
+ * OpenTUI view for the quota gauges and the pet.
+ * Usage cells and the pet both retain the terminal-default background.
  */
 import { RGBA, TextAttributes } from '@opentui/core'
 import { Index, Show } from 'solid-js'
-import { COLORS, mix, sevColor, usageCells, type FooterLayout, type FooterStat } from './footer'
-import { PANEL, ROWS, SPINNER_GAP, type Frame } from './spinners'
+import { COLORS, DEFAULT_COLOR, sevColor, usageCells, type FooterLayout, type FooterStat } from './footer'
+import { COLS, ROWS } from './pet'
 
 export const DEFAULT_BG = RGBA.defaultBackground()
 type Readable<T> = T | (() => T)
 const read = <T,>(value: Readable<T>) => typeof value === 'function' ? (value as () => T)() : value
 
-// A cell's colour: the panel at level 0, the stage's tone at level 1.
-function shade(tone: readonly number[], level: number) {
-  const [r, g, b] = mix(PANEL, tone, Math.min(1, level))
-  return RGBA.fromInts(r!, g!, b!)
-}
+const rgba = (word: number) => RGBA.fromInts((word >> 16) & 255, (word >> 8) & 255, word & 255)
 
 // Preserve the Raster's terminal-default background intent, including on an
 // OpenCode theme whose background differs from the terminal's background.
 export function rasterCells(words: Uint32Array) {
   return Array.from({ length: words.length / 3 }, (_, i) => {
-    const fg = words[i * 3 + 1]!
+    const bg = words[i * 3 + 2]!
     return {
       text: String.fromCodePoint(words[i * 3]!),
-      fg: RGBA.fromInts((fg >> 16) & 255, (fg >> 8) & 255, fg & 255),
+      fg: rgba(words[i * 3 + 1]!),
+      bg: bg === DEFAULT_COLOR ? DEFAULT_BG : rgba(bg),
     }
   })
 }
 
-// One row of Raster cells on the terminal-default background.
+// One row of Raster cells, each on its own background (the terminal's by default).
 export function Cells(props: { cells: ReturnType<typeof rasterCells> }) {
   return (
     <text width={props.cells.length} height={1} bg={DEFAULT_BG}>
-      <Index each={props.cells}>{cell => <span style={{ fg: cell().fg, bg: DEFAULT_BG, attributes: TextAttributes.NONE }}>{cell().text}</span>}</Index>
+      <Index each={props.cells}>{cell => <span style={{ fg: cell().fg, bg: cell().bg, attributes: TextAttributes.NONE }}>{cell().text}</span>}</Index>
     </text>
   )
 }
@@ -70,36 +67,30 @@ function Stat(props: { label: string; stat: FooterStat; animationTick: number })
   )
 }
 
-export function Spinner(props: { strip: Frame; tone: readonly number[]; cells: number }) {
+const STRIP_ROWS = Array.from({ length: ROWS }, (_, row) => row)
+
+// The pet's strip, COLS × ROWS Raster words, cut to its leftmost `cells` columns.
+export function Pet(props: { strip: Uint32Array; cells: number }) {
+  const cells = () => rasterCells(props.strip)
   return (
-    // The block keeps its size whatever the state, so nothing moves when work starts; the
-    // idle strip is blank. Its background stays transparent to the terminal. Explicit zero
-    // gaps prevent Yoga layout from inserting a blank row.
+    // The block keeps its size whatever the state, so nothing moves when work starts. Explicit
+    // zero gaps prevent Yoga layout from inserting a blank row.
     <box flexDirection="column" gap={0} rowGap={0} width={props.cells} height={ROWS} flexShrink={0}>
-      <Index each={props.strip}>{row => (
-        <text height={1}>
-          <Index each={row().slice(0, props.cells)}>{cell => <span style={{ fg: shade(props.tone, cell()[1]), attributes: TextAttributes.NONE }}>{cell()[0]}</span>}</Index>
-        </text>
-      )}</Index>
+      <Index each={STRIP_ROWS}>{row => <Cells cells={cells().slice(row() * COLS, row() * COLS + props.cells)} />}</Index>
     </box>
   )
 }
 
-// The spinner owns the far left and the quota stats stay right, so the free
-// space opens between them.
+// The quota stats keep the footer's right edge.
 export function FooterView(props: {
   frame: Readable<FooterLayout>
   animationTick: Readable<number>
-  strip: Readable<Frame>
-  tone: Readable<readonly number[]>
-  cells: Readable<number>
   onWidthChange?: (width: number) => void
 }) {
   const frame = () => read(props.frame)
   const animationTick = () => read(props.animationTick)
   return (
-    <box flexDirection="row" alignItems="flex-end" justifyContent="space-between" gap={SPINNER_GAP} flexGrow={1} flexShrink={1} minWidth={0} backgroundColor={DEFAULT_BG} onSizeChange={function () { props.onWidthChange?.(this.width) }}>
-      <Spinner strip={read(props.strip)} tone={read(props.tone)} cells={read(props.cells)} />
+    <box flexDirection="row" justifyContent="flex-end" flexGrow={1} flexShrink={1} minWidth={0} backgroundColor={DEFAULT_BG} onSizeChange={function () { props.onWidthChange?.(this.width) }}>
       <box flexDirection="row" gap={3} flexShrink={1} minWidth={0}>
         <Stat label="5h" stat={frame().five} animationTick={animationTick()} />
         <Stat label="wk" stat={frame().week} animationTick={animationTick()} />

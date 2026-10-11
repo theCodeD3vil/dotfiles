@@ -3,8 +3,8 @@
 Ports Ember Ribbon's five-hour animated braille bar and weekly Nerd Font ring
 from the `AI/.claude/mods/ember-ribbon/hooks/` modules into OpenCode 2.0.22.
 The plugin replaces `prompt.footer`, so none of OpenCode's native footer (working
-spinner, location label) renders; only the stage spinner, pinned to the far left,
-and the quota stats, at the right, remain. The prompt enhancement is not ported.
+spinner, location label) renders; only the quota stats, at the right, remain. Wick,
+the desk pet, stands above the prompt at the right. The prompt enhancement is not ported.
 
 ## Context and tokens above the prompt
 
@@ -36,43 +36,49 @@ ends; before any turn has, the readout shows the live context. Without a known
 window the readout is `– / –`.
 
 The row gives up the stream under about 44 columns and the chart under about 22,
-counted with a `134.4k / 200k` readout (Claude's has no narrow layout), and keeps one blank line above and below it (`ROW_PAD`
+counted with a `134.4k / 200k` readout (Claude's has no narrow layout). The pet stands on
+it, and the slot keeps one blank line above the pet and one below the row (`ROW_PAD`
 in `src/above.tsx` and `PROMPT_PAD` in `src/tui.tsx`; Claude keeps two above).
 
-## Stage spinners
+## The pet
 
-The footer shows a different spinner, in a different colour, for each stage of the
-conversation, read from the session's messages on the shared timer (`src/stage.ts`).
-Each is a 16 by 2 cell strip: braille (a 32 by 8 dot field, each cell coloured by its
-strongest dot) or glyphs. They are ported frame for frame from the spinner picker they
-were chosen in, one module each in `src/spinners/`, and the registry in
-`src/spinners/index.ts` says which stage gets which:
+Above the prompt, at the right of the context row, is Wick, the desk pet Claude Code
+shows above its Ember ribbon (`AI/.claude/mods/desk-pet`). Both hosts draw it with that
+mod's own module, `hooks/wick.ts`, which `src/pet.ts` imports, so the two are the same
+pet: 12 by 4 cells of octants (Unicode 16's 2 × 4 blocks, U+1CD00), 24 by 16 pixels, at
+the right, facing left (`COLS`, `ROWS` and `FACING` in `src/pet.ts`). A cell holds two
+colours, the pair nearest its eight pixels. The terminal's font must have the octants:
+CaskaydiaCove Nerd Font does, and Ghostty draws them itself. Its body keeps its colour, and the
+flame on its head and its props take the stage's. What it acts out is read from the
+session's messages on the shared timer (`src/stage.ts`):
 
-| Stage | Spinner | Colour (Catppuccin Mocha) | The stage is |
-| --- | --- | --- | --- |
-| waiting | Bouncing Balls (`bouncing-balls.ts`) | blue `89B4FA` | a prompt just sent, a tool that returned and the model's next step, or a reply that has not started |
-| thinking | Life (`life.ts`) | peach `FAB387` | the last part of the reply is reasoning that has not completed |
-| tool | Raindrops (`raindrops.ts`) | mauve `CBA6F7` | the last part is a tool that is streaming or running |
-| writing | Data Stream (`data-stream.ts`) | green `A6E3A1` | the last part is text |
-| approval | Warp (`warp.ts`) | yellow `F9E2AF` | a permission request is open; it wins over every other stage |
-| compacting | Flame (`flame.ts`) | red `F38BA8` | the latest message is a compaction that is running |
+| State | Colour (Catppuccin Mocha) | When |
+| --- | --- | --- |
+| idle | candle `FFC46B` | the session is not running; it falls asleep after a while |
+| waiting | blue `89B4FA` | a prompt just sent, a tool that returned and the model's next step, or a reply that has not started |
+| thinking | peach `FAB387` | the last part of the reply is reasoning that has not completed |
+| tool | mauve `CBA6F7` | the last part is a tool that is streaming or running |
+| writing | green `A6E3A1` | the last part is text |
+| approval | yellow `F9E2AF` | a permission request is open; it wins over every other stage |
+| compacting | red `F38BA8` | the latest message is a compaction that is running |
+| done | sky `89DCEB` | a turn just ended with `outcome: "succeeded"`, for `DONE_SECONDS`, then idle |
 
-Mauve for a tool call is the plugin's own choice, since none was picked for it; it keeps
-the six stages apart.
+A failed or interrupted turn goes straight to idle, and a turn that ended before its
+session came on screen is not celebrated.
 
 One timer runs at 30 frames a second (`FPS`), the rate OpenTUI paints at by default.
 Every third frame is also the 100 ms tick that the gauges, the token stream and the
-polling run on. A spinner is a function of the seconds since it started, so its speed
-does not depend on the frame rate; Life also keeps state, so it starts afresh each time
-its stage begins. Dots are lit above a brightness of 0.16, and the spinners that sit on
-an LED matrix keep a faint full block in unlit cells.
+polling run on. The pet is a function of the seconds since its state began and of the
+seconds its timer has run (blinks and the flame), so its speed does not depend on the
+frame rate. Clear pixels keep the terminal-default background.
 
-The inactive session state is blank. The strip is two rows tall in every state, so starting
-work never moves the prompt, and the quota stats stay aligned to its bottom row. When the
-footer is narrow the strip gives up cells from its right edge first, down to one, so the
-gauges keep their room (below about 24 columns). For a still frame, give the plugin the
-option `animate: false` (read from `context.options`): the working spinner then shows its
-state 1.5 seconds into its run, in the stage colour.
+The strip is four rows tall in every state, so starting work never moves the prompt.
+In a row narrower than the pet it shows only its leftmost cells. `session.composer.top`
+exists only in a session, so the home screen has no pet. For a still frame, give the plugin the option `animate: false` (read
+from `context.options`): the pet then shows its state 1.5 seconds in.
+
+The stage spinners the pet replaced are still in `src/spinners/`, which also holds the
+frame rate.
 
 The server reads the active provider's OAuth subscription usage: OpenAI's
 five-hour/weekly windows or Anthropic's `five_hour`/`seven_day` windows. Only
@@ -102,8 +108,11 @@ bun --conditions=browser tests/preview.tsx
 The oracle executes the untouched Claude source for gauge calculations. Tests
 compare original raster words, then check the native OpenTUI footer's glyphs,
 positions, RGB colors, terminal-default backgrounds, and provider lifecycle behavior.
-`tests/spinners.test.ts` runs each stage's spinner beside the picker's own frame code
-(`tests/artifact-spinners.js`) for thirty seconds and compares every frame.
+`tests/pet.test.ts` runs the desk-pet playground's own Wick beside the shared module,
+in every state for twenty seconds at both hosts' sizes and frame rates, and compares
+every pixel and cell. `tests/spinners.test.ts` runs each stage's spinner beside the
+picker's own frame code (`tests/artifact-spinners.js`) for thirty seconds and compares
+every frame.
 
 The preview command writes OpenCode cell evidence to
 `/private/tmp/opencode-ember-footer-preview`. It does not compare screenshots

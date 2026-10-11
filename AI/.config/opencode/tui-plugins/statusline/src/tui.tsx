@@ -1,16 +1,17 @@
 /** @jsxImportSource @opentui/solid */
 /**
- * OpenCode TUI statusline plugin: replaces the native prompt footer with the working
- * spinner at the far left, a different one and colour for each stage of the conversation,
- * and the quota gauges at the right.
+ * OpenCode TUI statusline plugin: replaces the native prompt footer with the quota gauges at
+ * the right, and puts Wick, the desk pet, above the prompt at the right, acting out each stage
+ * of the conversation over the context and token row.
  */
 import { Plugin, usePlugin } from '@opencode/plugin/tui'
 import { createEffect, createMemo, createSignal, onCleanup, untrack, type Accessor } from 'solid-js'
-import { ContextRow, type ContextFrame } from './above'
+import { AboveView, type ContextFrame } from './above'
 import { createTokenStream, liveReading, turnReadings, type ContextWindows, type TokenStream } from './context'
 import { footerLayout } from './footer'
 import { usageRpc } from './rpc'
-import { BLANK, FPS, SPINNER_GAP, STAGE_SPINNERS, spinnerCells } from './spinners'
+import { lastTurnEnd, petCellsFor, petClock, petStrip } from './pet'
+import { FPS } from './spinners'
 import { conversationStage } from './stage'
 import { FooterView } from './view'
 import type { UsageSnapshot } from './usage'
@@ -31,35 +32,24 @@ function useColumns() {
   return [columns, (width: number) => { if (width > 0) setColumns(width) }] as const
 }
 
-// While the spinner is not animated (the `animate: false` option) it shows this moment of its run.
+// While the pet is not animated (the `animate: false` option) it shows this moment of its act.
 const STILL_SECONDS = 1.5
-// The 100 ms tick the rest of the plugin runs on, in spinner frames.
+// The 100 ms tick the rest of the plugin runs on, in timer frames.
 const FRAMES_PER_TICK = FPS / 10
 
-function Footer(props: {
-  sessionID: Accessor<string | undefined>
-  tick: Accessor<number>
-  frames: Accessor<number>
-  redraw: Accessor<number>
-  refresh: Accessor<{ force: boolean }>
-  account: Accessor<number>
-  animate: boolean
-}) {
+// What Wick acts out: the stage while the session runs, and idle otherwise, except for a turn
+// that ends on its answer, which it celebrates once.
+function usePet(props: { sessionID: Accessor<string | undefined>; tick: Accessor<number>; frames: Accessor<number>; animate: boolean }) {
   const context = usePlugin()
-  const [columns, syncColumns] = useColumns()
-  const [usage, setUsage] = createSignal<UsageSnapshot>({ rateLimits: [], status: 'unavailable' })
-  const rpc = context.client.rpc(usageRpc)
-  let identity = ''
-
   const working = createMemo(() => {
-    // Sampling through the shared timer keeps the spinner in step with the quota
-    // animation without creating a second interval or event lifecycle.
+    // Sampling through the shared timer keeps the pet in step with the rest of the plugin
+    // without creating a second interval or event lifecycle.
     props.tick()
     return isRunning(context.data, props.sessionID())
   })
 
-  // What the running session is doing decides which spinner shows and in what colour; it is
-  // read on the same tick, and the stage name only changes when the conversation moves on.
+  // What the running session is doing decides what the pet acts out; it is read on the
+  // same tick, and the stage name only changes when the conversation moves on.
   const stage = createMemo(() => {
     props.tick()
     const sessionID = props.sessionID()
@@ -69,6 +59,46 @@ function Footer(props: {
       permissions: context.data.session.permission.list(sessionID)?.length ?? 0,
     })
   })
+
+  const pet = petClock(FPS)
+  let petSession: string | undefined
+  let celebrated: string | undefined
+  const turnEnd = (sessionID: string | undefined) =>
+    sessionID ? lastTurnEnd(untrack(() => context.data.session.message.list(sessionID))) : undefined
+  return createMemo(() => {
+    const frame = props.animate ? props.frames() : props.tick() * FRAMES_PER_TICK
+    const sessionID = props.sessionID()
+    // Another session's turns, ended before it came on screen, are not this one's to celebrate.
+    if (sessionID !== petSession) {
+      petSession = sessionID
+      celebrated = turnEnd(sessionID)?.id
+      pet.set('idle', frame)
+    }
+    if (working()) pet.set(stage(), frame)
+    else {
+      // The turn's end marker can land a moment after the session stops running.
+      const end = turnEnd(sessionID)
+      if (end && end.id !== celebrated) {
+        celebrated = end.id
+        pet.set(end.outcome === 'succeeded' ? 'done' : 'idle', frame)
+      } else if (pet.state !== 'done') pet.set('idle', frame)
+    }
+    const now = pet.at(frame)
+    return petStrip(props.animate ? now : { ...now, t: STILL_SECONDS, clock: STILL_SECONDS })
+  })
+}
+
+function Footer(props: {
+  tick: Accessor<number>
+  redraw: Accessor<number>
+  refresh: Accessor<{ force: boolean }>
+  account: Accessor<number>
+}) {
+  const context = usePlugin()
+  const [columns, syncColumns] = useColumns()
+  const [usage, setUsage] = createSignal<UsageSnapshot>({ rateLimits: [], status: 'unavailable' })
+  const rpc = context.client.rpc(usageRpc)
+  let identity = ''
 
   // A response for an old provider/account must never populate the new footer.
   createEffect(() => {
@@ -92,40 +122,32 @@ function Footer(props: {
     })
   })
 
-  const cells = createMemo(() => spinnerCells(columns()))
-
-  // A new instance each time the stage changes, so a spinner with state (Life) starts afresh.
-  const spinner = createMemo(() => STAGE_SPINNERS[stage()].make())
-  const strip = createMemo(() => {
-    if (!working()) return BLANK
-    if (!props.animate) return spinner()(STILL_SECONDS, 1 / FPS)
-    return spinner()(props.frames() / FPS, 1 / FPS)
-  })
-
   const frame = createMemo(() => {
     props.redraw()
     return footerLayout({
       fiveLimit: usage().rateLimits.find(limit => limit.kind === 'five_hour'),
       weekLimit: usage().rateLimits.find(limit => limit.kind === 'seven_day'),
       now: Date.now(),
-      columns: columns() - cells() - SPINNER_GAP,
+      columns: columns(),
       tick: untrack(props.tick),
     })
   })
 
   return (
     <box flexGrow={1} flexDirection="row" minWidth={0} onSizeChange={function () { syncColumns(this.width) }}>
-      <FooterView frame={frame} animationTick={props.tick} strip={strip} tone={() => STAGE_SPINNERS[stage()].tone} cells={cells} onWidthChange={syncColumns} />
+      <FooterView frame={frame} animationTick={props.tick} onWidthChange={syncColumns} />
     </box>
   )
 }
 
-// The row above the prompt: context fill history, used / window, token stream. The stream is
-// plugin state (it fills from events and survives the row remounting); the readings are read
+// Above the prompt: the pet, then context fill history, used / window, token stream. The stream
+// is plugin state (it fills from events and survives the row remounting); the readings are read
 // from the session's messages twice a second.
-function AboveRow(props: { sessionID: Accessor<string>; tick: Accessor<number>; stream: TokenStream }) {
+function AboveRow(props: { sessionID: Accessor<string>; tick: Accessor<number>; frames: Accessor<number>; animate: boolean; stream: TokenStream }) {
   const context = usePlugin()
   const [columns, syncColumns] = useColumns()
+  const strip = usePet(props)
+  const cells = createMemo(() => petCellsFor(columns()))
   // This row lives in `session.composer.top`; its bottom padding is therefore
   // the blank line between the context module and OpenCode's composer.
   const windows = (): ContextWindows => {
@@ -154,7 +176,7 @@ function AboveRow(props: { sessionID: Accessor<string>; tick: Accessor<number>; 
 
   return (
     <box flexGrow={1} flexDirection="row" minWidth={0} paddingBottom={PROMPT_PAD} onSizeChange={function () { syncColumns(this.width) }}>
-      <ContextRow frame={frame()} />
+      <AboveView strip={strip()} cells={cells()} frame={frame()} />
     </box>
   )
 }
@@ -200,18 +222,18 @@ export default Plugin.define({
       ...(['session.text.delta', 'session.reasoning.delta', 'session.tool.input.delta'] as const).map(type =>
         context.data.on(type, event => { if (event.data.sessionID === shown()) stream.add(event.data.delta.length) })),
     ]
-    // Plugin option `animate: false` pins the spinner to a still frame.
+    // Plugin option `animate: false` pins the pet to a still frame.
     const animate = context.options?.animate !== false
     const release = context.ui.slot({
       // Replacing prompt.footer removes OpenCode's native working status and
       // location label, leaving only this footer.
       replace: 'prompt.footer',
-      render: input => <Footer sessionID={() => input.sessionID} tick={tick} frames={frames} redraw={redraw} refresh={refresh} account={account} animate={animate} />,
+      render: () => <Footer tick={tick} redraw={redraw} refresh={refresh} account={account} />,
     })
-    // Appended to the composer's top, so the row sits directly above the prompt.
+    // Appended to the composer's top, so the pet and the row sit directly above the prompt.
     const releaseAbove = context.ui.slot({
       append: 'session.composer.top',
-      render: input => <AboveRow sessionID={() => input.sessionID} tick={tick} stream={stream} />,
+      render: input => <AboveRow sessionID={() => input.sessionID} tick={tick} frames={frames} animate={animate} stream={stream} />,
     })
     return () => {
       clearInterval(timer)
