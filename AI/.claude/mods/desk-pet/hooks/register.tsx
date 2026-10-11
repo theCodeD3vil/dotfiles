@@ -3,14 +3,22 @@ import type { EngineInterface, Register } from 'claude-code'
 import { COLUMNS, ROWS, type PetProps } from './pet'
 import type { PetState } from './wick'
 
-// Wick, 12 × 4 cells of octants, sits at the right between the Ember ribbon's padding and its
-// context row, facing left as the playground's right placement has it, and follows the main loop: waiting, thinking, a tool, writing, an approval, compacting, done.
-// Listed after ember-ribbon in CLAUDE_CODE_PLUGIN_DIRS, it draws under what plugins beneath draw.
+// Wick, 12 × 4 cells of octants, stands at the far right of the Ember ribbon's context row, his
+// feet on the row with the context count and the token stream, facing left as the playground's
+// right placement has it, and follows the main loop: waiting, thinking, a tool, writing, an approval, compacting, done.
+// Listed before ember-ribbon in CLAUDE_CODE_PLUGIN_DIRS (as install.sh's alphabetical order has
+// it), it wraps the band: the band is drawn in what Wick leaves of the width, Wick beside it.
 // The pet animates itself on the drawing thread (./pet.tsx); this module only tells it the
 // state, redrawing the band when the state changes.
 
 export { COLUMNS, FACING, ROWS } from './pet'
 export const KEY = 'pet'
+
+// The context row needs this much width: the enhance button 2, the chart 9, the count 13, a gap
+// 3, the token stream 8 + 1 and "9999 tok/s" 10. Narrower than that plus Wick, he stays away.
+export const BAND_COLUMNS = 46
+// Clear columns between the band and Wick, whose props reach his leftmost cells.
+export const GAP = 2
 
 // What a streamed piece of the main loop's reply says it is doing.
 const STEP_STATES: Partial<Record<string, PetState>> = { thinking: 'thinking', text: 'writing', tool: 'tool', input: 'tool' }
@@ -84,16 +92,18 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async (engine, event, next) => {
-    const below = await next(event)
-    if (event.surface !== 'terminal' || event.props.hasSurvey) return below
+    const { bodyColumns, hasSurvey } = event.props
+    const room = bodyColumns - COLUMNS - GAP
+    if (event.surface !== 'terminal' || hasSurvey || room < BAND_COLUMNS) return next(event)
+    const beside = await next({ ...event, props: { ...event.props, bodyColumns: room } })
     const { Box, Client } = engine.ui.resolve(event)
     const props: PetProps = { state }
     return (
-      <Box flexDirection="column">
-        {below}
-        <Box flexDirection="row" justifyContent="flex-end">
-          <Client key={KEY} module="./pet.tsx" props={props} width={COLUMNS} height={ROWS} />
+      <Box flexDirection="row" alignItems="flex-end" gap={GAP}>
+        <Box flexDirection="column" flexGrow={1}>
+          {beside}
         </Box>
+        <Client key={KEY} module="./pet.tsx" props={props} width={COLUMNS} height={ROWS} />
       </Box>
     )
   })
