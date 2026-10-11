@@ -9,6 +9,13 @@
 .config/worktrunk/approvals.toml
 .config/worktrunk/*.lock
 
+# Kaku and Warp write sessions, caches, AI keys and downloaded binaries next to their
+# config. On a fresh machine stow links the whole directory, so track only the config.
+.config/kaku/*
+!.config/kaku/kaku.lua
+.warp/*
+!.warp/settings.toml
+
 # Test suites are kept locally but are not part of the dotfiles repository.
 **/test/
 **/tests/

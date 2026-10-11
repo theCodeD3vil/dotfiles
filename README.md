@@ -138,7 +138,7 @@ and options.
 | Git and project work | Git, delta, lazygit, gh, worktrunk, and gitmux |
 | Development | Node LTS through nvm, Bun, pnpm, Python, Rust tooling, Go tools, and common CLI utilities |
 | AI tools | Claude Code, OpenCode, rtk, icm, and agent-browser |
-| macOS extras | Ghostty, iTerm2, Sketchybar, App Store applications, VS Code extensions, and other casks |
+| macOS extras | Ghostty, Kaku, Warp, iTerm2, Sketchybar, App Store applications, VS Code extensions, and other casks |
 
 The exact package list lives in `bootstrap/Brewfile`, with macOS-only additions
 in `bootstrap/Brewfile.mac`. Ubuntu prerequisites are in `bootstrap/apt.txt`.

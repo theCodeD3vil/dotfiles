@@ -461,3 +461,6 @@ command -v atuin >/dev/null 2>&1 && eval "$(atuin init zsh)"
 
 # Disable telemetry for pass-cli
 PROTON_PASS_DISABLE_TELEMETRY=true
+
+[[ ":$PATH:" != *":$HOME/.config/kaku/zsh/bin:"* ]] && export PATH="$HOME/.config/kaku/zsh/bin:$PATH" # Kaku PATH Integration
+[[ -f "$HOME/.config/kaku/zsh/kaku.zsh" ]] && source "$HOME/.config/kaku/zsh/kaku.zsh" # Kaku Shell Integration

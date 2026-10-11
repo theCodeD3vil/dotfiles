@@ -1,12 +1,16 @@
 # Portable half of the Brewfile: taps, formulae and go tools that install on both
 # macOS and Linux (Homebrew or Linuxbrew). Everything Mac-only is in Brewfile.mac.
 #   brew bundle --file bootstrap/Brewfile
+tap "0xjuanma/tap", trusted: true
 tap "adembc/tap", "https://github.com/Adembc/homebrew-tap", trusted: true
 tap "amjaradat01/awesome-lazy-zsh", trusted: true
+tap "anomalyco/tap", trusted: true
+tap "charmbracelet/tap", trusted: true
 tap "dart-lang/dart", trusted: true
 tap "hudochenkov/sshpass", trusted: true
 tap "protonpass/tap", trusted: true
 tap "rtk-ai/tap", trusted: true
+tap "traycerai/traycer", trusted: true
 # Browser automation CLI for AI agents
 brew "agent-browser"
 # Download with resuming and segmented downloading
@@ -21,6 +25,10 @@ brew "btop"
 brew "caddy"
 # Multi-shell multi-command argument completer
 brew "carapace"
+# TUI web browser with CSS, inline image and JavaScript support
+brew "chawan"
+# Manage your dotfiles across multiple diverse machines, securely
+brew "chezmoi"
 # Cloudflare Tunnel client (formerly Argo Tunnel)
 brew "cloudflared"
 # Terminal user interface client for Discord
@@ -51,6 +59,8 @@ brew "tmux"
 brew "gitmux"
 # Tool for glamorous shell scripts (prompts, confirms, spinners)
 brew "gum"
+# Grammar Checker for Developers
+brew "harper"
 # Review-first terminal diff viewer for agent-authored changesets
 brew "hunk"
 # Lightweight and flexible command-line JSON processor
@@ -65,12 +75,16 @@ brew "mosh"
 brew "tree-sitter"
 # Ambitious Vim-fork focused on extensibility and agility
 brew "neovim"
+# Command-line Git information tool
+brew "onefetch"
 # Interpreted, interactive, object-oriented programming language
 brew "python@3.14"
 # Execute binaries from Python packages in isolated environments
 brew "pipx"
 # PDF rendering library (based on the xpdf-3.0 code base)
 brew "poppler"
+# Modern API client that lives in your terminal
+brew "posting"
 # Generic syntax highlighter
 brew "pygments"
 # Search tool like grep and The Silver Searcher
@@ -91,12 +105,18 @@ brew "stow"
 brew "television"
 # Programmatically correct mistyped console commands
 brew "thefuck"
+# Official tldr client written in Rust
+brew "tlrc"
 # Upgrade all the things
 brew "topgrade"
 # Parser generator tool
 brew "tree-sitter-cli"
+# Terminal UI OS (Terminal Multiplexer)
+brew "tuios"
 # Language Server Protocol implementation for TypeScript wrapping tsserver
 brew "typescript-language-server"
+# Extremely fast Python package installer and resolver, written in Rust
+brew "uv"
 # CLI for Git worktree management, designed for parallel AI agent workflows
 brew "worktrunk"
 # Blazing fast terminal file manager written in Rust, based on async I/O
@@ -105,10 +125,16 @@ brew "yazi"
 brew "zoxide"
 # Fish shell like syntax highlighting for zsh
 brew "zsh-syntax-highlighting"
-# A simple terminal UI for managing SSH connections.  
+# See football match stats in real-time in your terminal
+brew "0xjuanma/tap/golazo", trusted: true
+# A simple terminal UI for managing SSH connections.
 brew "adembc/tap/lazyssh", trusted: true
 # Comprehensive Zsh environment manager with 40+ plugins, themes, and profiles
 brew "amjaradat01/awesome-lazy-zsh/awesome-lazy-zsh"
+# OpenCode V2 - the AI coding agent for the terminal
+brew "anomalyco/tap/opencode-v2", trusted: true
+# A powerful terminal-based AI assistant for developers, providing intelligent coding assistance directly in your terminal.
+brew "charmbracelet/tap/crush", trusted: true
 # SDK
 brew "dart-lang/dart/dart"
 brew "hudochenkov/sshpass/sshpass", trusted: true
@@ -116,6 +142,8 @@ brew "hudochenkov/sshpass/sshpass", trusted: true
 brew "protonpass/tap/pass-cli"
 # Permanent memory for AI agents — MCP server with hybrid search
 brew "rtk-ai/tap/icm"
+# Traycer CLI - host supervisor, auth, and config surface
+brew "traycerai/traycer/traycer", trusted: true
 go "golang.org/x/tools/gopls"
 go "mvdan.cc/sh/v3/cmd/shfmt"
 go "github.com/wailsapp/wails/v2/cmd/wails"

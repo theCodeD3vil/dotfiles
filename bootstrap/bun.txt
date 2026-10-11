@@ -5,4 +5,7 @@
 # there, not both.
 @cod3vil/kount-cli
 @cod3vil/trunk
+@deepseek-ai/dsh
+@fission-ai/openspec
+clawhub
 vercel

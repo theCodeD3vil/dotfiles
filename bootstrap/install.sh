@@ -938,7 +938,9 @@ step_stow() {
       --ignore='^Library$'
       --ignore='^\.wezterm\.lua$'
       --ignore='^vira-theme-for-terminals$'
+      --ignore='^\.warp$'
       --ignore='ghostty'
+      --ignore='kaku'
       --ignore='sketchybar'
       --ignore='\.aerospace\.toml'
     )
