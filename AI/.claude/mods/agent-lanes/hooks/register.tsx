@@ -34,8 +34,10 @@ const DEFAULT_COLOR = 0x01000000 // a Raster cell's "terminal default" colour
 const BRAILLE_FULL = 0x28ff
 const BRAILLE_TIP_LEFT = 0x28be
 const BRAILLE_TIP_RIGHT = 0x2877
-const DONE_COLOR = '#A6E3A1'
-const FAILED_COLOR = '#F38BA8'
+// Vira Deepforest
+const GREEN = '#C3E88D'
+const DONE_COLOR = GREEN
+const FAILED_COLOR = '#f07178'
 // The pulse and tips
 const PULSE_SPEED = 10 // cells a second: one cell per tick
 const PULSE_TAIL = 3
@@ -48,8 +50,8 @@ const packRgb = (rgb: Rgb) => ((rgb[0] ?? 0) << 16) | ((rgb[1] ?? 0) << 8) | (rg
 const rgbToHex = (rgb: Rgb) => '#' + rgb.map(channel => channel.toString(16).padStart(2, '0')).join('')
 const encodeCells = (words: Uint32Array) => (new Uint8Array(words.buffer) as Uint8Array & { toBase64: () => string }).toBase64()
 
-// Catppuccin Mocha, one per lane in order of arrival
-const LANE_COLORS = ['#89B4FA', '#A6E3A1', '#FAB387', '#CBA6F7', '#94E2D5', '#F9E2AF'].map(hexToRgb)
+// Blue, green, orange, pink, teal, yellow: one per lane in order of arrival
+const LANE_COLORS = ['#6FA0DE', GREEN, '#CC8868', '#CB7FA3', '#80CBC4', '#FFCB6B'].map(hexToRgb)
 
 // [r, g, b] 0-255 <-> [hue 0-360, saturation 0-1, lightness 0-1], as in ember-ribbon
 function toHsl([red = 0, green = 0, blue = 0]: Rgb): [number, number, number] {
