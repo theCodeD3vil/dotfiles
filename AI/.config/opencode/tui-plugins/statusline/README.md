@@ -52,16 +52,16 @@ CaskaydiaCove Nerd Font does, and Ghostty draws them itself. Its body keeps its 
 flame on its head and its props take the stage's. What it acts out is read from the
 session's messages on the shared timer (`src/stage.ts`):
 
-| State | Colour (Catppuccin Mocha) | When |
+| State | Colour (Vira Deepforest) | When |
 | --- | --- | --- |
-| idle | candle `FFC46B` | the session is not running; it falls asleep after a while |
-| waiting | blue `89B4FA` | a prompt just sent, a tool that returned and the model's next step, or a reply that has not started |
-| thinking | peach `FAB387` | the last part of the reply is reasoning that has not completed |
-| tool | mauve `CBA6F7` | the last part is a tool that is streaming or running |
-| writing | green `A6E3A1` | the last part is text |
-| approval | yellow `F9E2AF` | a permission request is open; it wins over every other stage |
-| compacting | red `F38BA8` | the latest message is a compaction that is running |
-| done | sky `89DCEB` | a turn just ended with `outcome: "succeeded"`, for `DONE_SECONDS`, then idle |
+| idle | candle yellow `FFCB6B` | the session is not running; it falls asleep after a while |
+| waiting | blue `6FA0DE` | a prompt just sent, a tool that returned and the model's next step, or a reply that has not started |
+| thinking | orange `CC8868` | the last part of the reply is reasoning that has not completed |
+| tool | pink `CB7FA3` | the last part is a tool that is streaming or running |
+| writing | lime `C3E88D` | the last part is text |
+| approval | yellow `FFCB6B` | a permission request is open; it wins over every other stage |
+| compacting | red `f07178` | the latest message is a compaction that is running |
+| done | cyan `74C9DE` | a turn just ended with `outcome: "succeeded"`, for `DONE_SECONDS`, then idle |
 
 A failed or interrupted turn goes straight to idle, and a turn that ended before its
 session came on screen is not celebrated.

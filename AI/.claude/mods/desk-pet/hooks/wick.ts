@@ -32,18 +32,19 @@ const INK: Palette = {
   e: '#2A100A', // eyes
   w: '#FFFFFF', // eye glints
 }
+// Vira Deepforest, everything but the body above: its yellow for the candle, its text colour for the paper.
 // Idle has no stage colour of its own, so its flame burns like a candle's.
-const CANDLE = '#FFC46B'
-const PAPER = '#F2EADB'
-// The stage colours, Catppuccin Mocha, as OpenCode's statusline gives its spinners.
+const CANDLE = '#FFCB6B'
+const PAPER = '#CAE5D5'
+// The stage colours, Deepforest's hues (purple is pink), as OpenCode's statusline gives its spinners.
 const TONES: Record<Exclude<PetState, 'idle'>, Color> = {
-  waiting: '#89B4FA',
-  thinking: '#FAB387',
-  tool: '#CBA6F7',
-  writing: '#A6E3A1',
-  approval: '#F9E2AF',
-  compacting: '#F38BA8',
-  done: '#89DCEB',
+  waiting: '#6FA0DE',
+  thinking: '#CC8868',
+  tool: '#CB7FA3',
+  writing: '#C3E88D',
+  approval: '#FFCB6B',
+  compacting: '#f07178',
+  done: '#74C9DE',
 }
 const SLEEP_AFTER = 14
 const BLINK_EVERY = 3.7
@@ -314,7 +315,7 @@ function sleepPose(c: Act): Pose {
     look: { eyes: 'blink' },
     flame: { size: 'ember', speed: 0.6 },
     front(body) {
-      const palette = { t: mix(CANDLE, '#E9E6DC', 0.5) }
+      const palette = { t: mix(CANDLE, PAPER, 0.5) }
       for (let i = 0; i < 3; i++) {
         if (since < i * 0.9) continue
         const age = ((since - i * 0.9) / 2.7) % 1
