@@ -1,0 +1,23 @@
+# Vira Deepforest for Atuin.
+# Colors come from vira-theme-for-terminals/warp/Vira-Theme-Deepforest.yaml, the
+# palette every tool in these dotfiles uses. Base is left unset so text follows
+# the terminal foreground.
+
+[theme]
+name = "vira-deepforest"
+
+[colors]
+AlertInfo = "#74C9DE"
+AlertWarn = "#FFCB6B"
+AlertError = "#f07178"
+Annotation = "#80CBC4"
+Guidance = "#95BBBD"
+Important = "#CC8868"
+Title = "#A68DCD"
+Muted = "#64746b"
+SyntaxCommand = "#6FA0DE"
+SyntaxFlag = "#80CBC4"
+SyntaxString = "#C3E88D"
+SyntaxVariable = "#A68DCD"
+SyntaxOperator = "#74C9DE"
+SyntaxComment = "#64746b"

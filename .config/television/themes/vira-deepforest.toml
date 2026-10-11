@@ -1,0 +1,30 @@
+# Vira Deepforest, the same palette as tmux (see "Palette" in the dotfiles README).
+#
+# `background` is left out on purpose. tv then draws on the terminal's default
+# background, so the sesh popup stays translucent and blurred like the rest of the
+# terminal. Setting it (tv's built-in `catppuccin` theme does) makes it opaque.
+
+# general
+border_fg = '#515f58'              # overlay0
+text_fg = '#CAE5D5'                # text
+dimmed_text_fg = '#76887f'         # overlay2
+# input
+input_text_fg = '#80CBC4'          # teal
+result_count_fg = '#76887f'        # overlay2
+# results
+result_name_fg = '#CAE5D5'         # text
+result_line_number_fg = '#76887f'  # overlay2
+result_value_fg = '#76887f'        # overlay2
+selection_fg = '#80CBC4'           # teal
+selection_bg = '#212f2b'           # surface0
+match_fg = '#A68DCD'               # mauve
+# preview
+preview_title_fg = '#95BBBD'       # lavender
+# modes: crust text on an accent, like the tmux pills
+channel_mode_fg = '#080c0b'        # crust
+channel_mode_bg = '#A68DCD'        # mauve
+remote_control_mode_fg = '#080c0b'
+remote_control_mode_bg = '#80CBC4' # teal
+action_picker_mode_fg = '#080c0b'
+action_picker_mode_bg = '#95BBBD'  # lavender
+send_to_channel_mode_fg = '#80CBC4'
