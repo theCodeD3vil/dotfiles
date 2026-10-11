@@ -2,22 +2,31 @@
 # Colors come from vira-theme-for-terminals/warp/Vira-Theme-Deepforest.yaml, the
 # palette every tool in these dotfiles uses. Base is left unset so text follows
 # the terminal foreground.
+#
+# Where each meaning shows up in the search UI:
+#   AlertInfo     duration of a command that succeeded
+#   AlertError    duration of a failed command, the SELECTED row, the update banner
+#   Annotation    key hints in the top bar (esc: exit, tab: edit, ...)
+#   Guidance      "2h ago" column
+#   Important     the active "Search" tab
+#   Syntax*       the command text, coloured like zsh-syntax-highlighting does
+# The Inspect tab, the filter label and the row numbers are not themeable.
 
 [theme]
 name = "vira-deepforest"
 
 [colors]
-AlertInfo = "#74C9DE"
+AlertInfo = "#80CBC4"
 AlertWarn = "#FFCB6B"
 AlertError = "#f07178"
-Annotation = "#80CBC4"
-Guidance = "#95BBBD"
-Important = "#CC8868"
-Title = "#A68DCD"
+Annotation = "#95BBBD"
+Guidance = "#64746b"
+Important = "#C3E88D"
+Title = "#80CBC4"
 Muted = "#64746b"
-SyntaxCommand = "#6FA0DE"
-SyntaxFlag = "#80CBC4"
-SyntaxString = "#C3E88D"
-SyntaxVariable = "#A68DCD"
-SyntaxOperator = "#74C9DE"
+SyntaxCommand = "#C3E88D"
+SyntaxFlag = "#95BBBD"
+SyntaxString = "#FFCB6B"
+SyntaxVariable = "#74C9DE"
+SyntaxOperator = "#CC8868"
 SyntaxComment = "#64746b"
