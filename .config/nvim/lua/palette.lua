@@ -4,14 +4,16 @@
 -- because Deepforest has fewer hues. Colors are the ANSI slots of
 -- vira-theme-for-terminals/ghostty/Vira-Theme-Deepforest.conf plus its accent.
 -- Deepforest has no pink: `pink` is an even blend of its red and purple, and
--- `flamingo` is that pink blended half and half with the text color.
+-- `flamingo` is that pink blended half and half with the text color. `mauve`
+-- (the "dark_purple" in the Vira themes) is also that pink, so the editor shows
+-- no purple.
 -- tmux keeps its own copy in tmux/conf/theme.conf, gitmux in .gitmux.conf,
 -- starship in starship.toml (none of them can require a Lua module).
 
 return {
   flamingo = "#CBB2BC",
   pink = "#CB7FA3",
-  mauve = "#A68DCD",
+  mauve = "#CB7FA3",
   red = "#f07178",
   maroon = "#CC8868",
   peach = "#CC8868",

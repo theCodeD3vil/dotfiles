@@ -5,7 +5,7 @@
 # .zshrc unsets LS_COLORS after oh-my-zsh loads, because LS_COLORS wins over this file.
 #
 # Roles: text #CAE5D5, lime #C3E88D, teal #80CBC4, sage #95BBBD, cyan #74C9DE,
-# blue #6FA0DE, purple #A68DCD, pink #CB7FA3, red #f07178, orange #CC8868,
+# blue #6FA0DE, pink #CB7FA3, red #f07178, orange #CC8868,
 # yellow #FFCB6B, overlay #76887f, dim #64746b.
 
 colourful: true
@@ -13,7 +13,7 @@ colourful: true
 filekinds:
   normal: {foreground: "#CAE5D5"}
   directory: {foreground: "#80CBC4", is_bold: true}
-  symlink: {foreground: "#A68DCD"}
+  symlink: {foreground: "#74C9DE"}
   pipe: {foreground: "#FFCB6B"}
   block_device: {foreground: "#FFCB6B", is_bold: true}
   char_device: {foreground: "#FFCB6B", is_bold: true}
@@ -33,8 +33,8 @@ perms:
   other_read: {foreground: "#FFCB6B"}
   other_write: {foreground: "#f07178"}
   other_execute: {foreground: "#C3E88D"}
-  special_user_file: {foreground: "#A68DCD"}
-  special_other: {foreground: "#A68DCD"}
+  special_user_file: {foreground: "#CB7FA3"}
+  special_other: {foreground: "#CB7FA3"}
   attribute: {foreground: "#76887f"}
 
 size:
@@ -44,7 +44,7 @@ size:
   number_kilo: {foreground: "#80CBC4"}
   number_mega: {foreground: "#74C9DE"}
   number_giga: {foreground: "#6FA0DE"}
-  number_huge: {foreground: "#A68DCD"}
+  number_huge: {foreground: "#CB7FA3"}
   unit_byte: {foreground: "#64746b"}
   unit_kilo: {foreground: "#64746b"}
   unit_mega: {foreground: "#64746b"}
@@ -54,7 +54,7 @@ size:
 users:
   user_you: {foreground: "#FFCB6B", is_bold: true}
   user_root: {foreground: "#f07178", is_bold: true}
-  user_other: {foreground: "#A68DCD"}
+  user_other: {foreground: "#CB7FA3"}
   group_yours: {foreground: "#FFCB6B"}
   group_other: {foreground: "#76887f"}
   group_root: {foreground: "#f07178"}
@@ -68,7 +68,7 @@ git:
   modified: {foreground: "#FFCB6B"}
   deleted: {foreground: "#f07178"}
   renamed: {foreground: "#74C9DE"}
-  typechange: {foreground: "#A68DCD"}
+  typechange: {foreground: "#CB7FA3"}
   ignored: {foreground: "#64746b"}
   conflicted: {foreground: "#CC8868"}
 
@@ -81,8 +81,8 @@ git_repo:
 file_type:
   image: {foreground: "#CB7FA3"}
   video: {foreground: "#CB7FA3", is_bold: true}
-  music: {foreground: "#A68DCD"}
-  lossless: {foreground: "#A68DCD", is_bold: true}
+  music: {foreground: "#CB7FA3"}
+  lossless: {foreground: "#CB7FA3", is_bold: true}
   crypto: {foreground: "#CC8868"}
   document: {foreground: "#95BBBD"}
   compressed: {foreground: "#f07178"}
@@ -93,12 +93,12 @@ file_type:
 
 punctuation: {foreground: "#64746b"}
 date: {foreground: "#6FA0DE"}
-inode: {foreground: "#A68DCD"}
+inode: {foreground: "#CB7FA3"}
 blocks: {foreground: "#95BBBD"}
 header: {foreground: "#76887f", is_underline: true}
-octal: {foreground: "#A68DCD"}
-flags: {foreground: "#A68DCD"}
-symlink_path: {foreground: "#74C9DE"}
+octal: {foreground: "#CB7FA3"}
+flags: {foreground: "#CB7FA3"}
+symlink_path: {foreground: "#95BBBD"}
 control_char: {foreground: "#f07178"}
 broken_symlink: {foreground: "#f07178"}
 broken_path_overlay: {foreground: "#f07178", is_underline: true}

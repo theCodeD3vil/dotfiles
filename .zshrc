@@ -343,7 +343,7 @@ fi
 
 vira_base="#111816" vira_surface="#283834" vira_overlay="#515f58" vira_text="#CAE5D5"
 vira_red="#f07178" vira_peach="#CC8868" vira_teal="#80CBC4"
-vira_blue="#6FA0DE" vira_mauve="#A68DCD"
+vira_blue="#6FA0DE" vira_lime="#C3E88D"
 # Deepforest has no pink, so this is an even blend of its red and purple.
 vira_pink="#CB7FA3"
 
@@ -357,7 +357,7 @@ eval "$(fzf --zsh)"
 # fzf theme — Vira Deepforest. Every color fzf draws is set here: the ones left out
 # (border, separator, scrollbar, gutter, query, label) fall back to fzf's built-in
 # 256-color greys, which are not in the palette.
-export FZF_DEFAULT_OPTS="--color=fg:${vira_text},bg:${vira_base},hl:${vira_mauve},fg+:${vira_text},bg+:${vira_surface},hl+:${vira_mauve},info:${vira_blue},prompt:${vira_teal},pointer:${vira_pink},marker:${vira_peach},spinner:${vira_pink},header:${vira_teal},border:${vira_overlay},preview-border:${vira_overlay},separator:${vira_surface},scrollbar:${vira_overlay},gutter:${vira_base},query:${vira_text},label:${vira_teal}"
+export FZF_DEFAULT_OPTS="--color=fg:${vira_text},bg:${vira_base},hl:${vira_lime},fg+:${vira_text},bg+:${vira_surface},hl+:${vira_lime},info:${vira_blue},prompt:${vira_teal},pointer:${vira_pink},marker:${vira_peach},spinner:${vira_pink},header:${vira_teal},border:${vira_overlay},preview-border:${vira_overlay},separator:${vira_surface},scrollbar:${vira_overlay},gutter:${vira_base},query:${vira_text},label:${vira_teal}"
 
 
 # -- Use fd instead of fzf --

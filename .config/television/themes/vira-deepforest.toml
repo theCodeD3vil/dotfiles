@@ -17,12 +17,12 @@ result_line_number_fg = '#76887f'  # overlay2
 result_value_fg = '#76887f'        # overlay2
 selection_fg = '#80CBC4'           # teal
 selection_bg = '#212f2b'           # surface0
-match_fg = '#A68DCD'               # mauve
+match_fg = '#C3E88D'               # lime
 # preview
 preview_title_fg = '#95BBBD'       # lavender
 # modes: crust text on an accent, like the tmux pills
 channel_mode_fg = '#080c0b'        # crust
-channel_mode_bg = '#A68DCD'        # mauve
+channel_mode_bg = '#C3E88D'        # lime
 remote_control_mode_fg = '#080c0b'
 remote_control_mode_bg = '#80CBC4' # teal
 action_picker_mode_fg = '#080c0b'

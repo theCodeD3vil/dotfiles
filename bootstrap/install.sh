@@ -75,7 +75,7 @@ SHELL_CHANGED=0
 UI_FANCY=0
 COLS=80
 ESC=""
-C_RESET="" C_BOLD="" C_TEAL="" C_GREEN="" C_RED="" C_YELLOW="" C_MAUVE="" C_GREY=""
+C_RESET="" C_BOLD="" C_TEAL="" C_GREEN="" C_RED="" C_YELLOW="" C_PINK="" C_GREY=""
 CLR="" CURSOR_HIDE="" CURSOR_SHOW=""
 FILL="#" EMPTY="-" OK="ok" FAIL="x" SKIPPED="-" ARROW=">" WARN="!" DOT="-" ELL="..."
 BOX_TL="+" BOX_BL="+" BOX_H="-" BOX_V="|"
@@ -113,7 +113,7 @@ init_ui() {
       C_GREEN="${ESC}[38;2;195;232;141m"
       C_RED="${ESC}[38;2;240;113;120m"
       C_YELLOW="${ESC}[38;2;255;203;107m"
-      C_MAUVE="${ESC}[38;2;166;141;205m"
+      C_PINK="${ESC}[38;2;203;127;163m"
       C_GREY="${ESC}[38;2;100;116;107m"
       ;;
     *)
@@ -121,7 +121,7 @@ init_ui() {
       C_GREEN="${ESC}[38;5;114m"
       C_RED="${ESC}[38;5;211m"
       C_YELLOW="${ESC}[38;5;223m"
-      C_MAUVE="${ESC}[38;5;183m"
+      C_PINK="${ESC}[38;5;175m"
       C_GREY="${ESC}[38;5;244m"
       ;;
   esac
@@ -338,7 +338,7 @@ step_desc() {
 step_header() {
   local name=$1 idx=$2 total=$3 pct
   pct=$(((idx - 1) * 100 / total))
-  printf '\n  %s%s%s %s%-14s%s %s%2d/%d%s  ' "$C_MAUVE" "$ARROW" "$C_RESET" "$C_BOLD" "$name" "$C_RESET" "$C_GREY" "$idx" "$total" "$C_RESET"
+  printf '\n  %s%s%s %s%-14s%s %s%2d/%d%s  ' "$C_PINK" "$ARROW" "$C_RESET" "$C_BOLD" "$name" "$C_RESET" "$C_GREY" "$idx" "$total" "$C_RESET"
   bar "$pct" 24
   printf ' %s%3d%%%s\n' "$C_GREY" "$pct" "$C_RESET"
   printf '      %s%s%s\n' "$C_GREY" "$(step_desc "$name")" "$C_RESET"
@@ -347,8 +347,8 @@ step_header() {
 }
 
 # The framed panels (banner and summary): a title line, then rows behind a left edge.
-box_top() { printf '\n  %s%s%s%s%s %s%s%s\n' "$C_MAUVE" "$BOX_TL" "$BOX_H" "$BOX_H" "$C_RESET" "$C_BOLD" "$1" "$C_RESET"; }
-box_row() { printf '  %s%s%s  %s\n' "$C_MAUVE" "$BOX_V" "$C_RESET" "$1"; }
+box_top() { printf '\n  %s%s%s%s%s %s%s%s\n' "$C_PINK" "$BOX_TL" "$BOX_H" "$BOX_H" "$C_RESET" "$C_BOLD" "$1" "$C_RESET"; }
+box_row() { printf '  %s%s%s  %s\n' "$C_PINK" "$BOX_V" "$C_RESET" "$1"; }
 
 print_banner() {
   local osname mode="live"
@@ -365,7 +365,7 @@ print_banner() {
   box_row "$osname"
   box_row "$C_GREY$DOTFILES_DIR$C_RESET"
   box_row "$C_GREY$mode$C_RESET"
-  printf '  %s%s%s%s%s%s\n' "$C_MAUVE" "$BOX_BL" "$BOX_H" "$BOX_H" "$BOX_H" "$C_RESET"
+  printf '  %s%s%s%s%s%s\n' "$C_PINK" "$BOX_BL" "$BOX_H" "$BOX_H" "$BOX_H" "$C_RESET"
   log_plain "dotfiles bootstrap: $osname, $DOTFILES_DIR, $mode"
 }
 
@@ -389,7 +389,7 @@ print_summary() {
   done <<EOF
 $SUMMARY
 EOF
-  printf '  %s%s%s%s%s ' "$C_MAUVE" "$BOX_BL" "$BOX_H" "$BOX_H" "$C_RESET"
+  printf '  %s%s%s%s%s ' "$C_PINK" "$BOX_BL" "$BOX_H" "$BOX_H" "$C_RESET"
   bar 100 16
   printf '  %s%d done, %d failed, %d skipped in %s%s\n' "$C_GREY" "$ndone" "$nfail" "$nskip" "$(fmt_secs "$total")" "$C_RESET"
   log_plain "summary: $ndone done, $nfail failed, $nskip skipped in $(fmt_secs "$total")"
@@ -402,7 +402,7 @@ bold() { printf '%s%s%s' "$C_BOLD" "$1" "$C_RESET"; }
 bullet() { printf '      %s%s%s %s\n' "$C_TEAL" "$DOT" "$C_RESET" "$*"; }
 
 print_next_steps() {
-  printf '\n  %s%s next steps%s  %s(none of these can be scripted)%s\n' "$C_MAUVE" "$ARROW" "$C_RESET" "$C_GREY" "$C_RESET"
+  printf '\n  %s%s next steps%s  %s(none of these can be scripted)%s\n' "$C_PINK" "$ARROW" "$C_RESET" "$C_GREY" "$C_RESET"
   if [ "$SHELL_CHANGED" = 1 ]; then
     bullet "your login shell is now zsh, but this terminal is still on the old one. Run $(bold 'exec zsh') or log in again; do not $(bold 'source ~/.zshrc') from bash"
   fi
