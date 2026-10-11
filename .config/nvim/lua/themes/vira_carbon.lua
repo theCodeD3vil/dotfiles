@@ -1,6 +1,6 @@
 -- Vira Carbon: bg/fg surface ramp from vira-theme-for-terminals/
 -- ghostty/Vira-Carbon.conf; decoration colors
--- (red/green/blue/etc) are literal Catppuccin Mocha, from lua/palette.lua.
+-- (red/green/blue/etc) are the shared Deepforest ones from lua/palette.lua.
 
 local p = require("palette")
 

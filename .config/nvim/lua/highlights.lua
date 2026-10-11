@@ -48,7 +48,7 @@ M.override = {
   Todo = { bold = true, italic = true },
   ["@comment.todo"] = { bold = true, italic = true },
 
-  -- opened folders in nvim-tree: literal Catppuccin Mocha green, not the
+  -- opened folders in nvim-tree: the palette.lua green, not the
   -- active theme's own green (base46/integrations/nvimtree.lua already
   -- defines this key with fg = colors.folder_bg, so it must go in
   -- hl_override, not hl_add — hl_add only merges into the "defaults"

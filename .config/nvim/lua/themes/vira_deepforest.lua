@@ -1,6 +1,6 @@
 -- Vira Deepforest: bg/fg surface ramp from vira-theme-for-terminals/
 -- ghostty/Vira-Deepforest.conf; decoration colors
--- (red/green/blue/etc) are literal Catppuccin Mocha, from lua/palette.lua.
+-- (red/green/blue/etc) are the Deepforest ANSI ones from lua/palette.lua.
 
 local p = require("palette")
 

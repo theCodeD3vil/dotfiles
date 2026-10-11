@@ -1,20 +1,25 @@
--- Catppuccin Mocha: the one place nvim spells these hexes out. Only the names
--- the config uses; add more from https://catppuccin.com/palette when needed.
+-- Vira Deepforest: the one place nvim spells these hexes out. The names are
+-- kept from the old Catppuccin palette so the themes and highlights that
+-- require this file need no edits; several names share one Deepforest color
+-- because Deepforest has fewer hues. Colors are the ANSI slots of
+-- vira-theme-for-terminals/ghostty/Vira-Theme-Deepforest.conf plus its accent.
+-- Deepforest has no pink: `pink` is an even blend of its red and purple, and
+-- `flamingo` is that pink blended half and half with the text color.
 -- tmux keeps its own copy in tmux/conf/theme.conf, gitmux in .gitmux.conf,
 -- starship in starship.toml (none of them can require a Lua module).
 
 return {
-  flamingo = "#f2cdcd",
-  pink = "#f5c2e7",
-  mauve = "#cba6f7",
-  red = "#f38ba8",
-  maroon = "#eba0ac",
-  peach = "#fab387",
-  yellow = "#f9e2af",
-  green = "#a6e3a1",
-  teal = "#94e2d5",
-  sky = "#89dceb",
-  sapphire = "#74c7ec",
-  blue = "#89b4fa",
-  lavender = "#b4befe",
+  flamingo = "#CBB2BC",
+  pink = "#CB7FA3",
+  mauve = "#A68DCD",
+  red = "#f07178",
+  maroon = "#CC8868",
+  peach = "#CC8868",
+  yellow = "#FFCB6B",
+  green = "#C3E88D",
+  teal = "#80CBC4",
+  sky = "#74C9DE",
+  sapphire = "#74C9DE",
+  blue = "#6FA0DE",
+  lavender = "#95BBBD",
 }
