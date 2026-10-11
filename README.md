@@ -185,15 +185,19 @@ tools use incompatible formats, so each config holds its own copy of these hexes
 | surface | `#212f2b`, `#283834` | yellow | `#FFCB6B` |
 | overlay | `#515f58`, `#64746b`, `#76887f` | green | `#C3E88D` |
 | text | `#CAE5D5` | teal (accent) | `#80CBC4` |
-| purple | `#A68DCD` | cyan | `#74C9DE` |
-| sage | `#95BBBD` | blue | `#6FA0DE` |
-| pink (derived) | `#CB7FA3` | | |
+| sage | `#95BBBD` | cyan | `#74C9DE` |
+| pink (derived) | `#CB7FA3` | blue | `#6FA0DE` |
 
 Vira Deepforest itself only defines the background, text and the 16 terminal
 colours. The crust, surface and overlay shades are taken from
 `.config/nvim/lua/themes/vira_deepforest.lua`. Deepforest has no pink, so pink is
-an even blend of its red and purple. It colours the fzf pointer and spinner and
-the zsh alias highlight.
+an even blend of its red and its magenta (`#A68DCD`). It colours the fzf pointer
+and spinner, the zsh alias highlight, bat's keywords and a few other accents.
+
+Purple is kept out of the tool themes on purpose: wherever a Catppuccin-style
+config used mauve, Deepforest's config uses pink or lime. The one place `#A68DCD`
+still appears is the terminal palettes (ANSI magenta in Ghostty, WezTerm and
+Kaku), which stay as the Vira pack defines them.
 
 | Tool | Where the colours live |
 |---|---|
@@ -209,6 +213,7 @@ the zsh alias highlight.
 | eza (`ls`, tree previews) | `.config/eza/theme.yml`; `.zshrc` points `EZA_CONFIG_DIR` at it and unsets oh-my-zsh's `LS_COLORS`, which would override it |
 | bat, delta | `.config/bat/themes/Vira Deepforest.tmTheme`, `[delta]` in `.gitconfig` |
 | television | `.config/television/themes/vira-deepforest.toml` |
+| yazi | `.config/yazi/theme.toml` and `flavors/vira-deepforest.yazi`; its `tmtheme.xml` links the bat theme. The `[flavor]` section carries no Kaku markers, so Kaku's yazi wrapper leaves it alone |
 | Atuin | `.config/atuin/themes/vira-deepforest.toml` |
 
 The Ghostty colours come from
