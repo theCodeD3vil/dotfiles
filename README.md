@@ -175,9 +175,11 @@ conditional in `window-status-format`.
 
 Every tool uses Vira Deepforest. VS Code, the Claude Code mods and the OpenCode
 statusline plugin are left alone on purpose: VS Code keeps its own theme, and the
-mods and the plugin keep their hand-picked colours. There is no shared palette file
-because the configured tools use incompatible formats, so each config holds its own
-copy of these hexes.
+mods and the plugin keep their hand-picked colours. The one exception is the green
+of the usage gauges (`severityColor` in Ember Ribbon, `sevColor` in the statusline),
+which is Deepforest's lime and must be the same in both. There is no shared palette
+file because the configured tools use incompatible formats, so each config holds its
+own copy of these hexes.
 
 | Role | Hex | Role | Hex |
 |---|---|---|---|

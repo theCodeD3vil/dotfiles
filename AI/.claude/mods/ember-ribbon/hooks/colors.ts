@@ -48,7 +48,7 @@ export function fromHsl(hue: number, saturation: number, lightness: number) {
 export function severityColor(percent: number) {
   if (percent >= 85) return '#E2766A'
   if (percent >= 65) return '#E2B064'
-  return '#A3BA82'
+  return '#C3E88D'
 }
 
 // Ember heat (Claude orange at 25-50%): the used tokens coloured by how full the context window is.

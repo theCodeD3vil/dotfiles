@@ -21,7 +21,7 @@ export type RateLimit = { percentUsed?: number; resetsAt?: string }
 export function sevColor(pct: number) {
   if (pct >= 85) return '#E2766A'
   if (pct >= 65) return '#E2B064'
-  return '#A3BA82'
+  return '#C3E88D'
 }
 
 export const hex = (h: string) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16))
