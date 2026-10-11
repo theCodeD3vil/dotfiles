@@ -1,0 +1,235 @@
+# vim:fileencoding=utf-8:foldmethod=marker
+
+# Vira Deepforest for yazi. The layout is Kaku Dark's flavor (the structure this
+# yazi version expects, icons included) recoloured with the Deepforest palette; see
+# "Palette" in the dotfiles README. tmtheme.xml links the bat theme, so code
+# previews use the same syntax colours as bat.
+#
+# Roles: lime #C3E88D (success, executables), red #f07178, blue #6FA0DE,
+# teal #80CBC4 (directories and chrome), yellow #FFCB6B, pink #CB7FA3, sage #95BBBD,
+# text #CAE5D5, crust #080c0b (text on accents), surface #283834, panel #1b2623,
+# dim #64746b, border #3B544D.
+
+# : Manager {{{
+
+[mgr]
+cwd = { fg = "#C3E88D", bold = true }
+
+find_keyword = { fg = "#FFCB6B", bold = true, italic = true, underline = true }
+find_position = { fg = "#CB7FA3", bg = "reset", bold = true, italic = true }
+symlink_target = { fg = "#64746b", italic = true }
+
+marker_copied   = { fg = "#C3E88D", bg = "#C3E88D" }
+marker_cut      = { fg = "#f07178", bg = "#f07178" }
+marker_marked   = { fg = "#6FA0DE", bg = "#6FA0DE" }
+marker_selected = { fg = "#FFCB6B", bg = "#FFCB6B" }
+
+count_copied   = { fg = "#080c0b", bg = "#C3E88D" }
+count_cut      = { fg = "#080c0b", bg = "#f07178" }
+count_selected = { fg = "#080c0b", bg = "#FFCB6B" }
+
+border_symbol = "│"
+border_style  = { fg = "#3B544D" }
+
+# : }}}
+
+
+# : Tabs {{{
+
+[tabs]
+active   = { fg = "#080c0b", bg = "#80CBC4", bold = true }
+inactive = { fg = "#CAE5D5", bg = "#283834" }
+
+# : }}}
+
+
+# : Mode {{{
+
+[mode]
+normal_main = { fg = "#080c0b", bg = "#80CBC4", bold = true }
+normal_alt  = { fg = "#80CBC4", bg = "#283834" }
+
+select_main = { fg = "#080c0b", bg = "#C3E88D", bold = true }
+select_alt  = { fg = "#C3E88D", bg = "#283834" }
+
+unset_main = { fg = "#080c0b", bg = "#FFCB6B", bold = true }
+unset_alt  = { fg = "#FFCB6B", bg = "#283834" }
+
+# : }}}
+
+
+# : Indicator {{{
+
+[indicator]
+parent  = { fg = "#64746b", bg = "#1b2623" }
+current = { fg = "#080c0b", bg = "#80CBC4", bold = true }
+preview = { fg = "#C3E88D", underline = true }
+padding = { open = "", close = "" }
+
+# : }}}
+
+
+# : Status {{{
+
+[status]
+perm_sep   = { fg = "#64746b" }
+perm_type  = { fg = "#95BBBD" }
+perm_read  = { fg = "#C3E88D" }
+perm_write = { fg = "#FFCB6B" }
+perm_exec  = { fg = "#80CBC4" }
+
+progress_label  = { fg = "#CAE5D5", bold = true }
+progress_normal = { fg = "#C3E88D", bg = "#283834" }
+progress_error  = { fg = "#080c0b", bg = "#f07178" }
+
+# : }}}
+
+
+# : Which {{{
+
+[which]
+mask            = { bg = "#1b2623" }
+cand            = { fg = "#C3E88D" }
+rest            = { fg = "#64746b" }
+desc            = { fg = "#CB7FA3" }
+separator       = "  "
+separator_style = { fg = "#3B544D" }
+
+# : }}}
+
+
+# : Confirm {{{
+
+[confirm]
+border  = { fg = "#80CBC4" }
+title   = { fg = "#80CBC4" }
+btn_yes = { fg = "#080c0b", bg = "#C3E88D", bold = true }
+btn_no  = { fg = "#CAE5D5", bg = "#283834" }
+
+# : }}}
+
+
+# : Spot {{{
+
+[spot]
+border   = { fg = "#80CBC4" }
+title    = { fg = "#80CBC4" }
+tbl_col  = { fg = "#C3E88D" }
+tbl_cell = { fg = "#080c0b", bg = "#FFCB6B" }
+
+# : }}}
+
+
+# : Notify {{{
+
+[notify]
+title_info  = { fg = "#C3E88D" }
+title_warn  = { fg = "#FFCB6B" }
+title_error = { fg = "#f07178" }
+
+# : }}}
+
+
+# : Pick {{{
+
+[pick]
+border = { fg = "#80CBC4" }
+active = { fg = "#CB7FA3", bold = true }
+
+# : }}}
+
+
+# : Input {{{
+
+[input]
+border   = { fg = "#80CBC4" }
+selected = { fg = "#080c0b", bg = "#80CBC4", bold = true }
+
+# : }}}
+
+
+# : Completion {{{
+
+[cmp]
+border = { fg = "#80CBC4" }
+active = { fg = "#080c0b", bg = "#80CBC4", bold = true }
+
+# : }}}
+
+
+# : Tasks {{{
+
+[tasks]
+border  = { fg = "#80CBC4" }
+hovered = { fg = "#C3E88D", bold = true }
+
+# : }}}
+
+
+# : Help {{{
+
+[help]
+on      = { fg = "#C3E88D" }
+run     = { fg = "#CB7FA3" }
+hovered = { fg = "#080c0b", bg = "#80CBC4", bold = true }
+footer  = { fg = "#080c0b", bg = "#CAE5D5" }
+
+# : }}}
+
+
+# : Filetype {{{
+
+[filetype]
+rules = [
+  { mime = "image/*", fg = "#FFCB6B" },
+  { mime = "{audio,video}/*", fg = "#CB7FA3" },
+  { mime = "application/{pdf,doc,rtf}", fg = "#80CBC4" },
+  { mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#f07178" },
+  { mime = "vfs/{absent,stale}", fg = "#64746b" },
+  { url = "*", is = "orphan", bg = "#f07178" },
+  { url = "*", is = "exec", fg = "#C3E88D" },
+  { url = "*", is = "dummy", bg = "#f07178" },
+  { url = "*/", is = "dummy", bg = "#f07178" },
+  { url = "*", fg = "#CAE5D5" },
+  { url = "*/", fg = "#80CBC4" },
+]
+
+# : }}}
+
+
+# : Icons {{{
+
+[icon]
+globs = []
+dirs = [
+  { name = ".config", text = "", fg = "#95BBBD" },
+  { name = ".git", text = "", fg = "#f07178" },
+  { name = ".github", text = "", fg = "#80CBC4" },
+  { name = ".npm", text = "", fg = "#CB7FA3" },
+  { name = "Desktop", text = "", fg = "#C3E88D" },
+  { name = "Development", text = "", fg = "#C3E88D" },
+  { name = "Documents", text = "", fg = "#80CBC4" },
+  { name = "Downloads", text = "", fg = "#80CBC4" },
+  { name = "Library", text = "", fg = "#95BBBD" },
+  { name = "Movies", text = "", fg = "#CB7FA3" },
+  { name = "Music", text = "", fg = "#CB7FA3" },
+  { name = "Pictures", text = "", fg = "#FFCB6B" },
+  { name = "Public", text = "", fg = "#C3E88D" },
+  { name = "Videos", text = "", fg = "#CB7FA3" },
+]
+conds = [
+  { if = "orphan", text = "", fg = "#f07178" },
+  { if = "link", text = "", fg = "#64746b" },
+  { if = "block", text = "", fg = "#FFCB6B" },
+  { if = "char", text = "", fg = "#FFCB6B" },
+  { if = "fifo", text = "", fg = "#FFCB6B" },
+  { if = "sock", text = "", fg = "#FFCB6B" },
+  { if = "sticky", text = "", fg = "#FFCB6B" },
+  { if = "dummy", text = "", fg = "#f07178" },
+  { if = "dir & hovered", text = "", fg = "#C3E88D" },
+  { if = "dir", text = "", fg = "#80CBC4" },
+  { if = "exec", text = "", fg = "#C3E88D" },
+  { if = "!dir", text = "", fg = "#CAE5D5" },
+]
+
+# : }}}

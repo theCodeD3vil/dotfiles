@@ -16,6 +16,10 @@
 .warp/*
 !.warp/settings.toml
 
+# Kaku's yazi wrapper installs its own flavors next to ours. On a fresh machine stow
+# links the whole ~/.config/yazi, so keep those copies out of the repo.
+.config/yazi/flavors/kaku-*
+
 # Test suites are kept locally but are not part of the dotfiles repository.
 **/test/
 **/tests/
