@@ -173,22 +173,48 @@ conditional in `window-status-format`.
 
 ## Palette
 
-The terminal uses Vira Theme Carbon. The prompt, tmux, Git UI, television, and
-most editor decoration colours use Catppuccin Mocha. There is no shared palette
-file because the configured tools use incompatible formats.
+Every tool uses Vira Deepforest. VS Code, the Claude Code mods and OpenCode are
+left alone on purpose: VS Code keeps its own theme, and the mods and OpenCode keep
+their hand-picked colours. There is no shared palette file because the configured
+tools use incompatible formats, so each config holds its own copy of these hexes.
 
-| Tool | Palette file |
+| Role | Hex | Role | Hex |
+|---|---|---|---|
+| background | `#111816` | red | `#f07178` |
+| crust (bars, text on pills) | `#080c0b` | orange | `#CC8868` |
+| surface | `#212f2b`, `#283834` | yellow | `#FFCB6B` |
+| overlay | `#515f58`, `#64746b`, `#76887f` | green | `#C3E88D` |
+| text | `#CAE5D5` | teal (accent) | `#80CBC4` |
+| purple | `#A68DCD` | cyan | `#74C9DE` |
+| sage | `#95BBBD` | blue | `#6FA0DE` |
+| pink (derived) | `#CB7FA3` | | |
+
+Vira Deepforest itself only defines the background, text and the 16 terminal
+colours. The crust, surface and overlay shades are taken from
+`.config/nvim/lua/themes/vira_deepforest.lua`. Deepforest has no pink, so pink is
+an even blend of its red and purple. It colours the fzf pointer and spinner and
+the zsh alias highlight.
+
+| Tool | Where the colours live |
 |---|---|
+| Ghostty | `.config/ghostty/config` |
+| WezTerm | `.wezterm.lua` |
+| Kaku | `.config/kaku/kaku.lua` (overrides on top of Kaku Dark) |
+| Warp | `.warp/settings.toml`; the stow step of `install.sh` links the pack's theme file into `~/.warp/themes` |
 | tmux | `.config/tmux/conf/theme.conf` |
-| Neovim | `.config/nvim/lua/palette.lua` |
-| Starship | `.config/starship.toml` |
-| zsh | `.zshrc` |
-| television | `.config/television/themes/catppuccin-mocha.toml` |
 | gitmux | `.gitmux.conf` |
+| Neovim | `.config/nvim/lua/palette.lua`, theme set in `chadrc.lua` |
+| Starship | `.config/starship.toml` |
+| zsh (fzf, `zi` picker, syntax highlighting) | `.zshrc` |
+| eza (`ls`, tree previews) | `.config/eza/theme.yml`; `.zshrc` points `EZA_CONFIG_DIR` at it and unsets oh-my-zsh's `LS_COLORS`, which would override it |
+| bat, delta | `.config/bat/themes/Vira Deepforest.tmTheme`, `[delta]` in `.gitconfig` |
+| television | `.config/television/themes/vira-deepforest.toml` |
+| Atuin | `.config/atuin/themes/vira-deepforest.toml` |
 
 The Ghostty colours come from
-`vira-theme-for-terminals/ghostty/Vira-Theme-Carbon.conf`; `.wezterm.lua` is its
-matching WezTerm translation. Change terminal colours in both places.
+`vira-theme-for-terminals/ghostty/Vira-Theme-Deepforest.conf`; `.wezterm.lua` and
+Kaku use its matching translation. Change terminal colours in all three places.
+After editing the bat theme, run `bat cache --build`.
 
 `prefix + s` opens `tv sesh` in a translucent tmux popup. It deliberately uses
 the terminal's default background so Ghostty and WezTerm transparency can show
