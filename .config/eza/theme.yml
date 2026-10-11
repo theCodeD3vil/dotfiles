@@ -1,0 +1,104 @@
+# Vira Deepforest for eza (the `ls` alias, fzf previews and the zi picker).
+# Colors are the ANSI slots of vira-theme-for-terminals/ghostty/Vira-Theme-Deepforest.conf
+# plus its accent; see "Palette" in the dotfiles README. They are written as hex so
+# they hold in any terminal, not just ones that use the Deepforest palette.
+# .zshrc unsets LS_COLORS after oh-my-zsh loads, because LS_COLORS wins over this file.
+#
+# Roles: text #CAE5D5, lime #C3E88D, teal #80CBC4, sage #95BBBD, cyan #74C9DE,
+# blue #6FA0DE, purple #A68DCD, pink #CB7FA3, red #f07178, orange #CC8868,
+# yellow #FFCB6B, overlay #76887f, dim #64746b.
+
+colourful: true
+
+filekinds:
+  normal: {foreground: "#CAE5D5"}
+  directory: {foreground: "#80CBC4", is_bold: true}
+  symlink: {foreground: "#A68DCD"}
+  pipe: {foreground: "#FFCB6B"}
+  block_device: {foreground: "#FFCB6B", is_bold: true}
+  char_device: {foreground: "#FFCB6B", is_bold: true}
+  socket: {foreground: "#CB7FA3"}
+  special: {foreground: "#CC8868"}
+  executable: {foreground: "#C3E88D", is_bold: true}
+  mount_point: {foreground: "#6FA0DE", is_bold: true}
+
+perms:
+  user_read: {foreground: "#FFCB6B"}
+  user_write: {foreground: "#f07178"}
+  user_execute_file: {foreground: "#C3E88D", is_bold: true}
+  user_execute_other: {foreground: "#C3E88D", is_bold: true}
+  group_read: {foreground: "#FFCB6B"}
+  group_write: {foreground: "#f07178"}
+  group_execute: {foreground: "#C3E88D"}
+  other_read: {foreground: "#FFCB6B"}
+  other_write: {foreground: "#f07178"}
+  other_execute: {foreground: "#C3E88D"}
+  special_user_file: {foreground: "#A68DCD"}
+  special_other: {foreground: "#A68DCD"}
+  attribute: {foreground: "#76887f"}
+
+size:
+  major: {foreground: "#95BBBD"}
+  minor: {foreground: "#74C9DE"}
+  number_byte: {foreground: "#95BBBD"}
+  number_kilo: {foreground: "#80CBC4"}
+  number_mega: {foreground: "#74C9DE"}
+  number_giga: {foreground: "#6FA0DE"}
+  number_huge: {foreground: "#A68DCD"}
+  unit_byte: {foreground: "#64746b"}
+  unit_kilo: {foreground: "#64746b"}
+  unit_mega: {foreground: "#64746b"}
+  unit_giga: {foreground: "#64746b"}
+  unit_huge: {foreground: "#64746b"}
+
+users:
+  user_you: {foreground: "#FFCB6B", is_bold: true}
+  user_root: {foreground: "#f07178", is_bold: true}
+  user_other: {foreground: "#A68DCD"}
+  group_yours: {foreground: "#FFCB6B"}
+  group_other: {foreground: "#76887f"}
+  group_root: {foreground: "#f07178"}
+
+links:
+  normal: {foreground: "#74C9DE"}
+  multi_link_file: {foreground: "#CC8868"}
+
+git:
+  new: {foreground: "#C3E88D"}
+  modified: {foreground: "#FFCB6B"}
+  deleted: {foreground: "#f07178"}
+  renamed: {foreground: "#74C9DE"}
+  typechange: {foreground: "#A68DCD"}
+  ignored: {foreground: "#64746b"}
+  conflicted: {foreground: "#CC8868"}
+
+git_repo:
+  branch_main: {foreground: "#C3E88D"}
+  branch_other: {foreground: "#FFCB6B"}
+  git_clean: {foreground: "#C3E88D"}
+  git_dirty: {foreground: "#f07178"}
+
+file_type:
+  image: {foreground: "#CB7FA3"}
+  video: {foreground: "#CB7FA3", is_bold: true}
+  music: {foreground: "#A68DCD"}
+  lossless: {foreground: "#A68DCD", is_bold: true}
+  crypto: {foreground: "#CC8868"}
+  document: {foreground: "#95BBBD"}
+  compressed: {foreground: "#f07178"}
+  temp: {foreground: "#64746b"}
+  compiled: {foreground: "#CC8868"}
+  build: {foreground: "#FFCB6B", is_bold: true, is_underline: true}
+  source: {foreground: "#6FA0DE"}
+
+punctuation: {foreground: "#64746b"}
+date: {foreground: "#6FA0DE"}
+inode: {foreground: "#A68DCD"}
+blocks: {foreground: "#95BBBD"}
+header: {foreground: "#76887f", is_underline: true}
+octal: {foreground: "#A68DCD"}
+flags: {foreground: "#A68DCD"}
+symlink_path: {foreground: "#74C9DE"}
+control_char: {foreground: "#f07178"}
+broken_symlink: {foreground: "#f07178"}
+broken_path_overlay: {foreground: "#f07178", is_underline: true}

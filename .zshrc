@@ -219,6 +219,10 @@ plugins=(git git-flow npm nvm docker docker-compose vscode extract dotenv ssh-ag
 # Load Oh My Zsh
 source $ZSH/oh-my-zsh.sh
 
+# oh-my-zsh exports a default LS_COLORS (red executables). eza reads it ahead of
+# ~/.config/eza/theme.yml, and ls here is eza, so drop it and let the theme apply.
+unset LS_COLORS
+
 # Homebrew PATH for Apple Silicon
 export PATH="/opt/homebrew/bin:$PATH"
 
@@ -334,13 +338,14 @@ if [[ "$OSTYPE" == darwin* ]]; then
 fi
 
 # *****************************************************************************
-# CATPPUCCIN MOCHA PALETTE (shared by fzf, bat, zsh-syntax-highlighting)
+# VIRA DEEPFOREST PALETTE (shared by fzf and zsh-syntax-highlighting)
 # *****************************************************************************
 
-ctp_base="#1e1e2e" ctp_mantle="#181825" ctp_surface0="#313244" ctp_surface1="#45475a"
-ctp_overlay0="#6c7086" ctp_text="#cdd6f4"
-ctp_red="#f38ba8" ctp_peach="#fab387" ctp_yellow="#f9e2af" ctp_green="#a6e3a1"
-ctp_teal="#94e2d5" ctp_blue="#89b4fa" ctp_mauve="#cba6f7" ctp_pink="#f5c2e7"
+vira_base="#111816" vira_surface="#283834" vira_overlay="#515f58" vira_text="#CAE5D5"
+vira_red="#f07178" vira_peach="#CC8868" vira_teal="#80CBC4"
+vira_blue="#6FA0DE" vira_mauve="#A68DCD"
+# Deepforest has no pink, so this is an even blend of its red and purple.
+vira_pink="#CB7FA3"
 
 # *****************************************************************************
 # FZF
@@ -349,8 +354,10 @@ ctp_teal="#94e2d5" ctp_blue="#89b4fa" ctp_mauve="#cba6f7" ctp_pink="#f5c2e7"
 # setup fzf keybindings and completions
 eval "$(fzf --zsh)"
 
-# fzf theme — Catppuccin Mocha
-export FZF_DEFAULT_OPTS="--color=fg:${ctp_text},bg:${ctp_base},hl:${ctp_mauve},fg+:${ctp_text},bg+:${ctp_surface1},hl+:${ctp_mauve},info:${ctp_blue},prompt:${ctp_teal},pointer:${ctp_pink},marker:${ctp_peach},spinner:${ctp_pink},header:${ctp_teal}"
+# fzf theme — Vira Deepforest. Every color fzf draws is set here: the ones left out
+# (border, separator, scrollbar, gutter, query, label) fall back to fzf's built-in
+# 256-color greys, which are not in the palette.
+export FZF_DEFAULT_OPTS="--color=fg:${vira_text},bg:${vira_base},hl:${vira_mauve},fg+:${vira_text},bg+:${vira_surface},hl+:${vira_mauve},info:${vira_blue},prompt:${vira_teal},pointer:${vira_pink},marker:${vira_peach},spinner:${vira_pink},header:${vira_teal},border:${vira_overlay},preview-border:${vira_overlay},separator:${vira_surface},scrollbar:${vira_overlay},gutter:${vira_base},query:${vira_text},label:${vira_teal}"
 
 
 # -- Use fd instead of fzf --
@@ -393,9 +400,13 @@ _fzf_comprun(){
 
 # ----- Bat (better cat) -----
 
-export BAT_THEME="Catppuccin Mocha"
+export BAT_THEME="Vira Deepforest"
 
 # ---- Eza (better ls) -----
+
+# On macOS eza looks for theme.yml in ~/Library/Application Support/eza and ignores
+# XDG_CONFIG_HOME, so point it at the stowed ~/.config/eza (the Vira Deepforest theme).
+export EZA_CONFIG_DIR="$HOME/.config/eza"
 
 alias ls="eza --color=always --long --git --no-filesize --icons=always --no-time --no-user --no-permissions"
 
@@ -403,6 +414,12 @@ alias ls="eza --color=always --long --git --no-filesize --icons=always --no-time
 eval "$(zoxide init zsh)"
 
 alias cd="z"
+
+# `zi` picks a directory with fzf. Setting _ZO_FZF_OPTS replaces both zoxide's own
+# fzf defaults and FZF_DEFAULT_OPTS, so this starts from the Deepforest fzf colors
+# and repeats zoxide's defaults. The only change to those is the preview: eza
+# draws it in the terminal palette, where zoxide's plain `ls` has no color on macOS.
+export _ZO_FZF_OPTS="$FZF_DEFAULT_OPTS --exact --no-sort --bind=ctrl-z:ignore,btab:up,tab:down --cycle --keep-right --border=sharp --height=45% --info=inline --layout=reverse --tabstop=1 --exit-0 --preview='eza --tree --level=2 --color=always --icons=always {2..}' --preview-window=down,30%,sharp"
 
 
 # *****************************************************************************
@@ -450,9 +467,9 @@ ZSH_HIGHLIGHT_PATTERNS+=('rm -rf *' 'fg=white,bold,bg=red')
 ZSH_HIGHLIGHT_MAXLENGTH=512
 ZSH_HIGHLIGHT_DIRS_BLACKLIST+=(/mnt/nfs-share)
 
-# Catppuccin Mocha colors (ansi mapping: magenta=Pink, cyan=Teal; palette defined above near FZF)
-ZSH_HIGHLIGHT_STYLES[alias]="fg=$ctp_pink,bold"
-ZSH_HIGHLIGHT_STYLES[path]="fg=$ctp_teal"
+# Vira Deepforest colors (palette defined above near FZF)
+ZSH_HIGHLIGHT_STYLES[alias]="fg=$vira_pink,bold"
+ZSH_HIGHLIGHT_STYLES[path]="fg=$vira_teal"
 ZSH_HIGHLIGHT_STYLES[globbing]='none'
 
 [ -f "$HOME/.atuin/bin/env" ] && . "$HOME/.atuin/bin/env"
