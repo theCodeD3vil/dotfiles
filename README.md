@@ -173,13 +173,11 @@ conditional in `window-status-format`.
 
 ## Palette
 
-Every tool uses Vira Deepforest. VS Code, the Claude Code mods and the OpenCode
-statusline plugin are left alone on purpose: VS Code keeps its own theme, and the
-mods and the plugin keep their hand-picked colours. The one exception is the green
-of the usage gauges (`severityColor` in Ember Ribbon, `sevColor` in the statusline),
-which is Deepforest's lime and must be the same in both. There is no shared palette
-file because the configured tools use incompatible formats, so each config holds its
-own copy of these hexes.
+Every tool uses Vira Deepforest. Only VS Code is left alone on purpose and keeps its
+own theme. The Claude Code mods and the OpenCode statusline plugin use it too, with
+one exception: Wick's body keeps its own orange ink, and only his flame and props
+follow Deepforest. There is no shared palette file because the configured tools use
+incompatible formats, so each config holds its own copy of these hexes.
 
 | Role | Hex | Role | Hex |
 |---|---|---|---|
@@ -219,6 +217,8 @@ Kaku), which stay as the Vira pack defines them.
 | yazi | `.config/yazi/theme.toml` and `flavors/vira-deepforest.yazi`; its `tmtheme.xml` links the bat theme. The `[flavor]` section carries no Kaku markers, so Kaku's yazi wrapper leaves it alone |
 | Atuin | `.config/atuin/themes/vira-deepforest.toml` |
 | Claude Code | `AI/.claude/themes/vira-deepforest.json`, linked into `~/.claude/themes`; select it with `/theme` (stored as `custom:vira-deepforest` in `~/.claude/settings.json`, which is not tracked). It overrides the base `dark` preset. Shimmer tokens are their base colour 45% blended toward the text colour; diff backgrounds are delta's |
+| Claude Code mods | A copy of the hexes in each mod: `ember-ribbon/hooks/colors.ts`, `desk-pet/hooks/wick.ts` (the flame tones and props; the body palette is Wick's own), `agent-lanes` and `session-panes` (`hooks/register.tsx`). Ember Ribbon's palette must match the statusline's, and `wick.ts`'s state tones its spinner tones; the statusline's parity tests check both |
+| OpenCode statusline | `AI/.config/opencode/tui-plugins/statusline/src/footer.ts` (the hues and greys the other files import); `bash build.sh` there installs a change |
 | OpenCode | `AI/.config/opencode/themes/vira-deepforest.json`; `theme` in `tui.json` and `theme.name` in `cli.json` select it. `background` is `none`, so the terminal's own background shows through |
 
 The Ghostty colours come from
