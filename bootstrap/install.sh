@@ -108,13 +108,13 @@ init_ui() {
   CURSOR_SHOW="${ESC}[?25h"
   case "${COLORTERM:-}" in
     *truecolor*|*24bit*)
-      # Catppuccin Mocha: the palette the rest of these dotfiles use.
-      C_TEAL="${ESC}[38;2;148;226;213m"
-      C_GREEN="${ESC}[38;2;166;227;161m"
-      C_RED="${ESC}[38;2;243;139;168m"
-      C_YELLOW="${ESC}[38;2;249;226;175m"
-      C_MAUVE="${ESC}[38;2;203;166;247m"
-      C_GREY="${ESC}[38;2;108;112;134m"
+      # Vira Deepforest: the palette the rest of these dotfiles use.
+      C_TEAL="${ESC}[38;2;128;203;196m"
+      C_GREEN="${ESC}[38;2;195;232;141m"
+      C_RED="${ESC}[38;2;240;113;120m"
+      C_YELLOW="${ESC}[38;2;255;203;107m"
+      C_MAUVE="${ESC}[38;2;166;141;205m"
+      C_GREY="${ESC}[38;2;100;116;107m"
       ;;
     *)
       C_TEAL="${ESC}[38;5;115m"
@@ -923,6 +923,16 @@ seed_opencode_config() {
   info "copied opencode.json into ~/.config/opencode"
 }
 
+# Warp reads custom themes from ~/.warp/themes, which .gitignore keeps out of the
+# repo, so stow never fills it. Link the Deepforest theme from the pack. The folder
+# is made first so stow links settings.toml inside a real ~/.warp instead of folding
+# the whole directory into the repo.
+link_warp_theme() {
+  local src="$DOTFILES_DIR/vira-theme-for-terminals/warp/Vira-Theme-Deepforest.yaml"
+  quiet mkdir -p "$HOME/.warp/themes" || return 1
+  quiet ln -sfn "$src" "$HOME/.warp/themes/Vira-Theme-Deepforest.yaml" || return 1
+}
+
 step_stow() {
   local out
   if ! have stow; then
@@ -951,6 +961,9 @@ step_stow() {
   # opencode are linked; init tools can create plugins/skills outside the repo.
   quiet mkdir -p "$HOME/.config" "$HOME/.config/opencode" || return 1
   seed_opencode_config || return 1
+  if [ "$OS" = mac ]; then
+    link_warp_theme || return 1
+  fi
   dry_skip "stow simulation reports no other problems" && return 0
   out=$(stow_run real) || { printf '%s\n' "$out" | sed 's/^/      /' >&2; return 1; }
   info "stowed into $HOME"
@@ -1072,6 +1085,14 @@ step_inits() {
     fi
   else
     tool_missing "icm is not installed" || rc=1
+  fi
+
+  # bat and delta load custom themes from bat's cache, so rebuild it once the
+  # stowed Vira Deepforest theme is in place.
+  if have bat; then
+    run_as "bat theme cache" bat cache --build || rc=1
+  else
+    tool_missing "bat is not installed" || rc=1
   fi
 
   setup_claude_mods || rc=1
