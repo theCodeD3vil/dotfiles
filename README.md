@@ -173,10 +173,11 @@ conditional in `window-status-format`.
 
 ## Palette
 
-Every tool uses Vira Deepforest. VS Code, the Claude Code mods and OpenCode are
-left alone on purpose: VS Code keeps its own theme, and the mods and OpenCode keep
-their hand-picked colours. There is no shared palette file because the configured
-tools use incompatible formats, so each config holds its own copy of these hexes.
+Every tool uses Vira Deepforest. VS Code, the Claude Code mods and the OpenCode
+statusline plugin are left alone on purpose: VS Code keeps its own theme, and the
+mods and the plugin keep their hand-picked colours. There is no shared palette file
+because the configured tools use incompatible formats, so each config holds its own
+copy of these hexes.
 
 | Role | Hex | Role | Hex |
 |---|---|---|---|
@@ -215,6 +216,8 @@ Kaku), which stay as the Vira pack defines them.
 | television | `.config/television/themes/vira-deepforest.toml` |
 | yazi | `.config/yazi/theme.toml` and `flavors/vira-deepforest.yazi`; its `tmtheme.xml` links the bat theme. The `[flavor]` section carries no Kaku markers, so Kaku's yazi wrapper leaves it alone |
 | Atuin | `.config/atuin/themes/vira-deepforest.toml` |
+| Claude Code | `AI/.claude/themes/vira-deepforest.json`, linked into `~/.claude/themes`; select it with `/theme` (stored as `custom:vira-deepforest` in `~/.claude/settings.json`, which is not tracked). It overrides the base `dark` preset. Shimmer tokens are their base colour 45% blended toward the text colour; diff backgrounds are delta's |
+| OpenCode | `AI/.config/opencode/themes/vira-deepforest.json`; `theme` in `tui.json` and `theme.name` in `cli.json` select it. `background` is `none`, so the terminal's own background shows through |
 
 The Ghostty colours come from
 `vira-theme-for-terminals/ghostty/Vira-Theme-Deepforest.conf`; `.wezterm.lua` and
