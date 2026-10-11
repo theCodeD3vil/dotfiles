@@ -1,10 +1,19 @@
 // Ember Ribbon's quota gauges. Keep its glyphs and raster arithmetic identical
 // to AI/.claude/mods/ember-ribbon/hooks/ (footer.tsx, rasters.ts, colors.ts, format.ts).
+// Vira Deepforest, as in ember-ribbon/hooks/colors.ts (pink is its red and magenta blended:
+// purple stays out of the palette).
+export const RED = '#f07178'
+export const ORANGE = '#CC8868'
+export const YELLOW = '#FFCB6B'
+export const GREEN = '#C3E88D'
+export const TEAL = '#80CBC4'
+export const BLUE = '#6FA0DE'
+export const PINK = '#CB7FA3'
 export const COLORS = {
-  claude: '#D97757',
-  ink: '#E9E6DC',
-  dim: '#7C776D',
-  track: '#3A3733',
+  claude: ORANGE,
+  ink: '#CAE5D5',
+  dim: '#76887f',
+  track: '#283834',
 } as const
 
 export const RINGS = ['\u{F0766}', '\u{F0A9E}', '\u{F0A9F}', '\u{F0AA0}', '\u{F0AA1}', '\u{F0AA2}', '\u{F0AA3}', '\u{F0AA4}', '\u{F1807}']
@@ -19,9 +28,9 @@ const TIP_PERIOD = 1400
 export type RateLimit = { percentUsed?: number; resetsAt?: string }
 
 export function sevColor(pct: number) {
-  if (pct >= 85) return '#E2766A'
-  if (pct >= 65) return '#E2B064'
-  return '#C3E88D'
+  if (pct >= 85) return RED
+  if (pct >= 65) return YELLOW
+  return GREEN
 }
 
 export const hex = (h: string) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16))

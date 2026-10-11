@@ -1,4 +1,4 @@
-import { hex } from '../footer'
+import { BLUE, GREEN, ORANGE, PINK, RED, YELLOW, hex } from '../footer'
 import type { ConversationStage } from '../stage'
 import { bouncingBalls } from './bouncing-balls'
 import { dataStream } from './data-stream'
@@ -13,19 +13,19 @@ export { COLS, ROWS, type Frame }
 // The spinners are written for this many frames a second. OpenTUI paints at 30 by default.
 export const FPS = 30
 
-// The terminal panel the stage colour blends from.
-export const PANEL = [10, 13, 18]
+// The terminal panel the stage colour blends from: Vira Deepforest's background, #111816.
+export const PANEL = [17, 24, 22]
 
-// What the footer draws for each stage of the conversation, in Catppuccin Mocha: blue while
-// waiting, orange (peach) while thinking, mauve for a tool, green while writing, yellow for an
-// approval, red while compacting.
+// What the footer draws for each stage of the conversation, in Vira Deepforest's hues (the same
+// as Wick's flame): blue while waiting, orange while thinking, pink for a tool, lime while
+// writing, yellow for an approval, red while compacting.
 export const STAGE_SPINNERS: Record<ConversationStage, { make: SpinnerFactory; tone: number[] }> = {
-  waiting: { make: bouncingBalls, tone: hex('#89B4FA') },
-  thinking: { make: life, tone: hex('#FAB387') },
-  tool: { make: raindrops, tone: hex('#CBA6F7') },
-  writing: { make: dataStream, tone: hex('#A6E3A1') },
-  approval: { make: warp, tone: hex('#F9E2AF') },
-  compacting: { make: flame, tone: hex('#F38BA8') },
+  waiting: { make: bouncingBalls, tone: hex(BLUE) },
+  thinking: { make: life, tone: hex(ORANGE) },
+  tool: { make: raindrops, tone: hex(PINK) },
+  writing: { make: dataStream, tone: hex(GREEN) },
+  approval: { make: warp, tone: hex(YELLOW) },
+  compacting: { make: flame, tone: hex(RED) },
 }
 
 // Idle: the strip keeps its size but shows nothing, so nothing is mistaken for a working spinner.

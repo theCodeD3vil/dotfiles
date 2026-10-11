@@ -1,19 +1,14 @@
 // Ember Ribbon's row above the prompt: the context window's fill history, the used / window
 // readout and the token stream. Keep the arithmetic identical to
 // AI/.claude/mods/ember-ribbon/hooks/ (band.tsx, rasters.ts, stream.ts); only the source of the numbers differs.
-import { COLORS, DEFAULT_COLOR, hex, mix, pack } from './footer'
-
-// Catppuccin Mocha
-const GREEN = '#A6E3A1'
-const YELLOW = '#F9E2AF'
-const RED = '#F38BA8'
+import { COLORS, DEFAULT_COLOR, GREEN, PINK, RED, TEAL, YELLOW, hex, mix, pack } from './footer'
 
 // Claude orange at 25-50%: the used tokens coloured by how full the window is.
 export const HEAT: ReadonlyArray<{ upTo: number; color: string }> = [
   { upTo: 25, color: GREEN },
   { upTo: 50, color: COLORS.claude },
   { upTo: 75, color: YELLOW },
-  { upTo: 90, color: '#F5C2E7' },
+  { upTo: 90, color: PINK },
   { upTo: Infinity, color: RED },
 ]
 
@@ -29,7 +24,7 @@ export const STREAM_CELLS = 8
 
 const BRAILLE_BITS = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]] as const
 const TRACK = pack(hex(COLORS.track))
-const STREAM_COLOR = pack(hex('#CBA6F7')) // Catppuccin Mocha mauve
+const STREAM_COLOR = pack(hex(TEAL))
 const FILL_GREEN = hex(GREEN)
 const FILL_YELLOW = hex(YELLOW)
 const FILL_RED = hex(RED)

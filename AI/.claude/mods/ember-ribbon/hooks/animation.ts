@@ -1,4 +1,4 @@
-import { BLUE, GREEN, MAUVE, PEACH, RED, SKY, YELLOW } from './colors'
+import { BLUE, CYAN, GREEN, ORANGE, PINK, RED, YELLOW } from './colors'
 
 // One 100 ms timer drives every animation; the tick counts its beats.
 export const TICK_MS = 100
@@ -9,7 +9,7 @@ export const elapsedMs = (tick: number) => tick * TICK_MS
 // Claude's own spinner frames, played forward and back while it works
 export const SPIN = ['·', '✢', '✳', '✶', '✻', '✽', '✻', '✶', '✳', '✢']
 
-export const RAINBOW = [RED, PEACH, YELLOW, GREEN, SKY, BLUE, MAUVE]
+export const RAINBOW = [RED, ORANGE, YELLOW, GREEN, CYAN, BLUE, PINK]
 
 // One RAINBOW colour per character, shifted one step each frame.
 export const rainbowDecorations = (text: string, frame: number) =>

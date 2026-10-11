@@ -57,7 +57,7 @@ function renderRing({ Text }: TerminalUi, percent: number) {
 }
 
 // ▬▬▬▬▬▮▬▬▬▬ filled up to usage (severity colour); ▮ marks how much of the window has passed,
-// coloured like usage: olive early in the window, amber past 65%, red past 85%
+// coloured like usage: lime early in the window, yellow past 65%, red past 85%
 function renderUsageBar({ Raster }: TerminalUi, bar: MountedBar, tick: number) {
   return <Raster key="usage" columns={bar.width} rows={1} cells={usageCells(bar.percent, bar.timePercent, bar.width, elapsedMs(tick))} />
 }

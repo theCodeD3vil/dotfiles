@@ -1,17 +1,19 @@
 // Palette and color math. Colors are '#RRGGBB' strings; math works on [r, g, b] arrays (0-255).
 
-export const CLAUDE = '#D97757'
-export const INK = '#E9E6DC'
-export const DIM = '#7C776D'
-export const TRACK = '#3A3733'
-// Catppuccin Mocha
-export const RED = '#F38BA8'
-export const PEACH = '#FAB387'
-export const YELLOW = '#F9E2AF'
-export const GREEN = '#A6E3A1'
-export const SKY = '#89DCEB'
-export const BLUE = '#89B4FA'
-export const MAUVE = '#CBA6F7'
+// Vira Deepforest (pink is its red and magenta blended: purple stays out of the palette).
+export const INK = '#CAE5D5'
+export const DIM = '#76887f'
+export const TRACK = '#283834'
+export const RED = '#f07178'
+export const ORANGE = '#CC8868'
+export const YELLOW = '#FFCB6B'
+export const GREEN = '#C3E88D'
+export const TEAL = '#80CBC4'
+export const CYAN = '#74C9DE'
+export const BLUE = '#6FA0DE'
+export const PINK = '#CB7FA3'
+// Claude's own colour, as the footer's star and the middle of the heat ramp.
+export const CLAUDE = ORANGE
 
 export const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value))
 
@@ -46,9 +48,9 @@ export function fromHsl(hue: number, saturation: number, lightness: number) {
 }
 
 export function severityColor(percent: number) {
-  if (percent >= 85) return '#E2766A'
-  if (percent >= 65) return '#E2B064'
-  return '#C3E88D'
+  if (percent >= 85) return RED
+  if (percent >= 65) return YELLOW
+  return GREEN
 }
 
 // Ember heat (Claude orange at 25-50%): the used tokens coloured by how full the context window is.
@@ -56,7 +58,7 @@ export const HEAT = [
   { upTo: 25, color: GREEN },
   { upTo: 50, color: CLAUDE },
   { upTo: 75, color: YELLOW },
-  { upTo: 90, color: '#F5C2E7' },
+  { upTo: 90, color: PINK },
   { upTo: Infinity, color: RED },
 ]
 export const heatColor = (percent: number) => (HEAT.find(band => percent < band.upTo) ?? HEAT[HEAT.length - 1]!).color

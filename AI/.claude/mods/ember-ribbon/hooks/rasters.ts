@@ -1,4 +1,4 @@
-import { MAUVE, TRACK_PACKED, clamp, fillColor, fromHsl, hexToRgb, packRgb, severityColor, toHsl } from './colors'
+import { TEAL, TRACK_PACKED, clamp, fillColor, fromHsl, hexToRgb, packRgb, severityColor, toHsl } from './colors'
 
 // Braille Rasters. A Raster is a flat Uint32Array of [character, foreground, background] per cell,
 // sent as base64. Every cell sits on the terminal's own background.
@@ -110,7 +110,7 @@ export function fillCells(width: number, rows: number, percents: number[]) {
 // One row of braille, two dot columns to a cell: `points` (two per cell, oldest first) scaled to the largest.
 export function streamCells(points: number[], width: number) {
   const peak = Math.max(1, ...points)
-  const color = packRgb(hexToRgb(MAUVE))
+  const color = packRgb(hexToRgb(TEAL))
   const words = new Uint32Array(width * 3)
   for (let column = 0; column < width; column++) {
     const bits = [0, 1].reduce((lit, half) => lit | columnBits(half, Math.round((points[column * 2 + half]! / peak) * 4), 0, 1), 0)
