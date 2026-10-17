@@ -1,0 +1,4 @@
+tmux-256color-rgb|tmux with 256 colors and direct RGB color,
+  use=tmux-256color,
+  Tc,
+  RGB,

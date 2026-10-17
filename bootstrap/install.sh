@@ -1014,6 +1014,17 @@ setup_pass_cli_completions() {
   fi
 }
 
+# tmux can pass RGB through to Ghostty, but the stock tmux-256color terminfo entry only advertises
+# 256 colours to applications. Compile the local entry before tmux gives it to new panes.
+setup_tmux_terminfo() {
+  local source="$DOTFILES_DIR/.config/tmux/terminfo/tmux-256color-rgb.terminfo"
+  dry_skip "compile tmux RGB terminfo into $HOME/.terminfo" && return 0
+  have tic || { tool_missing "tic is not available: tmux RGB terminfo was not installed"; return 1; }
+  quiet mkdir -p "$HOME/.terminfo" || return 1
+  tic -x -o "$HOME/.terminfo" "$source" || { warn "could not compile tmux RGB terminfo"; return 1; }
+  info "tmux RGB terminfo installed"
+}
+
 # Point CLAUDE_CODE_PLUGIN_DIRS in ~/.claude/settings.json at every mod in AI/.claude/mods.
 # settings.json stays out of git (Claude Code and other apps rewrite it), so only this key is set.
 setup_claude_mods() {
@@ -1060,6 +1071,7 @@ setup_claude_plugins() {
 step_inits() {
   local rc=0
   quiet mkdir -p "$HOME/.claude"    # rtk init exits 1 without it
+  setup_tmux_terminfo || rc=1
 
   if have rtk; then
     if [ -f "$HOME/.claude/RTK.md" ] && [ -f "$HOME/.config/opencode/plugins/rtk.ts" ]; then
