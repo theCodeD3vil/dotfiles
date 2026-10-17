@@ -79,6 +79,7 @@ export PATH="$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
 
 alias uncommit="git reset --soft HEAD~1"
 alias claude2='CLAUDE_CONFIG_DIR=~/.config/claude-code-sub2 claude'
+alias headroom-reapply='python3 -B "$HOME/dotfiles/bootstrap/headroom-usage-headers/apply.py"'
 
 # *****************************************************************************
 # GUM PICKERS — pick instead of type, guard instead of just run
@@ -225,6 +226,7 @@ unset LS_COLORS
 
 # Homebrew PATH for Apple Silicon
 export PATH="/opt/homebrew/bin:$PATH"
+export HOMEBREW_NO_AUTO_UPDATE=1
 
 # Visual Studio Code Path
 export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
@@ -481,3 +483,87 @@ PROTON_PASS_DISABLE_TELEMETRY=true
 
 [[ ":$PATH:" != *":$HOME/.config/kaku/zsh/bin:"* ]] && export PATH="$HOME/.config/kaku/zsh/bin:$PATH" # Kaku PATH Integration
 [[ -f "$HOME/.config/kaku/zsh/kaku.zsh" ]] && source "$HOME/.config/kaku/zsh/kaku.zsh" # Kaku Shell Integration
+# >>> headroom:managed_rtk >>>
+_headroom_bin="$HOME/Library/Application Support/Headroom/headroom/bin"
+_headroom_path=":$PATH:"
+while case "$_headroom_path" in *:"$_headroom_bin":*) true ;; *) false ;; esac; do
+  _headroom_path=${_headroom_path%%:"$_headroom_bin":*}:${_headroom_path#*:"$_headroom_bin":}
+done
+_headroom_path=${_headroom_path#:}
+_headroom_path=${_headroom_path%:}
+export PATH="$_headroom_bin${_headroom_path:+:$_headroom_path}"
+unset _headroom_path _headroom_bin
+# <<< headroom:managed_rtk <<<
+# >>> headroom:claude_code >>>
+__headroom_up() {
+  case ${OSTYPE-} in
+    msys*|cygwin*) if [ -x /usr/bin/timeout ]; then
+      BASH_ENV= /usr/bin/timeout 1 "${BASH:-bash}" -c ': </dev/tcp/127.0.0.1/6767' 2>/dev/null; return
+    fi ;;
+  esac
+  if [ -n "${ZSH_VERSION-}" ]; then
+    local REPLY
+    zmodload zsh/net/tcp 2>/dev/null && ztcp 127.0.0.1 6767 2>/dev/null && ztcp -c "$REPLY"
+  else
+    (: </dev/tcp/127.0.0.1/6767) 2>/dev/null
+  fi
+}
+case ${__headroom_live-} in "$$:"[01]) ;; *) if __headroom_up; then __headroom_live=$$:1; else __headroom_live=$$:0; fi ;; esac
+if [ "$__headroom_live" = "$$:1" ]; then export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-http://127.0.0.1:6767}"; elif [ "${ANTHROPIC_BASE_URL-}" = http://127.0.0.1:6767 ]; then unset ANTHROPIC_BASE_URL; fi
+# /remote-control needs api.anthropic.com; this relaunches the same session without Headroom.
+if ! alias claude >/dev/null 2>&1; then eval 'claude() {
+  local a; for a in "$@"; do [ "$a" = --remote-control ] && { set -- --settings '\''{"env":{"ANTHROPIC_BASE_URL":"https://api.anthropic.com"}}'\'' "$@"; break; }; done
+  if [ -n "${CLAUDE_CONFIG_DIR-}" ] && [ "${CLAUDE_CONFIG_DIR%/}" != "$HOME/.claude" ] && [ -z "${ANTHROPIC_BASE_URL-}" ] &&
+    command grep -qs '\''"ANTHROPIC_BASE_URL"[[:space:]]*:[[:space:]]*"http://127.0.0.1:6767"'\'' "$HOME/.claude/settings.json"; then
+    ANTHROPIC_BASE_URL=http://127.0.0.1:6767 HEADROOM_RC_RELAUNCHER=tty command claude "$@"
+  elif [ "${ANTHROPIC_BASE_URL-}" = http://127.0.0.1:6767 ] && ! __headroom_up; then
+    command env -u ANTHROPIC_BASE_URL HEADROOM_RC_RELAUNCHER=tty claude "$@"
+  else
+    HEADROOM_RC_RELAUNCHER=tty command claude "$@"
+  fi
+  local rc=$?
+  local m="$HOME/.headroom/remote-control/$(command basename "$(command tty 2>/dev/null)" 2>/dev/null)"
+  if [ -s "$m" ] && [ -n "$(command find "$m" -mmin -2 2>/dev/null)" ]; then
+    local sid; sid=$(command cat "$m"); command rm -f "$m"
+    local n=$# v=0
+    while [ "$n" -gt 0 ]; do
+      a=$1; shift; n=$((n-1))
+      if [ "$v" = 1 ]; then v=0; set -- "$@" "$a"; continue; fi
+      case $a in
+        --model|--permission-mode|--add-dir|--agent|--effort|--fallback-model|--append-system-prompt|--mcp-config|--plugin-dir) v=1; set -- "$@" "$a" ;;
+        --model=*|--permission-mode=*|--add-dir=*|--agent=*|--effort=*|--fallback-model=*|--append-system-prompt=*|--mcp-config=*|--plugin-dir=*|--dangerously-skip-permissions|--allow-dangerously-skip-permissions|--strict-mcp-config|--verbose|--ide|--chrome|--no-chrome) set -- "$@" "$a" ;;
+      esac
+    done
+    command claude --settings '\''{"env":{"ANTHROPIC_BASE_URL":"https://api.anthropic.com"}}'\'' "$@" -r "$sid" --remote-control
+    return $?
+  fi
+  return $rc
+}'; fi
+# <<< headroom:claude_code <<<
+# >>> headroom:codex_cli >>>
+__headroom_up() {
+  case ${OSTYPE-} in
+    msys*|cygwin*) if [ -x /usr/bin/timeout ]; then
+      BASH_ENV= /usr/bin/timeout 1 "${BASH:-bash}" -c ': </dev/tcp/127.0.0.1/6767' 2>/dev/null; return
+    fi ;;
+  esac
+  if [ -n "${ZSH_VERSION-}" ]; then
+    local REPLY
+    zmodload zsh/net/tcp 2>/dev/null && ztcp 127.0.0.1 6767 2>/dev/null && ztcp -c "$REPLY"
+  else
+    (: </dev/tcp/127.0.0.1/6767) 2>/dev/null
+  fi
+}
+case ${__headroom_live-} in "$$:"[01]) ;; *) if __headroom_up; then __headroom_live=$$:1; else __headroom_live=$$:0; fi ;; esac
+if [ "$__headroom_live" = "$$:1" ]; then export OPENAI_BASE_URL="${OPENAI_BASE_URL:-http://127.0.0.1:6767/v1}"; elif [ "${OPENAI_BASE_URL-}" = http://127.0.0.1:6767/v1 ]; then unset OPENAI_BASE_URL; fi
+if ! alias codex >/dev/null 2>&1 && ! typeset -f codex >/dev/null 2>&1; then eval 'codex() {
+  if [ "${OPENAI_BASE_URL-}" = http://127.0.0.1:6767/v1 ] && ! __headroom_up; then
+    command env -u OPENAI_BASE_URL codex "$@"
+  else
+    command codex "$@"
+  fi
+}'; fi
+# <<< headroom:codex_cli <<<
+# >>> headroom:grok_build >>>
+export GROK_CLI_CHAT_PROXY_BASE_URL=http://127.0.0.1:6767/v1
+# <<< headroom:grok_build <<<
