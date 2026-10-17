@@ -2,21 +2,22 @@ import type { RenderChildren } from 'claude-code'
 
 import type { ContextReading } from '../types'
 import { RAINBOW, SPIN } from './animation'
-import { BLUE, GREEN, heatColor } from './colors'
+import { BLUE, GREEN, ORANGE, heatColor } from './colors'
 import type { TerminalUi } from './components'
 import { formatTokens } from './format'
-import { fillCells, streamCells } from './rasters'
+import { HEADROOM_CELLS, HEADROOM_COUNT_COLUMNS, HEADROOM_ICON, savedPerTurn } from './headroom'
+import { contextSparklineCells, sparklineCells, streamCells } from './rasters'
 import { STREAM_CELLS, streamPoints, tokensPerSecond } from './stream'
 
 // One row above the prompt, with the context and the token stream:
-//    134.4k / 200k
-// The enhance button at the left, the context's fill history and heat, the token stream at the right.
+//   ✦                                    ⣿⣿⣷⣿ 134.4k / 200k   ⣀⣤⣶⣿   42 tok/s   ⣀⣤⣶⣿ 26.9k
+// The enhance button at the left, the context's sparkline and heat, the token stream, and
+// Headroom's saved tokens (life ring, a graph of each turn's, the session's total) at the right.
 
-// The context chart: one dot column per turn, two to a cell, the newest turn at the right.
-// FILL_ROWS cells tall, four dot rows to each, so a column has 4 * FILL_ROWS heights.
+// The context chart: one ▁▂▃▄▅▆▇█ glyph per turn, newest at the right.
 export const FILL_CELLS = 8
-export const FILL_ROWS = 2
-export const FILL_TURNS = FILL_CELLS * 2
+export const FILL_ROWS = 1
+export const FILL_TURNS = FILL_CELLS
 
 // The sparkle (U+F51B) and nf-md-check, from Symbols Nerd Font: a Mono face such as
 // CaskaydiaCove Nerd Font Mono squeezes icons into 1 cell. Ghostty draws one 2 cells wide only
@@ -40,6 +41,9 @@ export type BandView = {
   isEnhancing: boolean
   doneTicks: number
   streamTicks: number[]
+  // Headroom's session total: now, and at the end of each turn then now, oldest first.
+  headroomSaved: number
+  headroomTotals: number[]
 }
 
 // The icon is blue sparkles while ready, a RAINBOW spinner while Haiku works, then a green check
@@ -77,13 +81,21 @@ export function renderBand(components: TerminalUi, view: BandView) {
           <Button key="enhance" label=" " plain action="app:cycleDiffBase" onPress={view.onEnhance} />
         </Box>
         <Box marginRight={1}>
-          <Raster key="fill" columns={FILL_CELLS} rows={FILL_ROWS} cells={fillCells(FILL_CELLS, FILL_ROWS, view.history.map(reading => reading.percent))} />
+          <Raster key="fill" columns={FILL_CELLS} rows={FILL_ROWS} cells={contextSparklineCells(FILL_CELLS, view.history.map(reading => reading.percent))} />
         </Box>
         {renderContextReadout(components, view.latest)}
         <Box marginLeft={3} gap={1}>
           <Raster key="stream" columns={STREAM_CELLS} rows={1} cells={streamCells(streamPoints(view.streamTicks, STREAM_CELLS), STREAM_CELLS)} />
           {/* Padded to four digits (figure spaces are digit-wide) so the row stops shifting as it counts. */}
           <Text dimColor>{rate.padStart(4, ' ')} tok/s</Text>
+        </Box>
+        {/* Always drawn, between the token stream and Wick: the count keeps its width so the row never shifts. */}
+        <Box marginLeft={3} gap={1}>
+          <Text color={ORANGE}>{HEADROOM_ICON}</Text>
+          <Raster key="headroom" columns={HEADROOM_CELLS} rows={1} cells={sparklineCells(savedPerTurn(view.headroomTotals), HEADROOM_CELLS, ORANGE)} />
+          <Box width={HEADROOM_COUNT_COLUMNS}>
+            <Text dimColor>{formatTokens(view.headroomSaved)}</Text>
+          </Box>
         </Box>
       </Box>
     </Box>

@@ -17,6 +17,7 @@ import {
 } from './enhance'
 import { DEFAULT_COLUMNS, FIVE_HOURS, USAGE_BAR_WIDTH, footerLayout, renderFooter } from './footer'
 import { modelName, timeLeft, windowElapsedPercent } from './format'
+import { HEADROOM_POINTS, HEADROOM_REFRESH_MS, READ_HEADROOM_STATE, savedTokens } from './headroom'
 import { usageCells } from './rasters'
 import { state } from './state'
 import { nextStreamHistory } from './stream'
@@ -39,6 +40,9 @@ import { nextStreamHistory } from './stream'
 const readingsState = { plugin: 'ember-ribbon', key: 'readings' } as const
 const previousDraftState = { plugin: 'ember-ribbon', key: 'previous' } as const
 const readHistory = async (engine: EngineInterface) => (await engine.state.get(readingsState)).value ?? []
+// `savedState` is Headroom's session total at the end of each turn, for the band's savings graph.
+const savedState = { plugin: 'ember-ribbon', key: 'saved' } as const
+const readSavedTotals = async (engine: EngineInterface) => (await engine.state.get(savedState)).value ?? []
 
 const redraw = (engine: EngineInterface) => engine.ui.invalidate('ui.render')
 
@@ -48,6 +52,26 @@ async function readContext(engine: EngineInterface): Promise<ContextReading | un
   const tokens = context.tokens ?? 0
   const percent = context.percent ?? Math.round((tokens / context.window) * 100)
   return { tokens, window: context.window, percent }
+}
+
+// The band's Headroom item: what Headroom saved this session, read from its state file at most
+// every HEADROOM_REFRESH_MS (the band redraws each tick while Claude works). A read that fails, as
+// one catching the file mid-rewrite does, keeps the last count: the item is always drawn.
+async function refreshHeadroomSaved(engine: EngineInterface) {
+  const now = await engine.clock.now()
+  if (now - state.headroomReadAt < HEADROOM_REFRESH_MS) return
+  state.headroomReadAt = now
+  try {
+    const { stdout } = await engine.process.run(READ_HEADROOM_STATE)
+    state.headroomSaved = savedTokens(stdout, await engine.session.id())
+  } catch {}
+}
+
+// Called as a main-loop turn ends: adds Headroom's total for the session, which the graph turns into what each turn saved.
+async function takeSavedTotal(engine: EngineInterface) {
+  state.headroomReadAt = 0
+  await refreshHeadroomSaved(engine)
+  await engine.state.set(savedState, [...(await readSavedTotals(engine)), state.headroomSaved].slice(-(HEADROOM_POINTS + 1)))
 }
 
 // Called as a main-loop turn ends: adds that turn's reading, oldest first, keeping what the chart shows.
@@ -198,7 +222,10 @@ export const register: Register = on => {
   // One context reading per main-loop turn (not subagents).
   on('turn.complete', async (engine, event, next) => {
     const result = await next(event)
-    if (!event.agentId) await takeReading(engine)
+    if (!event.agentId) {
+      await takeReading(engine)
+      await takeSavedTotal(engine)
+    }
     return result
   })
 
@@ -241,6 +268,7 @@ export const register: Register = on => {
     const latest = history[history.length - 1] ?? (await readContext(engine))
     const canUndo = (await engine.state.get(previousDraftState)).value != null
     state.isWorking = event.props.isWorking
+    await refreshHeadroomSaved(engine)
 
     return renderBand(engine.ui.resolve(event), {
       below,
@@ -253,6 +281,8 @@ export const register: Register = on => {
       isEnhancing: state.isEnhancing,
       doneTicks: state.doneTicks,
       streamTicks: state.streamTicks,
+      headroomSaved: state.headroomSaved,
+      headroomTotals: [...(await readSavedTotals(engine)), state.headroomSaved],
     })
   })
 

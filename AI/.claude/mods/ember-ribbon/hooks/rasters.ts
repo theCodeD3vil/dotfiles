@@ -13,6 +13,7 @@ const BRAILLE_FLOOR = BRAILLE_BITS[3]![0]! + BRAILLE_BITS[3]![1]!
 const BRAILLE_TIP_LEFT = 0x28be
 const BRAILLE_TIP_RIGHT = 0x2877
 const MARKER_CHAR = 0x2590 // ▐
+const SPARKLINE_BASE = 0x2581 // ▁
 
 const PULSE_SPEED = 10 // cells a second: one cell per 100 ms repaint, so the front moves smoothly
 const PULSE_TAIL = 3 // cells the pulse's tail fades over
@@ -82,35 +83,40 @@ function columnBits(half: number, level: number, cellRow: number, rows: number) 
   return bits
 }
 
-// The context chart: one dot column per turn, two to a cell, the newest turn at the right, as tall as
-// the context percent at the turn's end (the dots rise from the floor).
-// percents: one per turn, oldest first. Turns fill from the right; the cells before the first turn
-// are dim floor dots, and a cell is coloured by the higher of its two turns.
-export function fillCells(width: number, rows: number, percents: number[]) {
-  const shown = percents.slice(-width * 2)
-  const firstTurn = width * 2 - shown.length
-  const dotRows = rows * 4
-  const words = new Uint32Array(width * rows * 3)
+const sparklineGlyph = (value: number, peak: number) => SPARKLINE_BASE + Math.round((clamp(value, 0, peak) / peak) * 7)
+
+// One terminal row: each turn has one ▁▂▃▄▅▆▇█ glyph. A turn keeps the existing continuous
+// green → yellow → red context colour; cells before the first turn stay on the dim track.
+export function contextSparklineCells(width: number, percents: number[]) {
+  const shown = percents.slice(-width)
+  const firstTurn = width - shown.length
+  const words = new Uint32Array(width * 3)
   for (let column = 0; column < width; column++) {
-    // The percents of this cell's two turns; undefined for a dot column with no turn yet.
-    const turnPercents = [0, 1].map(half => shown[column * 2 + half - firstTurn])
-    // How many dots tall each of the two turns is; -1 for a column with no turn yet.
-    const levels = turnPercents.map(percent => (percent === undefined ? -1 : Math.max(1, Math.round((clamp(percent, 0, 100) / 100) * dotRows))))
-    const top = Math.max(...turnPercents.map(percent => percent ?? -1))
-    const color = top < 0 ? TRACK_PACKED : packRgb(fillColor(top))
-    for (let cellRow = 0; cellRow < rows; cellRow++) {
-      // A bare column keeps its floor dot, which is a level of 1.
-      const bits = levels.reduce((lit, level, half) => lit | columnBits(half, Math.max(1, level), cellRow, rows), 0)
-      setCell(words, cellRow * width + column, BRAILLE_BLANK + bits, color)
-    }
+    const percent = shown[column - firstTurn]
+    const color = percent === undefined ? TRACK_PACKED : packRgb(fillColor(percent))
+    setCell(words, column, sparklineGlyph(percent ?? 0, 100), color)
+  }
+  return encodeCells(words)
+}
+
+// One terminal row, scaled to the recent peak. Zeros and missing history retain the dim ▁ baseline.
+export function sparklineCells(points: number[], width: number, ink = TEAL) {
+  const shown = points.slice(-width)
+  const firstPoint = width - shown.length
+  const peak = Math.max(1, ...shown)
+  const color = packRgb(hexToRgb(ink))
+  const words = new Uint32Array(width * 3)
+  for (let column = 0; column < width; column++) {
+    const point = shown[column - firstPoint]
+    setCell(words, column, sparklineGlyph(point ?? 0, peak), point && point > 0 ? color : TRACK_PACKED)
   }
   return encodeCells(words)
 }
 
 // One row of braille, two dot columns to a cell: `points` (two per cell, oldest first) scaled to the largest.
-export function streamCells(points: number[], width: number) {
+export function streamCells(points: number[], width: number, ink = TEAL) {
   const peak = Math.max(1, ...points)
-  const color = packRgb(hexToRgb(TEAL))
+  const color = packRgb(hexToRgb(ink))
   const words = new Uint32Array(width * 3)
   for (let column = 0; column < width; column++) {
     const bits = [0, 1].reduce((lit, half) => lit | columnBits(half, Math.round((points[column * 2 + half]! / peak) * 4), 0, 1), 0)

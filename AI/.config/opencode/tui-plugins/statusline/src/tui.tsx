@@ -9,6 +9,7 @@ import { createEffect, createMemo, createSignal, onCleanup, untrack, type Access
 import { AboveView, type ContextFrame } from './above'
 import { createTokenStream, liveReading, turnReadings, type ContextWindows, type TokenStream } from './context'
 import { footerLayout } from './footer'
+import { HEADROOM_POLL_TICKS, createHeadroomSaved, type HeadroomSaved } from './headroom'
 import { usageRpc } from './rpc'
 import { lastTurnEnd, petClock, petStrip } from './pet'
 import { FPS } from './spinners'
@@ -140,10 +141,10 @@ function Footer(props: {
   )
 }
 
-// Above the prompt: context fill history, used / window, token stream, then the pet. The stream
-// is plugin state (it fills from events and survives the row remounting); the readings are read
-// from the session's messages twice a second.
-function AboveRow(props: { sessionID: Accessor<string>; tick: Accessor<number>; frames: Accessor<number>; animate: boolean; stream: TokenStream }) {
+// Above the prompt: context sparkline, used / window, token stream, Headroom's savings, then the
+// pet. The stream and the savings are plugin state (they fill from events and the proxy, and survive
+// the row remounting); the readings are read from the session's messages twice a second.
+function AboveRow(props: { sessionID: Accessor<string>; tick: Accessor<number>; frames: Accessor<number>; animate: boolean; stream: TokenStream; headroom: HeadroomSaved }) {
   const context = usePlugin()
   const [columns, syncColumns] = useColumns()
   const strip = usePet(props)
@@ -170,7 +171,7 @@ function AboveRow(props: { sessionID: Accessor<string>; tick: Accessor<number>; 
   const frame = createMemo((): ContextFrame => {
     props.tick()
     const { history, live } = readings()
-    return { history: history.map(reading => reading.percent), now: history[history.length - 1] ?? live, stream: props.stream.samples(), columns: columns() }
+    return { history: history.map(reading => reading.percent), now: history[history.length - 1] ?? live, stream: props.stream.samples(), columns: columns(), headroom: props.headroom.totals() }
   })
 
   return (
@@ -192,6 +193,8 @@ export default Plugin.define({
     const [refresh, setRefresh] = createSignal({ force: false })
     const [account, setAccount] = createSignal(0)
     const stream = createTokenStream()
+    const headroom = createHeadroomSaved()
+    void headroom.refresh()
     // The session on screen: only its reply feeds the stream, and a different one starts a fresh chart.
     const shown = () => {
       const route = context.ui.router.current()
@@ -207,6 +210,7 @@ export default Plugin.define({
       if (sessionID !== streamed) { streamed = sessionID; stream.reset() }
       stream.tick(isRunning(context.data, sessionID))
       setTick(count)
+      if (count % HEADROOM_POLL_TICKS === 0) void headroom.refresh()
       if (count % 600 === 0) {
         setRedraw(value => value + 1)
         setRefresh({ force: false })
@@ -214,7 +218,10 @@ export default Plugin.define({
     }, 1000 / FPS)
     const subscriptions = [
       ...(['session.execution.succeeded', 'session.execution.failed'] as const).map(type =>
-        context.data.on(type, () => setRefresh({ force: true }))),
+        context.data.on(type, () => {
+          setRefresh({ force: true })
+          void headroom.endTurn()
+        })),
       ...(['credential.switched', 'credential.updated'] as const).map(type =>
         context.data.on(type, () => setAccount(value => value + 1))),
       // Characters the reply streams (text, thinking and tool input), as Claude counts them.
@@ -232,7 +239,7 @@ export default Plugin.define({
     // Appended to the composer's top, so the pet and the row sit directly above the prompt.
     const releaseAbove = context.ui.slot({
       append: 'session.composer.top',
-      render: input => <AboveRow sessionID={() => input.sessionID} tick={tick} frames={frames} animate={animate} stream={stream} />,
+      render: input => <AboveRow sessionID={() => input.sessionID} tick={tick} frames={frames} animate={animate} stream={stream} headroom={headroom} />,
     })
     return () => {
       clearInterval(timer)

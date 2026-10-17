@@ -1,4 +1,4 @@
-// Ember Ribbon's row above the prompt: the context window's fill history, the used / window
+// Ember Ribbon's row above the prompt: the context window's sparkline, the used / window
 // readout and the token stream. Keep the arithmetic identical to
 // AI/.claude/mods/ember-ribbon/hooks/ (band.tsx, rasters.ts, stream.ts); only the source of the numbers differs.
 import { COLORS, DEFAULT_COLOR, GREEN, PINK, RED, TEAL, YELLOW, hex, mix, pack } from './footer'
@@ -14,15 +14,15 @@ export const HEAT: ReadonlyArray<{ upTo: number; color: string }> = [
 
 export const heatColor = (percent: number) => (HEAT.find(band => percent < band.upTo) ?? HEAT[HEAT.length - 1]!).color
 
-// The context chart: one dot column per turn, two to a cell, the newest turn at the right.
-// FILL_ROWS cells tall, four dot rows to each, so a column has 4 * FILL_ROWS heights.
+// The context chart: one ▁▂▃▄▅▆▇█ glyph per turn, newest at the right.
 export const FILL_CELLS = 8
-export const FILL_ROWS = 2
-export const FILL_TURNS = FILL_CELLS * 2
-// Token stream: 1 braille row at the far right of the row.
+export const FILL_ROWS = 1
+export const FILL_TURNS = FILL_CELLS
+// Token stream: one braille row at the far right of the row.
 export const STREAM_CELLS = 8
 
 const BRAILLE_BITS = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]] as const
+const SPARKLINE_BASE = 0x2581 // ▁
 const TRACK = pack(hex(COLORS.track))
 const STREAM_COLOR = pack(hex(TEAL))
 const FILL_GREEN = hex(GREEN)
@@ -47,29 +47,31 @@ export const fillColor = (percent: number) => {
   return t < 0.5 ? mix(FILL_GREEN, FILL_YELLOW, t * 2) : mix(FILL_YELLOW, FILL_RED, (t - 0.5) * 2)
 }
 
-// percents: one per turn, oldest first. Turns fill from the right; the cells before the first turn
-// are dim floor dots, and a cell is coloured by the higher of its two turns. Returns the Raster's
-// [codepoint, foreground, default-background] words, row by row.
-export function fillCells(width: number, rows: number, percents: number[]) {
-  const shown = percents.slice(-width * 2)
-  const first = width * 2 - shown.length
-  const dots = rows * 4
-  const words = new Uint32Array(width * rows * 3)
-  for (let x = 0; x < width; x++) {
-    const turns = [0, 1].map(c => shown[x * 2 + c - first])
-    // How many dots tall each of this cell's two turns is; -1 for a column with no turn yet.
-    const levels = turns.map(p => p === undefined ? -1 : Math.max(1, Math.round((Math.min(100, Math.max(0, p)) / 100) * dots)))
-    const top = Math.max(...turns.map(p => p ?? -1))
-    const color = top < 0 ? TRACK : pack(fillColor(top))
-    for (let cr = 0; cr < rows; cr++) {
-      let bits = 0
-      for (let r = 0; r < 4; r++) {
-        // The dot's height above the floor; lit when within the column's level (a bare column keeps its floor dots).
-        const height = dots - 1 - (cr * 4 + r)
-        for (let c = 0; c < 2; c++) if (height < levels[c]! || (levels[c] === -1 && height === 0)) bits |= BRAILLE_BITS[r]![c]!
-      }
-      words.set([0x2800 + bits, color, DEFAULT_COLOR], (cr * width + x) * 3)
-    }
+const sparklineGlyph = (value: number, peak: number) => SPARKLINE_BASE + Math.round((Math.max(0, Math.min(peak, value)) / peak) * 7)
+
+// One terminal row: each turn has one ▁▂▃▄▅▆▇█ glyph. A turn keeps the existing continuous
+// green → yellow → red context colour; cells before the first turn stay on the dim track.
+export function contextSparklineCells(width: number, percents: number[]) {
+  const shown = percents.slice(-width)
+  const firstTurn = width - shown.length
+  const words = new Uint32Array(width * 3)
+  for (let column = 0; column < width; column++) {
+    const percent = shown[column - firstTurn]
+    const color = percent === undefined ? TRACK : pack(fillColor(percent))
+    words.set([sparklineGlyph(percent ?? 0, 100), color, DEFAULT_COLOR], column * 3)
+  }
+  return words
+}
+
+// One terminal row, scaled to the recent peak. Zeros and missing history retain the dim ▁ baseline.
+export function sparklineCells(points: number[], width: number, color: number) {
+  const shown = points.slice(-width)
+  const firstPoint = width - shown.length
+  const peak = Math.max(1, ...shown)
+  const words = new Uint32Array(width * 3)
+  for (let column = 0; column < width; column++) {
+    const point = shown[column - firstPoint]
+    words.set([sparklineGlyph(point ?? 0, peak), point && point > 0 ? color : TRACK, DEFAULT_COLOR], column * 3)
   }
   return words
 }
@@ -89,8 +91,10 @@ export function streamPoints(stream: readonly number[], width: number) {
   })
 }
 
-export function streamCells(stream: readonly number[], width: number) {
-  const points = streamPoints(stream, width)
+export const streamCells = (stream: readonly number[], width: number) => pointCells(streamPoints(stream, width), width, STREAM_COLOR)
+
+// One row of braille, two dot columns to a cell: `points` (two per cell, oldest first) scaled to the largest.
+export function pointCells(points: readonly number[], width: number, color: number) {
   const top = Math.max(1, ...points)
   const words = new Uint32Array(width * 3)
   for (let x = 0; x < width; x++) {
@@ -99,7 +103,7 @@ export function streamCells(stream: readonly number[], width: number) {
       const level = Math.round((points[x * 2 + c]! / top) * 4)
       for (let r = 4 - level; r < 4; r++) bits |= BRAILLE_BITS[r]![c]!
     }
-    words.set([bits ? 0x2800 + bits : 0x2800 + BRAILLE_BITS[3]![0]! + BRAILLE_BITS[3]![1]!, bits ? STREAM_COLOR : TRACK, DEFAULT_COLOR], x * 3)
+    words.set([bits ? 0x2800 + bits : 0x2800 + BRAILLE_BITS[3]![0]! + BRAILLE_BITS[3]![1]!, bits ? color : TRACK, DEFAULT_COLOR], x * 3)
   }
   return words
 }

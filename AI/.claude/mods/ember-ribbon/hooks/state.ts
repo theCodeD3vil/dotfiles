@@ -13,4 +13,7 @@ export const state = {
   streamTicks: [] as number[],
   streamedChars: 0,
   mountedBar: undefined as MountedBar | undefined,
+  // Tokens Headroom saved this session (the last count read) and when its file was last read (ms).
+  headroomSaved: 0,
+  headroomReadAt: 0,
 }

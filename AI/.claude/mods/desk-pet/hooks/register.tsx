@@ -15,8 +15,9 @@ export { COLUMNS, FACING, ROWS } from './pet'
 export const KEY = 'pet'
 
 // The context row needs this much width: the enhance button 2, the chart 9, the count 13, a gap
-// 3, the token stream 8 + 1 and "9999 tok/s" 10. Narrower than that plus Wick, he stays away.
-export const BAND_COLUMNS = 46
+// 3, the token stream 8 + 1 and "9999 tok/s" 10, a gap 3 and Headroom's life ring 1 + 1, graph
+// 6 + 1 and count 6. Narrower than that plus Wick, he stays away.
+export const BAND_COLUMNS = 64
 // Clear columns between the band and Wick, whose props reach his leftmost cells.
 export const GAP = 2
 

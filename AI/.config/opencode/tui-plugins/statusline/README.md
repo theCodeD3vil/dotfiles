@@ -13,13 +13,12 @@ OpenCode's `session.composer.top` slot sits directly above the prompt, so the
 plugin appends Ember Ribbon's row there (`src/context.ts`, `src/above.tsx`):
 
 ```text
-⠀⠀⠀⠀⠀⢀⣠⣴
-⣀⣀⣠⣴⣾⣿⣿⣿ 134.4k / 200k   ⣀⣀⣀⣿⣿⣿⣿⣿  100 tok/s
+▁▂▃▄▅▆▇█  134.4k / 200k   ⣀⣤⣶⣿⣦⣀⣀⣀  100 tok/s    ▁▂▆█▂▅ 15.3k
 ```
 
-- **Context fill history**: 8 cells by 2 rows of braille, one dot column per turn
-  (16 turns), as tall as the context percent at the turn's end, green when low,
-  yellow mid, red high. Cells before the first turn are dim floor dots.
+- **Context sparkline**: 8 `▁▂▃▄▅▆▇█` glyphs, one per completed turn,
+  coloured with the existing continuous green → yellow → red context ramp. Empty
+  history is a dim `▁` baseline.
 - **Used / window**: the used count in the heat colour (green under 25%, Claude
   orange to 50%, yellow to 75%, pink to 90%, red above), the window dim.
 - **Token stream**: 8 braille cells and `tok/s`, always drawn, flat while idle.
@@ -27,6 +26,8 @@ plugin appends Ember Ribbon's row there (`src/context.ts`, `src/above.tsx`):
   `session.tool.input.delta`) are counted per 100 ms tick, about four to a token;
   each dot column is the mean of five ticks. Only the session on screen counts, and
   the chart restarts when a run starts or another session opens.
+- **Headroom savings**: the life ring, an orange one-row sparkline of tokens saved per completed turn, and the saved-token total.
+
 
 The arithmetic is the Claude source's, compared cell for cell with it in
 `tests/context.test.ts`. What differs is where the numbers come from. A turn is a

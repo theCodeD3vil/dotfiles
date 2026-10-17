@@ -63,7 +63,7 @@ export const HEAT = [
 ]
 export const heatColor = (percent: number) => (HEAT.find(band => percent < band.upTo) ?? HEAT[HEAT.length - 1]!).color
 
-// The context chart's column colour: green when low, yellow mid, red high.
+// The context sparkline's glyph colour: green when low, yellow mid, red high.
 const FILL_GREEN = hexToRgb(GREEN)
 const FILL_YELLOW = hexToRgb(YELLOW)
 const FILL_RED = hexToRgb(RED)
