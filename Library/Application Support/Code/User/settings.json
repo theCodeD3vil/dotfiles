@@ -1,4 +1,5 @@
 {
+    "claudeCode.claudeProcessWrapper": "/Users/michaelnji/.claude/hooks/headroom-claude-wrapper.py",
 
   // Editor
   "editor.fontSize": 16,
@@ -270,7 +271,7 @@
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "[vue]": {
-    "editor.defaultFormatter": "Vue.volar"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "vscode.typescript-language-features"
@@ -381,10 +382,13 @@
     "https://www.schemastore.org/": true
   },
   "claudeCode.hideOnboarding": true,
-  "window.density.layout": "compact",
   "workbench.notifications.position": "top-right",
   "githubPullRequests.experimental.notificationsMarkPullRequests": "markAsDone",
   "githubPullRequests.notifications": "pullRequests",
   "extensions.ignoreRecommendations": true,
-  "scm.repositories.selectionMode": "single"
+  "scm.repositories.selectionMode": "single",
+  "search.useIgnoreFiles": false,
+  "supermaven.enable": {
+    "*": false
+  }
 }
