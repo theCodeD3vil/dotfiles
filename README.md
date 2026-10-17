@@ -159,18 +159,6 @@ into your home directory. `AI/` is a separate Stow package for the tracked
 OpenCode configuration. `notes.txt` records implementation decisions for the
 installer.
 
-## tmux busy spinner
-
-Inactive tmux windows show a teal spinner while they are producing output and
-return to their window number once quiet. It indicates recent output, not
-whether a command is still running: a silent task can look idle, while a
-continuously refreshing command can look busy.
-
-The loop lives in `.config/tmux/scripts/spinner.sh`; its timing settings are at
-the top of that file. The tmux format is in `.config/tmux/conf/windows.conf`.
-To disable it, remove that file's `run-shell -b` line and the `@busy`
-conditional in `window-status-format`.
-
 ## Palette
 
 Every tool uses Vira Deepforest. Only VS Code is left alone on purpose and keeps its
