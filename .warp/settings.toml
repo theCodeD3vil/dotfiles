@@ -87,3 +87,6 @@ path = "~/.warp/themes/Vira-Theme-Deepforest.yaml"
 
 [notifications]
 toast_duration_secs = 8
+
+[general]
+login_item = false
