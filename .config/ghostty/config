@@ -2,9 +2,11 @@
 
 font-family = Cartograph CF
 font-size = 16
+# Narrower cells make the tmux window pills' rounded caps (U+E0B4) look rounder.
+adjust-cell-width = -6%
 
-window-padding-x = 10
-window-padding-y = 10
+window-padding-x = 16
+window-padding-y = 16
 
 macos-option-as-alt = true
 
