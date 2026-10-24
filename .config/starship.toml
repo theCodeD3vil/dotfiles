@@ -9,41 +9,37 @@
 #-------------------------------------------------------
 # PROMPT LAYOUT
 #-------------------------------------------------------
-# pill order, left to right: os/shell/sudo -> language & runtime versions
-# -> docker/conda/pixi -> folder icon + directory, then a line break and
-# the prompt character. The pills are four shades of Deepforest green, from
-# its brightest on the left to the darkest on the right; the prompt character
-# is the same bright green, and red is reserved for a failed command.
+# One sentence, then the input on its own line:
+#   ┳━ <status icon> folder via <tool> on <github> branch ● +added -removed took 3.2s
+#   ┗━
+# The status icon is green after a passing command and red after a failing one.
+# Only one tool shows, whichever the folder uses. Every module carries its own
+# leading label ("via", "on", "took"), so a missing module leaves no gap.
 "$schema" = 'https://starship.rs/config-schema.json'
 
 format = """
-[╭─](fg:color_line)\
-[](color_pill_os)\
-$os\
-$shell\
-$sudo\
-[](bg:color_pill_lang fg:color_pill_os)\
+[┳━ ](fg:color_line)\
+$status\
+$directory\
 $c\
 $cpp\
 $rust\
 $golang\
-$nodejs\
 $bun\
+$nodejs\
 $php\
 $java\
 $kotlin\
 $haskell\
 $python\
-[](fg:color_pill_lang bg:color_pill_env)\
-$docker_context\
-$conda\
-$pixi\
-[](fg:color_pill_env bg:color_pill_dir)\
-$directory\
-[](fg:color_pill_dir)\
-$line_break[ ](fg:color_line)$line_break$character"""
-
-right_format = """$git_branch$cmd_duration"""
+$git_branch\
+${custom.git_dirty}\
+$git_metrics\
+$cmd_duration\
+$line_break\
+[┃](fg:color_line)\
+$line_break\
+$character"""
 
 #-------------------------------------------------------
 # PALETTE SELECTION
@@ -61,152 +57,42 @@ color_bg1 = '#212f2b'
 color_green = '#C3E88D'
 color_grey = '#64746b'
 color_pink = '#CB7FA3'
+color_orange = '#CC8868'
 color_red = '#f07178'
 color_yellow = '#FFCB6B'
-# Pill shades, left to right from Deepforest's brightest green (#C3E88D, its ANSI
-# green) down to a deep forest green. The first two pills take dark text
-# (color_fg0), the last two light text (color_fg_light), and every pill keeps at
-# least 4.7:1 contrast with its text. Neighbours differ by roughly 1.9:1 to 2.5:1.
-color_pill_os = '#C3E88D'
-color_pill_lang = '#7baf69'
-color_pill_env = '#3b6a48'
-color_pill_dir = '#234632'
-# Prompt connectors: the green Deepforest uses for text selection.
+# Tool versions: the mid green between Deepforest's ANSI green and the
+# connector green.
+color_tool = '#7baf69'
+# Prompt connector: the green Deepforest uses for text selection.
 color_line = '#4B7253'
 
 # *****************************************************************************
-# LEFT PILL — OS / SHELL / SUDO
+# STATUS ICON — LAST COMMAND STATUS
 # *****************************************************************************
 
-[os]
+# Every kind of failure (exit code, not found, not executable, Ctrl-C, signal)
+# draws the same red icon.
+[status]
 disabled = false
-style = "bg:color_pill_os fg:color_fg0"
-
-[os.symbols]
-Windows = "󰍲"
-Ubuntu = "󰕈"
-SUSE = ""
-Raspbian = "󰐿"
-Mint = "󰣭"
-Macos = "󰀵"
-Manjaro = ""
-Linux = "󰌽"
-Gentoo = "󰣨"
-Fedora = "󰣛"
-Alpine = ""
-Amazon = ""
-Android = ""
-AOSC = ""
-Arch = "󰣇"
-Artix = "󰣇"
-EndeavourOS = ""
-CentOS = ""
-Debian = "󰣚"
-Redhat = "󱄛"
-RedHatEnterprise = "󱄛"
-Pop = ""
-
-[shell]
-disabled = false
-style = "bg:color_pill_os fg:color_fg0"
-format = '[ $indicator ]($style)'
-zsh_indicator = "zsh"
-bash_indicator = "bash"
-fish_indicator = "fish"
-powershell_indicator = "pwsh"
-unknown_indicator = "shell"
-
-[sudo]
-disabled = false
-symbol = "󰒃"
-style = "bg:color_pill_os fg:color_fg0"
-format = '[ $symbol ]($style)'
+format = '$symbol'
+success_symbol = '[ ](fg:color_green)'
+symbol = '[ ](fg:color_red)'
+not_executable_symbol = '[ ](fg:color_red)'
+not_found_symbol = '[ ](fg:color_red)'
+sigint_symbol = '[ ](fg:color_red)'
+signal_symbol = '[ ](fg:color_red)'
 
 # *****************************************************************************
-# LANGUAGE & RUNTIME VERSIONS
-# *****************************************************************************
-
-[nodejs]
-symbol = ""
-style = "bg:color_pill_lang"
-format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_pill_lang)]($style)'
-
-[bun]
-symbol = ""
-style = "bg:color_pill_lang"
-format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_pill_lang)]($style)'
-
-[c]
-symbol = " "
-style = "bg:color_pill_lang"
-format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_pill_lang)]($style)'
-
-[cpp]
-symbol = " "
-style = "bg:color_pill_lang"
-format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_pill_lang)]($style)'
-
-[rust]
-symbol = ""
-style = "bg:color_pill_lang"
-format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_pill_lang)]($style)'
-
-[golang]
-symbol = ""
-style = "bg:color_pill_lang"
-format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_pill_lang)]($style)'
-
-[php]
-symbol = ""
-style = "bg:color_pill_lang"
-format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_pill_lang)]($style)'
-
-[java]
-symbol = ""
-style = "bg:color_pill_lang"
-format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_pill_lang)]($style)'
-
-[kotlin]
-symbol = ""
-style = "bg:color_pill_lang"
-format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_pill_lang)]($style)'
-
-[haskell]
-symbol = ""
-style = "bg:color_pill_lang"
-format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_pill_lang)]($style)'
-
-[python]
-symbol = ""
-style = "bg:color_pill_lang"
-format = '[[ $symbol( $version) ](fg:color_fg0 bg:color_pill_lang)]($style)'
-
-# *****************************************************************************
-# ENVIRONMENT — DOCKER / CONDA / PIXI
-# *****************************************************************************
-
-[docker_context]
-symbol = ""
-style = "bg:color_pill_env"
-format = '[[ $symbol( $context) ](fg:color_fg_light bg:color_pill_env)]($style)'
-
-[conda]
-style = "bg:color_pill_env"
-format = '[[ $symbol( $environment) ](fg:color_fg_light bg:color_pill_env)]($style)'
-
-[pixi]
-style = "bg:color_pill_env"
-format = '[[ $symbol( $version)( $environment) ](fg:color_fg_light bg:color_pill_env)]($style)'
-
-# *****************************************************************************
-# DIRECTORY PILL
+# FOLDER
 # *****************************************************************************
 
 [directory]
-style = "fg:color_fg_light bg:color_pill_dir"
-format = "[ 󰉋 $path ]($style)"
-truncation_length = 3
-truncation_symbol = "…/"
+# Same pill as the tmux folder pill: green icon tab, dark label, rounded ends.
+style = "fg:color_fg_light bg:color_bg1"
+read_only_style = "fg:color_red bg:color_bg1"
+format = "[](fg:color_green)[ ](fg:color_fg0 bg:color_green)[ $path]($style)[$read_only]($read_only_style)[](fg:color_bg1)"
+truncation_length = 1
+truncate_to_repo = false
 
 [directory.substitutions]
 "Documents" = "󰈙 "
@@ -216,32 +102,90 @@ truncation_symbol = "…/"
 "Developer" = "󰲋 "
 
 # *****************************************************************************
-# RIGHT PROMPT — GIT BRANCH / CMD DURATION
+# TOOL — ONE SLOT, WHICHEVER THE FOLDER USES
+# *****************************************************************************
+
+[c]
+symbol = ""
+format = '[ via ](fg:color_grey)[$symbol $version](fg:color_tool)'
+
+[cpp]
+symbol = ""
+format = '[ via ](fg:color_grey)[$symbol $version](fg:color_tool)'
+
+[rust]
+symbol = ""
+format = '[ via ](fg:color_grey)[$symbol $version](fg:color_tool)'
+
+[golang]
+symbol = ""
+format = '[ via ](fg:color_grey)[$symbol $version](fg:color_tool)'
+
+[bun]
+symbol = ""
+format = '[ via ](fg:color_grey)[$symbol $version](fg:color_tool)'
+
+# A Bun project also has a package.json, so Node steps aside when a Bun
+# lockfile or config is present.
+[nodejs]
+symbol = ""
+format = '[ via ](fg:color_grey)[$symbol $version](fg:color_tool)'
+detect_files = ["package.json", ".node-version", ".nvmrc", "!bun.lock", "!bun.lockb", "!bunfig.toml"]
+
+[php]
+symbol = ""
+format = '[ via ](fg:color_grey)[$symbol $version](fg:color_tool)'
+
+[java]
+symbol = ""
+format = '[ via ](fg:color_grey)[$symbol $version](fg:color_tool)'
+
+[kotlin]
+symbol = ""
+format = '[ via ](fg:color_grey)[$symbol $version](fg:color_tool)'
+
+[haskell]
+symbol = ""
+format = '[ via ](fg:color_grey)[$symbol $version](fg:color_tool)'
+
+[python]
+symbol = ""
+format = '[ via ](fg:color_grey)[$symbol $version](fg:color_tool)'
+
+# *****************************************************************************
+# GIT — BRANCH, CHANGES, LINES ADDED / REMOVED
 # *****************************************************************************
 
 [git_branch]
-symbol = " "
-style = "fg:color_grey"
-format = '[$symbol$branch]($style) '
+symbol = ""
+format = '[ on ](fg:color_grey)[$symbol $branch](fg:color_orange)'
+
+# One dot for any uncommitted change, untracked files included.
+[custom.git_dirty]
+when = 'test -n "$(git status --porcelain 2>/dev/null | head -n 1)"'
+require_repo = true
+shell = ["sh"]
+format = '[ ●](fg:color_orange)'
+
+[git_metrics]
+disabled = false
+format = '( [+$added](fg:color_green))( [-$deleted](fg:color_red))'
 
 [cmd_duration]
 min_time = 500
-style = "fg:color_green"
-format = '[󱦟 $duration]($style)'
+format = '[ took ](fg:color_grey)[$duration](bold fg:color_yellow)'
 
 # *****************************************************************************
-# PROMPT CHARACTER
+# INPUT LINE
 # *****************************************************************************
 
 [line_break]
 disabled = false
 
 [character]
-disabled = false
-success_symbol = '[╰─](bold fg:color_green)[](bold fg:color_green)'
-error_symbol = '[╰─](bold fg:color_red)[](bold fg:color_red)'
-vimcmd_symbol = '[╰─](bold fg:color_green)[](bold fg:color_green)'
-vimcmd_replace_one_symbol = '[╰─](bold fg:color_pink)[](bold fg:color_pink)'
-vimcmd_replace_symbol = '[╰─](bold fg:color_pink)[](bold fg:color_pink)'
-vimcmd_visual_symbol = '[╰─](bold fg:color_yellow)[](bold fg:color_yellow)'
-
+success_symbol = '[┗━](fg:color_line)[](fg:color_green)'
+error_symbol = '[┗━](fg:color_line)[](fg:color_green)'
+vimcmd_symbol = '[┗━](fg:color_green)[](fg:color_green)'
+vimcmd_replace_one_symbol = '[┗━](fg:color_pink)[](fg:color_pink)'
+vimcmd_replace_symbol = '[┗━](fg:color_pink)[](fg:color_pink)'
+vimcmd_visual_symbol = '[┗━](fg:color_yellow)[](fg:color_yellow)'
