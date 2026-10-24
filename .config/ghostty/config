@@ -2,8 +2,11 @@
 
 font-family = Cartograph CF
 font-size = 16
+# Nerd Font icons come from CaskaydiaCove instead of Ghostty's built-in symbols.
+font-codepoint-map = U+E000-U+F8FF,U+F0000-U+FFFFF=CaskaydiaCove Nerd Font Mono
 # Narrower cells make the tmux window pills' rounded caps (U+E0B4) look rounder.
-adjust-cell-width = -6%
+# Off while testing bigger prompt icons.
+# adjust-cell-width = -6%
 
 window-padding-x = 16
 window-padding-y = 16

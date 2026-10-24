@@ -56,10 +56,11 @@ config.colors = {
 -- Cartograph CF has no Nerd Font glyphs, and the Symbols Nerd Font bundled with
 -- WezTerm 20240203 predates some of the ones starship.toml uses (U+E91B, U+EC6F),
 -- which show up as placeholder boxes. Name the installed Nerd Font as a fallback and
--- keep the bundled symbols font last for anything it does not cover.
+-- keep the bundled symbols font last for anything it does not cover. The non-Mono
+-- variant draws full-size icons, which spill into the space after them.
 config.font = wezterm.font_with_fallback({
 	"Cartograph CF",
-	"CaskaydiaCove Nerd Font Mono",
+	"CaskaydiaCove Nerd Font",
 	"Symbols Nerd Font Mono",
 })
 config.font_size = 16
