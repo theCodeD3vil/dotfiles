@@ -3,7 +3,7 @@
 font-family = Cartograph CF
 font-size = 16
 # Nerd Font icons come from CaskaydiaCove instead of Ghostty's built-in symbols.
-font-codepoint-map = U+E000-U+F8FF,U+F0000-U+FFFFF=CaskaydiaCove Nerd Font Mono
+font-codepoint-map = U+E000-U+F8FF,U+F0000-U+FFFFF=CaskaydiaCove Nerd Font
 window-padding-x = 16
 window-padding-y = 16
 
