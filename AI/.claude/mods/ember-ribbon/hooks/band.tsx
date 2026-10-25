@@ -12,7 +12,7 @@ import { STREAM_CELLS, streamPoints, tokensPerSecond } from './stream'
 // One row above the prompt, with the context and the token stream:
 //   ✦                                    ⣿⣿⣷⣿ 134.4k / 200k   ⣀⣤⣶⣿   42 tok/s   ⣀⣤⣶⣿ 26.9k
 // The enhance button at the left, the context's sparkline and heat, the token stream, and
-// Headroom's saved tokens (life ring, a graph of each turn's, the session's total) at the right.
+// Headroom's saved tokens (its icon, a graph of each turn's, the session's total) at the right.
 
 // The context chart: one ▁▂▃▄▅▆▇█ glyph per turn, newest at the right.
 export const FILL_CELLS = 8

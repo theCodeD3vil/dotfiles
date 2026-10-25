@@ -1,7 +1,7 @@
 import { createSignal } from 'solid-js'
 import { ORANGE, hex, pack } from './footer'
 
-// The row's Headroom item, after Ember Ribbon's: the life ring (U+F1CD), a graph of the tokens saved
+// The row's Headroom item, after Ember Ribbon's: U+F0768, a graph of the tokens saved
 // in each recent turn, and the total. The proxy OpenCode's provider points at reports what it saved
 // for each client; OpenCode's share (all its sessions since the proxy started) is what the item shows.
 export const HEADROOM_STATS_URL = 'http://127.0.0.1:6767/stats'
@@ -9,7 +9,7 @@ export const HEADROOM_STATS_URL = 'http://127.0.0.1:6767/stats'
 export const HEADROOM_POLL_TICKS = 50
 const HEADROOM_TIMEOUT_MS = 2000
 
-export const HEADROOM_ICON = '\u{F1CD}'
+export const HEADROOM_ICON = '\u{F0768}'
 export const HEADROOM_COLOR = pack(hex(ORANGE))
 export const HEADROOM_CELLS = 6
 export const HEADROOM_POINTS = HEADROOM_CELLS * 2

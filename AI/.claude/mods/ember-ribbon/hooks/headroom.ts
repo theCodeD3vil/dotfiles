@@ -6,9 +6,9 @@ export const READ_HEADROOM_STATE = ['sh', '-c', 'cat "$HOME/Library/Application 
 // The band redraws ten times a second while Claude works; the file is read at most this often.
 export const HEADROOM_REFRESH_MS = 2000
 
-// The band's Headroom item: the life ring (U+F1CD, Symbols Nerd Font), a graph of the tokens saved
+// The band's Headroom item: U+F0768 (Symbols Nerd Font), a graph of the tokens saved
 // in each recent turn, two to a cell with the newest at the right, and the session's total.
-export const HEADROOM_ICON = '\u{F1CD}'
+export const HEADROOM_ICON = '\u{F0768}'
 export const HEADROOM_CELLS = 6
 export const HEADROOM_POINTS = HEADROOM_CELLS * 2
 // Room for "999.9k", so the item keeps its width as the total grows.

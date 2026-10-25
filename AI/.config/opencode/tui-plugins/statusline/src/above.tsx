@@ -3,7 +3,7 @@
  * OpenTUI view for the row above the prompt, after Ember Ribbon's AbovePrompt:
  *   ⣿⣿⣿⣷⣿⣷⣿⣿  134.4k / 200k   ⣀⣤⣶⣿⣦⣀⣀⣀   412 tok/s   ⣀⣤⣶⣿⣀⣀ 15.3k
  * The context sparkline, the used / window readout coloured by heat, the token stream and
- * Headroom's saved tokens (life ring, a graph of each turn's, the total), with Wick, the desk pet, at the far right of the row, his feet on it, as Claude Code has him.
+ * Headroom's saved tokens (its icon, a graph of each turn's, the total), with Wick, the desk pet, at the far right of the row, his feet on it, as Claude Code has him.
  * All cells use the terminal-default background so transparent themes remain transparent.
  */
 import { TextAttributes } from '@opentui/core'
