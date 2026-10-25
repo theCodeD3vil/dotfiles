@@ -4,8 +4,7 @@ import { COLUMNS, ROWS, type PetProps } from './pet'
 import type { PetState } from './wick'
 
 // Wick, 12 × 4 cells of octants, stands at the far right of the Ember ribbon's context row, his
-// feet on the row with the context count and the token stream, facing left as the playground's
-// right placement has it, and follows the main loop: waiting, thinking, a tool, writing, an approval, compacting, done.
+// feet on the row with the context count and the token stream, facing left, and follows the main loop: waiting, thinking, a tool, writing, an approval, compacting, done.
 // Listed before ember-ribbon in CLAUDE_CODE_PLUGIN_DIRS (as install.sh's alphabetical order has
 // it), it wraps the band: the band is drawn in what Wick leaves of the width, Wick beside it.
 // The pet animates itself on the drawing thread (./pet.tsx); this module only tells it the
