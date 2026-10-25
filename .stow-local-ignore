@@ -35,5 +35,9 @@ _darcs
 # .claude/ here is this repo's own project config (skills), not a mirror of ~/.claude.
 ^/\.claude$
 
-# Untracked local notes (task lists, Claude local instructions).
-\.local\.md$
+# Untracked local notes (task lists, Claude local instructions). Stow matches a
+# pattern with no slash against the whole file name, so it needs the leading .+
+.+\.local\.md
+
+# fallow's cache folder (it gitignores itself).
+^/\.fallow$
