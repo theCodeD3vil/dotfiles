@@ -213,7 +213,7 @@ export ZSH="$HOME/.oh-my-zsh"
 # ZSH_THEME="starship"
 
 # Plugins
-plugins=(git git-flow npm nvm docker docker-compose vscode extract dotenv ssh-agent node gitfast thefuck zsh-autosuggestions zsh-syntax-highlighting)
+plugins=(git git-flow npm nvm docker docker-compose vscode extract dotenv ssh-agent node gitfast thefuck ding zsh-autosuggestions zsh-syntax-highlighting)
 # Complete selection for profiles (includes aliases/custom plugins)
 # awesome-lazy-zsh-plugins=["git","git-flow","npm","nvm","docker","docker-compose","vscode","extract","dotenv","ssh-agent","node","gitfast","thefuck","zsh-autosuggestions","zsh-syntax-highlighting","python","golang","rust","java","git-extras","ssh","directories","history-search","flutter"]
 
