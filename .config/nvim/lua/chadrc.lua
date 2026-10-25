@@ -3,14 +3,14 @@ local highlights = require "highlights"
 local options = {
 
   base46 = {
-    theme = "vira_deepforest", -- default theme
+    theme = "catppuccin", -- default theme
     hl_add = highlights.add,
     hl_override = highlights.override,
     integrations_dir = nil,
     integrations = {},
     changed_themes = {},
     transparency = true,
-    theme_toggle = { "vira_deepforest", "one_light" },
+    theme_toggle = { "catppuccin", "catppuccin-latte" },
   },
 
   ui = {

@@ -1,20 +1,16 @@
 // Wick, the desk pet: a round candle-drop slime in full-colour octant pixel art. Claude Code
 // draws it above the Ember ribbon and OpenCode above the prompt, both at the right, from this file.
 //
-// Ported pixel for pixel from playground/js/characters/wick.js, where the design is made; the
-// statusline's tests (tests/pet.test.ts) draw every state in both and compare every pixel.
-//
 // Its body is a fixed orange with a dark outline and its whole face is two eyes. The flame on its
 // head and its props take the stage's colour. A grid 14 or more pixels tall gets the full pet, a
-// 14 × 9 mochi; anything shorter gets the mini, an 8 × 3 body. (The playground's small pet, for
-// grids 10 to 13 tall, is not ported: neither host draws one.) Both hosts give it 12 × 4 cells
-// of octants, 24 × 16 pixels.
+// 14 × 9 mochi; anything shorter gets the mini, an 8 × 3 body. Both hosts give it 12 × 4 cells of octants,
+// 24 × 16 pixels.
 
 export type PetState = 'idle' | 'waiting' | 'thinking' | 'tool' | 'writing' | 'approval' | 'compacting' | 'done'
 
 /** `t`: seconds since the state began; `clock`: seconds the pet has been running (it blinks on it). */
 export type PetFrame = { state: PetState; t: number; clock: number }
-/** Which way the pet looks: 1 to the right, -1 to the left (the playground's right placement). */
+/** Which way the pet looks: 1 to the right, -1 to the left. */
 export type Facing = 1 | -1
 
 type Color = string // '#rrggbb'
@@ -32,19 +28,19 @@ const INK: Palette = {
   e: '#2A100A', // eyes
   w: '#FFFFFF', // eye glints
 }
-// Vira Deepforest, everything but the body above: its yellow for the candle, its text colour for the paper.
+// Catppuccin Mocha, everything but the body above: its yellow for the candle, its text colour for the paper.
 // Idle has no stage colour of its own, so its flame burns like a candle's.
-const CANDLE = '#FFCB6B'
-const PAPER = '#CAE5D5'
-// The stage colours, Deepforest's hues (purple is pink), as OpenCode's statusline gives its spinners.
+const CANDLE = '#f9e2af'
+const PAPER = '#cdd6f4'
+// The stage colours, Catppuccin Mocha's hues, as OpenCode's statusline gives its spinners.
 const TONES: Record<Exclude<PetState, 'idle'>, Color> = {
-  waiting: '#6FA0DE',
-  thinking: '#CC8868',
-  tool: '#CB7FA3',
-  writing: '#C3E88D',
-  approval: '#FFCB6B',
-  compacting: '#f07178',
-  done: '#74C9DE',
+  waiting: '#89b4fa',
+  thinking: '#fab387',
+  tool: '#cba6f7',
+  writing: '#a6e3a1',
+  approval: '#f9e2af',
+  compacting: '#f38ba8',
+  done: '#89dceb',
 }
 const SLEEP_AFTER = 14
 const BLINK_EVERY = 3.7

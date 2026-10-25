@@ -39,19 +39,7 @@ end)
 config.send_composed_key_when_left_alt_is_pressed = false
 config.send_composed_key_when_right_alt_is_pressed = false
 
--- Vira Theme - Deepforest (vira-theme-for-terminals/ghostty/Vira-Theme-Deepforest.conf,
--- no wezterm variant ships in the pack, translated from the ghostty one)
-config.colors = {
-	foreground = "#CAE5D5",
-	background = "#111816",
-	cursor_bg = "#FFCC00",
-	cursor_border = "#FFCC00",
-	cursor_fg = "#111816",
-	selection_bg = "#4B7253",
-	selection_fg = "#CAE5D5",
-	ansi = { "#3B544D", "#f07178", "#C3E88D", "#FFCB6B", "#6FA0DE", "#A68DCD", "#74C9DE", "#CAE5D5" },
-	brights = { "#3B544D", "#f07178", "#C3E88D", "#FFCB6B", "#6FA0DE", "#A68DCD", "#74C9DE", "#ffffff" },
-}
+config.color_scheme = "Catppuccin Mocha"
 
 -- Cartograph CF has no Nerd Font glyphs, and the Symbols Nerd Font bundled with
 -- WezTerm 20240203 predates some of the ones starship.toml uses (U+E91B, U+EC6F),

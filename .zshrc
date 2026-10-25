@@ -314,10 +314,6 @@ drm() {
 # SHELL INTEGRATION / PROMPT
 # *****************************************************************************
 
-# iterm2 integration is also sourced inside the managed block
-# above; this guarded re-source is a harmless no-op belt-and-
-# braces left over from before that block existed.
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 eval "$(starship init zsh)"
 export EDITOR="nvim"
 
@@ -340,26 +336,19 @@ if [[ "$OSTYPE" == darwin* ]]; then
 fi
 
 # *****************************************************************************
-# VIRA DEEPFOREST PALETTE (shared by fzf and zsh-syntax-highlighting)
-# *****************************************************************************
-
-vira_base="#111816" vira_surface="#283834" vira_overlay="#515f58" vira_text="#CAE5D5"
-vira_red="#f07178" vira_peach="#CC8868" vira_teal="#80CBC4"
-vira_blue="#6FA0DE" vira_lime="#C3E88D"
-# Deepforest has no pink, so this is an even blend of its red and purple.
-vira_pink="#CB7FA3"
-
-# *****************************************************************************
 # FZF
 # *****************************************************************************
 
 # setup fzf keybindings and completions
 eval "$(fzf --zsh)"
 
-# fzf theme — Vira Deepforest. Every color fzf draws is set here: the ones left out
-# (border, separator, scrollbar, gutter, query, label) fall back to fzf's built-in
-# 256-color greys, which are not in the palette.
-export FZF_DEFAULT_OPTS="--color=fg:${vira_text},bg:${vira_base},hl:${vira_lime},fg+:${vira_text},bg+:${vira_surface},hl+:${vira_lime},info:${vira_blue},prompt:${vira_teal},pointer:${vira_pink},marker:${vira_peach},spinner:${vira_pink},header:${vira_teal},border:${vira_overlay},preview-border:${vira_overlay},separator:${vira_surface},scrollbar:${vira_overlay},gutter:${vira_base},query:${vira_text},label:${vira_teal}"
+# fzf theme — Catppuccin Mocha (catppuccin/fzf)
+export FZF_DEFAULT_OPTS=" \
+--color=bg+:#313244,bg:#1E1E2E,spinner:#F5E0DC,hl:#F38BA8 \
+--color=fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC \
+--color=marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8 \
+--color=selected-bg:#45475A \
+--color=border:#6C7086,label:#CDD6F4"
 
 
 # -- Use fd instead of fzf --
@@ -402,12 +391,12 @@ _fzf_comprun(){
 
 # ----- Bat (better cat) -----
 
-export BAT_THEME="Vira Deepforest"
+export BAT_THEME="Catppuccin Mocha"
 
 # ---- Eza (better ls) -----
 
 # On macOS eza looks for theme.yml in ~/Library/Application Support/eza and ignores
-# XDG_CONFIG_HOME, so point it at the stowed ~/.config/eza (the Vira Deepforest theme).
+# XDG_CONFIG_HOME, so point it at the stowed ~/.config/eza (the Catppuccin Mocha theme).
 export EZA_CONFIG_DIR="$HOME/.config/eza"
 
 alias ls="eza --color=always --long --git --no-filesize --icons=always --no-time --no-user --no-permissions"
@@ -418,7 +407,7 @@ eval "$(zoxide init zsh)"
 alias cd="z"
 
 # `zi` picks a directory with fzf. Setting _ZO_FZF_OPTS replaces both zoxide's own
-# fzf defaults and FZF_DEFAULT_OPTS, so this starts from the Deepforest fzf colors
+# fzf defaults and FZF_DEFAULT_OPTS, so this starts from the Catppuccin fzf colors
 # and repeats zoxide's defaults. The only change to those is the preview: eza
 # draws it in the terminal palette, where zoxide's plain `ls` has no color on macOS.
 export _ZO_FZF_OPTS="$FZF_DEFAULT_OPTS --exact --no-sort --bind=ctrl-z:ignore,btab:up,tab:down --cycle --keep-right --border=sharp --height=45% --info=inline --layout=reverse --tabstop=1 --exit-0 --preview='eza --tree --level=2 --color=always --icons=always {2..}' --preview-window=down,30%,sharp"
@@ -469,10 +458,10 @@ ZSH_HIGHLIGHT_PATTERNS+=('rm -rf *' 'fg=white,bold,bg=red')
 ZSH_HIGHLIGHT_MAXLENGTH=512
 ZSH_HIGHLIGHT_DIRS_BLACKLIST+=(/mnt/nfs-share)
 
-# Vira Deepforest colors (palette defined above near FZF)
-ZSH_HIGHLIGHT_STYLES[alias]="fg=$vira_pink,bold"
-ZSH_HIGHLIGHT_STYLES[path]="fg=$vira_teal"
-ZSH_HIGHLIGHT_STYLES[globbing]='none'
+# Catppuccin Mocha styles (catppuccin/zsh-syntax-highlighting). The file also sets
+# its own highlighters, so ours are restored after it.
+source ~/.config/zsh/catppuccin_mocha-zsh-syntax-highlighting.zsh
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern)
 
 [ -f "$HOME/.atuin/bin/env" ] && . "$HOME/.atuin/bin/env"
 
@@ -484,15 +473,14 @@ PROTON_PASS_DISABLE_TELEMETRY=true
 [[ ":$PATH:" != *":$HOME/.config/kaku/zsh/bin:"* ]] && export PATH="$HOME/.config/kaku/zsh/bin:$PATH" # Kaku PATH Integration
 [[ -f "$HOME/.config/kaku/zsh/kaku.zsh" ]] && source "$HOME/.config/kaku/zsh/kaku.zsh" # Kaku Shell Integration
 # >>> headroom:managed_rtk >>>
-_headroom_bin="$HOME/Library/Application Support/Headroom/headroom/bin"
 _headroom_path=":$PATH:"
-while case "$_headroom_path" in *:"$_headroom_bin":*) true ;; *) false ;; esac; do
-  _headroom_path=${_headroom_path%%:"$_headroom_bin":*}:${_headroom_path#*:"$_headroom_bin":}
+while case "$_headroom_path" in *:"/Users/michaelnji/Library/Application Support/Headroom/headroom/bin":*) true ;; *) false ;; esac; do
+  _headroom_path=${_headroom_path%%:"/Users/michaelnji/Library/Application Support/Headroom/headroom/bin":*}:${_headroom_path#*:"/Users/michaelnji/Library/Application Support/Headroom/headroom/bin":}
 done
 _headroom_path=${_headroom_path#:}
 _headroom_path=${_headroom_path%:}
-export PATH="$_headroom_bin${_headroom_path:+:$_headroom_path}"
-unset _headroom_path _headroom_bin
+export PATH="/Users/michaelnji/Library/Application Support/Headroom/headroom/bin${_headroom_path:+:$_headroom_path}"
+unset _headroom_path
 # <<< headroom:managed_rtk <<<
 # >>> headroom:claude_code >>>
 __headroom_up() {

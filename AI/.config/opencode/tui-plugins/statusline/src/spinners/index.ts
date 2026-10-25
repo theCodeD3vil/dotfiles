@@ -13,11 +13,11 @@ export { COLS, ROWS, type Frame }
 // The spinners are written for this many frames a second. OpenTUI paints at 30 by default.
 export const FPS = 30
 
-// The terminal panel the stage colour blends from: Vira Deepforest's background, #111816.
-export const PANEL = [17, 24, 22]
+// The terminal panel the stage colour blends from: Catppuccin Mocha's base, #1e1e2e.
+export const PANEL = [30, 30, 46]
 
-// What the footer draws for each stage of the conversation, in Vira Deepforest's hues (the same
-// as Wick's flame): blue while waiting, orange while thinking, pink for a tool, lime while
+// What the footer draws for each stage of the conversation, in Catppuccin Mocha's hues (the same
+// as Wick's flame): blue while waiting, peach while thinking, mauve for a tool, green while
 // writing, yellow for an approval, red while compacting.
 export const STAGE_SPINNERS: Record<ConversationStage, { make: SpinnerFactory; tone: number[] }> = {
   waiting: { make: bouncingBalls, tone: hex(BLUE) },

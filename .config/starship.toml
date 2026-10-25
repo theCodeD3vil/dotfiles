@@ -44,11 +44,25 @@ $character"""
 #-------------------------------------------------------
 # PALETTE SELECTION
 #-------------------------------------------------------
-palette = 'vira_deepforest'
+palette = 'catppuccin_mocha'
 
 # *****************************************************************************
 # THEME — VIRA DEEPFOREST PALETTE
 # *****************************************************************************
+
+# Catppuccin Mocha (catppuccin/starship), under the names the modules use.
+[palettes.catppuccin_mocha]
+color_fg0 = '#11111b'
+color_fg_light = '#cdd6f4'
+color_bg1 = '#313244'
+color_green = '#a6e3a1'
+color_grey = '#7f849c'
+color_pink = '#f5c2e7'
+color_orange = '#fab387'
+color_red = '#f38ba8'
+color_yellow = '#f9e2af'
+color_tool = '#94e2d5'
+color_line = '#6c7086'
 
 [palettes.vira_deepforest]
 color_fg0 = '#080c0b'
@@ -57,7 +71,7 @@ color_bg1 = '#212f2b'
 color_green = '#C3E88D'
 color_grey = '#64746b'
 color_pink = '#CB7FA3'
-color_orange = '#CC8868'
+color_orange = '#DF9877'
 color_red = '#f07178'
 color_yellow = '#FFCB6B'
 # Tool versions: the mid green between Deepforest's ANSI green and the

@@ -57,16 +57,16 @@ CaskaydiaCove Nerd Font does, and Ghostty draws them itself. Its body keeps its 
 flame on its head and its props take the stage's. What it acts out is read from the
 session's messages on the shared timer (`src/stage.ts`):
 
-| State | Colour (Vira Deepforest) | When |
+| State | Colour (Catppuccin Mocha) | When |
 | --- | --- | --- |
-| idle | candle yellow `FFCB6B` | the session is not running; it falls asleep after a while |
-| waiting | blue `6FA0DE` | a prompt just sent, a tool that returned and the model's next step, or a reply that has not started |
-| thinking | orange `CC8868` | the last part of the reply is reasoning that has not completed |
-| tool | pink `CB7FA3` | the last part is a tool that is streaming or running |
-| writing | lime `C3E88D` | the last part is text |
-| approval | yellow `FFCB6B` | a permission request is open; it wins over every other stage |
-| compacting | red `f07178` | the latest message is a compaction that is running |
-| done | cyan `74C9DE` | a turn just ended with `outcome: "succeeded"`, for `DONE_SECONDS`, then idle |
+| idle | candle yellow `f9e2af` | the session is not running; it falls asleep after a while |
+| waiting | blue `89b4fa` | a prompt just sent, a tool that returned and the model's next step, or a reply that has not started |
+| thinking | peach `fab387` | the last part of the reply is reasoning that has not completed |
+| tool | mauve `cba6f7` | the last part is a tool that is streaming or running |
+| writing | green `a6e3a1` | the last part is text |
+| approval | yellow `f9e2af` | a permission request is open; it wins over every other stage |
+| compacting | red `f38ba8` | the latest message is a compaction that is running |
+| done | sky `89dceb` | a turn just ended with `outcome: "succeeded"`, for `DONE_SECONDS`, then idle |
 
 A failed or interrupted turn goes straight to idle, and a turn that ended before its
 session came on screen is not celebrated.
@@ -113,9 +113,7 @@ bun --conditions=browser tests/preview.tsx
 The oracle executes the untouched Claude source for gauge calculations. Tests
 compare original raster words, then check the native OpenTUI footer's glyphs,
 positions, RGB colors, terminal-default backgrounds, and provider lifecycle behavior.
-`tests/pet.test.ts` runs the desk-pet playground's own Wick beside the shared module,
-in every state for twenty seconds at both hosts' sizes and frame rates, and compares
-every pixel and cell. `tests/spinners.test.ts` runs each stage's spinner beside the
+`tests/spinners.test.ts` runs each stage's spinner beside the
 picker's own frame code (`tests/artifact-spinners.js`) for thirty seconds and compares
 every frame.
 

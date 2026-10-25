@@ -66,11 +66,11 @@ The installer sets up the machine in this order:
 4. Installs the Claude Code and OpenCode command-line clients.
 5. Installs oh-my-zsh and the shell plugins used by this setup.
 6. Fetches the plugin checkouts this repository tracks as Git submodules
-   (fzf-git and the tmux plugins) when they are empty.
+   (fzf-git and the Catppuccin tmux palette) when they are empty.
 7. Links the configuration files in this repository into your home directory.
 8. Applies the small Ubuntu-only shell fixes when needed.
-9. Sets up rtk, icm, worktrunk, and the pass-cli shell completions when those
-   commands are available.
+9. Sets up rtk, icm, the bat theme cache, yazi packages, worktrunk, and the
+   pass-cli shell completions when those commands are available.
 
 On macOS, it also installs the Mac-only applications and App Store items listed
 in `bootstrap/Brewfile.mac`. On Ubuntu, Homebrew provides the developer tools
@@ -108,22 +108,14 @@ Read the error and run the installer again:
 ~/dotfiles/bootstrap/install.sh
 ```
 
-It is meant to be re-runnable. Finished work is detected and skipped. For a
-plain, copyable log while troubleshooting, add `--plain`:
-
-```sh
-~/dotfiles/bootstrap/install.sh --plain
-```
+It is meant to be re-runnable. Finished work is detected and skipped.
 
 Useful options:
 
 | Command | Use it when you want to... |
 |---|---|
 | `--dry-run` | preview a run without changing anything |
-| `--upgrade` | allow Homebrew packages to be upgraded |
-| `--check-cleanup` | see packages not listed in the Brewfiles; it never removes them |
 | `--skip NAME` | skip a step, for example `--skip brew` |
-| `--demo` | preview the installer display without installing anything |
 
 Run `~/dotfiles/bootstrap/install.sh --help` for the full list of step names
 and options.
@@ -132,9 +124,9 @@ and options.
 
 | Area | Included |
 |---|---|
-| Shell | zsh, oh-my-zsh, syntax highlighting, zoxide, fzf, and Starship |
+| Shell | Homebrew's zsh, oh-my-zsh, awesome-lazy-zsh, syntax highlighting, zoxide, fzf, and Starship |
 | Terminal workflow | tmux, sesh, atuin, eza, bat, ripgrep, fd, yazi, and television |
-| Editing | Neovim with NvChad and custom Vira themes |
+| Editing | Neovim with NvChad |
 | Git and project work | Git, delta, lazygit, gh, worktrunk, and gitmux |
 | Development | Node LTS through nvm, Bun, pnpm, Python, Rust tooling, Go tools, and common CLI utilities |
 | AI tools | Claude Code, OpenCode, rtk, icm, and agent-browser |
@@ -161,58 +153,28 @@ installer.
 
 ## Palette
 
-Every tool uses Vira Deepforest. Only VS Code is left alone on purpose and keeps its
-own theme. The Claude Code mods and the OpenCode statusline plugin use it too, with
-one exception: Wick's body keeps its own orange ink, and only his flame and props
-follow Deepforest. There is no shared palette file because the configured tools use
-incompatible formats, so each config holds its own copy of these hexes.
+Everything uses [Catppuccin Mocha](https://catppuccin.com/palette), through each
+tool's official port where one exists. Ports that need an accent use mauve. The
+Vira theme files (`vira-theme-for-terminals/` and the `vira-*` files next to each
+config) are kept but no longer selected.
 
-| Role | Hex | Role | Hex |
-|---|---|---|---|
-| background | `#111816` | red | `#f07178` |
-| crust (bars, text on pills) | `#080c0b` | orange | `#CC8868` |
-| surface | `#212f2b`, `#283834` | yellow | `#FFCB6B` |
-| overlay | `#515f58`, `#64746b`, `#76887f` | green | `#C3E88D` |
-| text | `#CAE5D5` | teal (accent) | `#80CBC4` |
-| sage | `#95BBBD` | cyan | `#74C9DE` |
-| pink (derived) | `#CB7FA3` | blue | `#6FA0DE` |
-
-Vira Deepforest itself only defines the background, text and the 16 terminal
-colours. The crust, surface and overlay shades are taken from
-`.config/nvim/lua/themes/vira_deepforest.lua`. Deepforest has no pink, so pink is
-an even blend of its red and its magenta (`#A68DCD`). It colours the fzf pointer
-and spinner, the zsh alias highlight, bat's keywords and a few other accents.
-
-Purple is kept out of the tool themes on purpose: wherever a Catppuccin-style
-config used mauve, Deepforest's config uses pink or lime. The one place `#A68DCD`
-still appears is the terminal palettes (ANSI magenta in Ghostty, WezTerm and
-Kaku), which stay as the Vira pack defines them.
-
-| Tool | Where the colours live |
+| Tool | Where the theme comes from |
 |---|---|
-| Ghostty | `.config/ghostty/config` |
-| WezTerm | `.wezterm.lua` |
-| Kaku | `.config/kaku/kaku.lua` (overrides on top of Kaku Dark) |
-| Warp | `.warp/settings.toml`; the stow step of `install.sh` links the pack's theme file into `~/.warp/themes` |
-| tmux | `.config/tmux/conf/theme.conf` |
-| gitmux | `.gitmux.conf` |
-| Neovim | `.config/nvim/lua/palette.lua`, theme set in `chadrc.lua` |
-| Starship | `.config/starship.toml` |
-| zsh (fzf, `zi` picker, syntax highlighting) | `.zshrc` |
-| eza (`ls`, tree previews) | `.config/eza/theme.yml`; `.zshrc` points `EZA_CONFIG_DIR` at it and unsets oh-my-zsh's `LS_COLORS`, which would override it |
-| bat, delta | `.config/bat/themes/Vira Deepforest.tmTheme`, `[delta]` in `.gitconfig` |
-| television | `.config/television/themes/vira-deepforest.toml` |
-| yazi | `.config/yazi/theme.toml` and `flavors/vira-deepforest.yazi`; its `tmtheme.xml` links the bat theme. The `[flavor]` section carries no Kaku markers, so Kaku's yazi wrapper leaves it alone |
-| Atuin | `.config/atuin/themes/vira-deepforest.toml` |
-| Claude Code | `AI/.claude/themes/vira-deepforest.json`, linked into `~/.claude/themes`; select it with `/theme` (stored as `custom:vira-deepforest` in `~/.claude/settings.json`, which is not tracked). It overrides the base `dark` preset. Shimmer tokens are their base colour 45% blended toward the text colour; diff backgrounds are delta's |
-| Claude Code mods | A copy of the hexes in each mod: `ember-ribbon/hooks/colors.ts`, `desk-pet/hooks/wick.ts` (the flame tones and props; the body palette is Wick's own), `agent-lanes` and `session-panes` (`hooks/register.tsx`). Ember Ribbon's palette must match the statusline's, and `wick.ts`'s state tones its spinner tones; the statusline's parity tests check both |
-| OpenCode statusline | `AI/.config/opencode/tui-plugins/statusline/src/footer.ts` (the hues and greys the other files import); `bash build.sh` there installs a change |
-| OpenCode | `AI/.config/opencode/themes/vira-deepforest.json`; `theme` in `tui.json` and `theme.name` in `cli.json` select it. `background` is `none`, so the terminal's own background shows through |
-
-The Ghostty colours come from
-`vira-theme-for-terminals/ghostty/Vira-Theme-Deepforest.conf`; `.wezterm.lua` and
-Kaku use its matching translation. Change terminal colours in all three places.
-After editing the bat theme, run `bat cache --build`.
+| Ghostty, WezTerm, Kaku | the built-in `Catppuccin Mocha` scheme |
+| tmux | `catppuccin_mocha_tmux.conf` from the catppuccin/tmux submodule, sourced by `.config/tmux/conf/theme.conf`; everything reads `#{@thm_*}` |
+| Starship | `[palettes.catppuccin_mocha]` in `.config/starship.toml` |
+| bat, delta | `.config/bat/themes/Catppuccin Mocha.tmTheme` (catppuccin/bat); `.config/delta/catppuccin.gitconfig` (catppuccin/delta), included from `.gitconfig`. Run `bat cache --build` after changing the bat theme |
+| eza | `.config/eza/theme.yml` (catppuccin/eza) |
+| Atuin | `.config/atuin/themes/catppuccin-mocha-mauve.toml` (catppuccin/atuin) |
+| yazi | `catppuccin-mocha` from yazi-rs/flavors, listed in `.config/yazi/package.toml` and installed by `ya pkg install` |
+| television | the built-in `catppuccin` theme |
+| Neovim | NvChad's built-in `catppuccin` theme, set in `chadrc.lua` |
+| OpenCode | the built-in `catppuccin` theme, in `tui.json` and `cli.json` |
+| zsh | fzf colors from catppuccin/fzf in `.zshrc`; `.config/zsh/catppuccin_mocha-zsh-syntax-highlighting.zsh` (catppuccin/zsh-syntax-highlighting) |
+| gitmux | hex copied by hand into `.gitmux.conf` (gitmux output can't read tmux options) |
+| Claude Code | `AI/.claude/themes/catppuccin-mocha.json`, linked into `~/.claude/themes`; selected with `/theme` (`custom:catppuccin-mocha`) |
+| Claude Code mods, OpenCode statusline | hex in `ember-ribbon/hooks/colors.ts`, `desk-pet/hooks/wick.ts` (flame and props; Wick's body keeps its own orange), `session-panes/hooks/register.tsx` and the statusline's `src/footer.ts`. Ember Ribbon's palette must match the statusline's; run `bash build.sh` in the statusline after a change |
+| Warp | not managed here (still Vira) |
 
 `prefix + s` opens `tv sesh` in a translucent tmux popup. It deliberately uses
 the terminal's default background so Ghostty and WezTerm transparency can show

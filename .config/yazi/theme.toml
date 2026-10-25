@@ -1,8 +1,8 @@
 #:schema https://yazi-rs.github.io/schemas/theme.json
 
-# Vira Deepforest, from flavors/vira-deepforest.yazi. This [flavor] section has no
-# Kaku markers on purpose: Kaku's yazi wrapper rewrites a marked block to match
+# Catppuccin Mocha, installed by `ya pkg install` from package.toml. This [flavor]
+# section has no Kaku markers on purpose: Kaku's yazi wrapper rewrites a marked block to match
 # Kaku's own theme, but leaves a [flavor] section without the markers alone.
 [flavor]
-dark = "vira-deepforest"
-light = "vira-deepforest"
+dark = "catppuccin-mocha"
+light = "catppuccin-mocha"

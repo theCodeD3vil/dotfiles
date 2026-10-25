@@ -13,11 +13,11 @@ const PANES = [
   { command: 'recalled', id: 'recall', title: 'Recalled for this prompt', description: 'Show the ICM memories recalled for the last prompt', opened: 'Opened the recall pane.' },
 ] as const
 
-// Vira Deepforest: its blue, lime, red and orange
-const NEW_FILE_COLOR = '#6FA0DE'
-const ADDED_COLOR = '#C3E88D'
-const REMOVED_COLOR = '#f07178'
-const TOPIC_COLOR = '#CC8868'
+// Catppuccin Mocha: its blue, green, red and peach
+const NEW_FILE_COLOR = '#89b4fa'
+const ADDED_COLOR = '#a6e3a1'
+const REMOVED_COLOR = '#f38ba8'
+const TOPIC_COLOR = '#fab387'
 const HOME_FOLDER = /^\/Users\/[^/]+/
 const RECALL_LIMIT = '3'
 

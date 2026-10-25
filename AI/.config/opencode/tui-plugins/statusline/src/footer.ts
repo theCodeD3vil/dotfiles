@@ -1,19 +1,18 @@
 // Ember Ribbon's quota gauges. Keep its glyphs and raster arithmetic identical
 // to AI/.claude/mods/ember-ribbon/hooks/ (footer.tsx, rasters.ts, colors.ts, format.ts).
-// Vira Deepforest, as in ember-ribbon/hooks/colors.ts (pink is its red and magenta blended:
-// purple stays out of the palette).
-export const RED = '#f07178'
-export const ORANGE = '#CC8868'
-export const YELLOW = '#FFCB6B'
-export const GREEN = '#C3E88D'
-export const TEAL = '#80CBC4'
-export const BLUE = '#6FA0DE'
-export const PINK = '#CB7FA3'
+// Catppuccin Mocha, as in ember-ribbon/hooks/colors.ts (PINK holds Mocha's mauve).
+export const RED = '#f38ba8'
+export const ORANGE = '#fab387'
+export const YELLOW = '#f9e2af'
+export const GREEN = '#a6e3a1'
+export const TEAL = '#94e2d5'
+export const BLUE = '#89b4fa'
+export const PINK = '#cba6f7'
 export const COLORS = {
   claude: ORANGE,
-  ink: '#CAE5D5',
-  dim: '#76887f',
-  track: '#283834',
+  ink: '#cdd6f4',
+  dim: '#9399b2',
+  track: '#45475a',
 } as const
 
 export const RINGS = ['\u{F0766}', '\u{F0A9E}', '\u{F0A9F}', '\u{F0AA0}', '\u{F0AA1}', '\u{F0AA2}', '\u{F0AA3}', '\u{F0AA4}', '\u{F1807}']

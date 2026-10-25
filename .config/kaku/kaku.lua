@@ -50,22 +50,7 @@ end
 
 -- New installs start in Kaku Dark. Pick another theme in Settings, or change this line:
 -- 'Kaku Light', or 'Auto' to follow macOS appearance.
-config.color_scheme = 'Kaku Dark'
-
--- Vira Theme - Deepforest (vira-theme-for-terminals/ghostty/Vira-Theme-Deepforest.conf).
--- `colors` overrides the matching keys of the scheme above, so Kaku Dark still
--- supplies everything not listed here (tab bar, scrollbar, and so on).
-config.colors = {
-  foreground = '#CAE5D5',
-  background = '#111816',
-  cursor_bg = '#FFCC00',
-  cursor_border = '#FFCC00',
-  cursor_fg = '#111816',
-  selection_bg = '#4B7253',
-  selection_fg = '#CAE5D5',
-  ansi = { '#3B544D', '#f07178', '#C3E88D', '#FFCB6B', '#6FA0DE', '#A68DCD', '#74C9DE', '#CAE5D5' },
-  brights = { '#3B544D', '#f07178', '#C3E88D', '#FFCB6B', '#6FA0DE', '#A68DCD', '#74C9DE', '#ffffff' },
-}
+config.color_scheme = 'Catppuccin Mocha'
 
 -- User overrides:
 -- Kaku intentionally keeps WezTerm-compatible Lua API names
@@ -144,7 +129,8 @@ config.window_decorations = 'INTEGRATED_BUTTONS|RESIZE'
 local function cartograph(weight, italic)
   return wezterm.font_with_fallback({
     { family = 'Cartograph CF', weight = weight, italic = italic },
-    'CaskaydiaCove Nerd Font Mono',
+    -- Non-Mono variant: full-size icons that spill into the space after them.
+    'CaskaydiaCove Nerd Font',
     'Symbols Nerd Font Mono',
   })
 end

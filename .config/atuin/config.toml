@@ -9,7 +9,7 @@ enabled = true
 autostart = true
 
 [theme]
-name = "vira-deepforest"
+name = "catppuccin-mocha-mauve"
 
 [search]
 filters = ["workspace", "global"]

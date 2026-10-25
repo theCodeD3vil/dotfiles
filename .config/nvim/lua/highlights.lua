@@ -2,8 +2,6 @@
 -- `:Telescope highlights` to find any group name; each takes fg/bg/bold/italic/etc,
 -- base30 color names work as values too.
 
-local p = require("palette")
-
 local M = {}
 
 -- every key below is verified present in one of base46's own integration
@@ -48,13 +46,12 @@ M.override = {
   Todo = { bold = true, italic = true },
   ["@comment.todo"] = { bold = true, italic = true },
 
-  -- opened folders in nvim-tree: the palette.lua green, not the
-  -- active theme's own green (base46/integrations/nvimtree.lua already
-  -- defines this key with fg = colors.folder_bg, so it must go in
-  -- hl_override, not hl_add — hl_add only merges into the "defaults"
-  -- integration, which nvimtree.lua's own dofile then runs after and
-  -- would silently clobber)
-  NvimTreeOpenedFolderName = { fg = p.green, bold = true },
+  -- opened folders in nvim-tree: the theme's green instead of its folder
+  -- color (base46/integrations/nvimtree.lua already defines this key with
+  -- fg = colors.folder_bg, so it must go in hl_override, not hl_add — hl_add
+  -- only merges into the "defaults" integration, which nvimtree.lua's own
+  -- dofile then runs after and would silently clobber)
+  NvimTreeOpenedFolderName = { fg = "green", bold = true },
 }
 
 M.add = {}

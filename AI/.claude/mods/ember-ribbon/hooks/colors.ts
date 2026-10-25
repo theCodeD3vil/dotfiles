@@ -1,17 +1,17 @@
 // Palette and color math. Colors are '#RRGGBB' strings; math works on [r, g, b] arrays (0-255).
 
-// Vira Deepforest (pink is its red and magenta blended: purple stays out of the palette).
-export const INK = '#CAE5D5'
-export const DIM = '#76887f'
-export const TRACK = '#283834'
-export const RED = '#f07178'
-export const ORANGE = '#CC8868'
-export const YELLOW = '#FFCB6B'
-export const GREEN = '#C3E88D'
-export const TEAL = '#80CBC4'
-export const CYAN = '#74C9DE'
-export const BLUE = '#6FA0DE'
-export const PINK = '#CB7FA3'
+// Catppuccin Mocha (PINK holds Mocha's mauve).
+export const INK = '#cdd6f4'
+export const DIM = '#9399b2'
+export const TRACK = '#45475a'
+export const RED = '#f38ba8'
+export const ORANGE = '#fab387'
+export const YELLOW = '#f9e2af'
+export const GREEN = '#a6e3a1'
+export const TEAL = '#94e2d5'
+export const CYAN = '#89dceb'
+export const BLUE = '#89b4fa'
+export const PINK = '#cba6f7'
 // Claude's own colour, as the footer's star and the middle of the heat ramp.
 export const CLAUDE = ORANGE
 

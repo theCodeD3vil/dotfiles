@@ -33,26 +33,14 @@
     navigate = true    # use n and N to move between diff sections
     side-by-side = true
 
-    # Vira Deepforest: syntax colors come from the bat theme of the same name,
-    # diff backgrounds are the palette's red and green blended into the terminal
-    # background (14% for lines, 30% for the changed words).
-    syntax-theme = Vira Deepforest
-    minus-style = syntax "#302424"
-    minus-emph-style = syntax "#543333"
-    plus-style = syntax "#2a3527"
-    plus-emph-style = syntax "#46563a"
-    line-numbers-zero-style = "#64746b"
-    line-numbers-minus-style = "#f07178"
-    line-numbers-plus-style = "#C3E88D"
-    file-style = "#80CBC4" bold
-    file-decoration-style = "#80CBC4" ul
-    hunk-header-style = file line-number syntax
-    hunk-header-decoration-style = "#283834" box
-
+    features = catppuccin-mocha
 
     # delta detects terminal colors automatically; set one of these to disable auto-detection
     # dark = true
     # light = true
+
+[include]
+    path = ~/.config/delta/catppuccin.gitconfig
 
 [merge]
     conflictstyle = diff3
