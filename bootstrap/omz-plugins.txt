@@ -4,6 +4,6 @@
 # Only plugins that omz really loads are listed: it needs <name>.plugin.zsh in
 # the directory. The Mac also has thefuck, z and you-should-use there; omz uses
 # its built-ins for the first two, and the third isn't in plugins=().
-zsh-autosuggestions      https://github.com/zsh-users/zsh-autosuggestions
-zsh-syntax-highlighting  https://github.com/zsh-users/zsh-syntax-highlighting.git
+deja                     https://github.com/Giammarco-Ferranti/deja
+zsh-patina               https://github.com/michel-kraemer/zsh-patina
 ding                     https://github.com/jessetipton/ding

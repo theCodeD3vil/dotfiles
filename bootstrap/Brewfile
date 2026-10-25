@@ -28,6 +28,8 @@ brew "carapace"
 brew "cloudflared"
 # Terminal user interface client for Discord
 brew "concord"
+# Predictive ghost-text autosuggestions for zsh
+brew "deja"
 # Modern, maintained replacement for ls
 brew "eza"
 # Simple, fast and user-friendly alternative to find
@@ -122,8 +124,8 @@ brew "yazi"
 brew "zoxide"
 # UNIX shell (command interpreter)
 brew "zsh"
-# Fish shell like syntax highlighting for zsh
-brew "zsh-syntax-highlighting"
+# Blazingly fast Zsh syntax highlighter
+brew "zsh-patina"
 # See football match stats in real-time in your terminal
 brew "0xjuanma/tap/golazo", trusted: true
 # A simple terminal UI for managing SSH connections.

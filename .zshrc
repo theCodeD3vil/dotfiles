@@ -192,17 +192,6 @@ fi
 # bootstrap/install.sh generates (pass-cli ships a generator, not a file).
 fpath=(~/.docker/completions ~/.zfunc $fpath)
 
-# zsh-syntax-highlighting settings. The plugin is loaded once, by oh-my-zsh in the
-# block below, and reads these when it loads, so they have to come first.
-# Catppuccin Mocha styles (catppuccin/zsh-syntax-highlighting). The file also sets
-# its own highlighters, so ours are restored after it.
-source ~/.config/zsh/catppuccin_mocha-zsh-syntax-highlighting.zsh
-ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern)
-typeset -A ZSH_HIGHLIGHT_PATTERNS
-ZSH_HIGHLIGHT_PATTERNS+=('rm -rf *' 'fg=white,bold,bg=red')
-ZSH_HIGHLIGHT_MAXLENGTH=512
-ZSH_HIGHLIGHT_DIRS_BLACKLIST+=(/mnt/nfs-share)
-
 export DING_SUCCESS_SOUND=Funk
 # Claude Code drops to 256 colours under tmux unless told tmux passes RGB through (it does).
 export CLAUDE_CODE_TMUX_TRUECOLOR=1
@@ -226,9 +215,9 @@ export ZSH="$HOME/.oh-my-zsh"
 # ZSH_THEME="starship"
 
 # Plugins
-plugins=(git git-flow npm nvm docker docker-compose vscode extract dotenv ssh-agent node gitfast thefuck ding zsh-autosuggestions zsh-syntax-highlighting)
+plugins=(git git-flow npm nvm docker docker-compose vscode extract dotenv ssh-agent node gitfast thefuck ding deja zsh-patina)
 # Complete selection for profiles (includes aliases/custom plugins)
-# awesome-lazy-zsh-plugins=["git","git-flow","npm","nvm","docker","docker-compose","vscode","extract","dotenv","ssh-agent","node","gitfast","thefuck","zsh-autosuggestions","zsh-syntax-highlighting","python","golang","rust","java","git-extras","ssh","directories","history-search","flutter"]
+# awesome-lazy-zsh-plugins=["git","git-flow","npm","nvm","docker","docker-compose","vscode","extract","dotenv","ssh-agent","node","gitfast","thefuck","deja","zsh-patina","python","golang","rust","java","git-extras","ssh","directories","history-search","flutter"]
 
 # Load Oh My Zsh
 source $ZSH/oh-my-zsh.sh
@@ -455,6 +444,16 @@ chpwd(){
     nvm use
   fi
 }
+
+# Kaku (sourced below) loads its bundled zsh-autosuggestions unless it sees a
+# third-party widget with "autosuggest" in its name. deja's widgets are all deja-*,
+# so register one; otherwise both engines would run.
+(( $+widgets[deja-accept] )) && zle -N deja-autosuggest
+
+# Same for highlighting: Kaku defers its bundled fast-syntax-highlighting unless a
+# function named _zsh_highlight exists, which only zsh-syntax-highlighting defines.
+# zsh-patina highlights here, so claim the name.
+(( $+commands[zsh-patina] )) && _zsh_highlight() { :; }
 
 [ -f "$HOME/.atuin/bin/env" ] && . "$HOME/.atuin/bin/env"
 

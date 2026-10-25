@@ -34,7 +34,7 @@ STEP_TABLE=(
   'submodules|fill the plugin checkouts the repo tracks (fzf-git, tmux)'
   'stow|link the dotfiles into your home directory'
   'linux|Ubuntu-only shell fixes'
-  'inits|rtk, icm, Claude Code mods and plugins, yazi packages, worktrunk setup'
+  'inits|rtk, icm, deja history, Claude Code mods and plugins, yazi packages, worktrunk setup'
   'finish|login shell and a last check'
 )
 STEPS=()
@@ -835,6 +835,18 @@ step_inits() {
     fi
   else
     tool_missing "icm is not installed" || rc=1
+  fi
+
+  # A second import adds frequency to every command already stored, so only a
+  # fresh database gets one.
+  if have deja; then
+    if [ -f "$HOME/.local/share/deja/deja.db" ]; then
+      info "deja history already imported"
+    else
+      run_as "deja import" deja import || rc=1
+    fi
+  else
+    tool_missing "deja is not installed" || rc=1
   fi
 
   # bat and delta load custom themes from bat's cache, so rebuild it once the
