@@ -34,3 +34,6 @@ _darcs
 
 # .claude/ here is this repo's own project config (skills), not a mirror of ~/.claude.
 ^/\.claude$
+
+# Untracked local notes (task lists, Claude local instructions).
+\.local\.md$
