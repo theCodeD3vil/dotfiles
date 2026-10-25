@@ -224,9 +224,9 @@ export ZSH="$HOME/.oh-my-zsh"
 # ZSH_THEME="starship"
 
 # Plugins
-plugins=(git git-flow npm nvm docker docker-compose vscode extract dotenv ssh-agent node gitfast thefuck ding deja zsh-patina)
+plugins=(git git-flow npm nvm docker docker-compose vscode extract dotenv ssh-agent node gitfast thefuck ding deja zsh-patina zsh-paste-guard)
 # Complete selection for profiles (includes aliases/custom plugins)
-# awesome-lazy-zsh-plugins=["git","git-flow","npm","nvm","docker","docker-compose","vscode","extract","dotenv","ssh-agent","node","gitfast","thefuck","deja","zsh-patina","python","golang","rust","java","git-extras","ssh","directories","history-search","flutter"]
+# awesome-lazy-zsh-plugins=["git","git-flow","npm","nvm","docker","docker-compose","vscode","extract","dotenv","ssh-agent","node","gitfast","thefuck","deja","zsh-patina","zsh-paste-guard","python","golang","rust","java","git-extras","ssh","directories","history-search","flutter"]
 
 # Load Oh My Zsh
 source $ZSH/oh-my-zsh.sh
@@ -476,6 +476,21 @@ PROTON_PASS_DISABLE_TELEMETRY=true
 
 [[ ":$PATH:" != *":$HOME/.config/kaku/zsh/bin:"* ]] && export PATH="$HOME/.config/kaku/zsh/bin:$PATH" # Kaku PATH Integration
 [[ -f "$HOME/.config/kaku/zsh/kaku.zsh" ]] && source "$HOME/.config/kaku/zsh/kaku.zsh" # Kaku Shell Integration
+
+# zsh-paste-guard and Kaku's "# query" hook both replace accept-line and both end in the
+# builtin .accept-line, so whichever registers last silently disables the other (Kaku
+# registers on the first prompt, after the guard). After that, send pastes to the guard
+# and every other Enter to Kaku.
+_pg_kaku_accept_line() {
+  if (( __paste_guard_pasted )); then zle paste-guard-accept-line; else zle kaku-accept-line; fi
+}
+_pg_kaku_register() {
+  zle -N paste-guard-accept-line __paste_guard_accept_line
+  zle -N kaku-accept-line _kaku_ai_query_accept_line
+  zle -N accept-line _pg_kaku_accept_line
+  precmd_functions=("${precmd_functions[@]:#_pg_kaku_register}")
+}
+(( $+functions[__paste_guard_accept_line] && $+functions[_kaku_ai_query_register_widget] )) && precmd_functions+=(_pg_kaku_register)
 # >>> headroom:managed_rtk >>>
 _headroom_path=":$PATH:"
 while case "$_headroom_path" in *:"/Users/michaelnji/Library/Application Support/Headroom/headroom/bin":*) true ;; *) false ;; esac; do

@@ -6,4 +6,5 @@
 # its built-ins for the first two, and the third isn't in plugins=().
 deja                     https://github.com/Giammarco-Ferranti/deja
 zsh-patina               https://github.com/michel-kraemer/zsh-patina
+zsh-paste-guard          https://github.com/stefanoamorelli/zsh-paste-guard
 ding                     https://github.com/jessetipton/ding
