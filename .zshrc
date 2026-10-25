@@ -196,6 +196,15 @@ export DING_SUCCESS_SOUND=Funk
 # Claude Code drops to 256 colours under tmux unless told tmux passes RGB through (it does).
 export CLAUDE_CODE_TMUX_TRUECOLOR=1
 
+# Ghost text from deja, in Catppuccin Mocha overlay2. Its default (fg=8) is the
+# terminal's palette entry 8, which Kaku draws nearly white. deja reads this when it
+# loads, so it has to be set before the block below.
+export DEJA_HIGHLIGHT_STYLE='fg=#9399b2'
+
+# deja cycles history alternatives on Tab by default, which swallows Tab whenever ghost
+# text is showing and hides zsh/cod completions. Move the cycle to Ctrl+N.
+export DEJA_CYCLE_KEY='^N'
+
 # >>> awesome-lazy-zsh managed block >>>
 #      _                                               _                         _____    _
 #     / \__      _____  ___  ___  _ __ ___   ___      | |    __ _ _____   _     |__  /___| |__
