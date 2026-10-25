@@ -10,7 +10,6 @@ tap "dart-lang/dart", trusted: true
 tap "hudochenkov/sshpass", trusted: true
 tap "protonpass/tap", trusted: true
 tap "rtk-ai/tap", trusted: true
-tap "traycerai/traycer", trusted: true
 # Browser automation CLI for AI agents
 brew "agent-browser"
 # Download with resuming and segmented downloading
@@ -25,10 +24,6 @@ brew "btop"
 brew "caddy"
 # Multi-shell multi-command argument completer
 brew "carapace"
-# TUI web browser with CSS, inline image and JavaScript support
-brew "chawan"
-# Manage your dotfiles across multiple diverse machines, securely
-brew "chezmoi"
 # Cloudflare Tunnel client (formerly Argo Tunnel)
 brew "cloudflared"
 # Terminal user interface client for Discord
@@ -39,10 +34,6 @@ brew "eza"
 brew "fd"
 # Play, record, convert, and stream select audio and video codecs
 brew "ffmpeg"
-# Banner-like program prints strings as ASCII art
-brew "figlet"
-# Text editor for your terminal: easy, powerful and fast
-brew "fresh-editor"
 # Command-line fuzzy finder written in Go
 brew "fzf"
 # GNU compiler collection
@@ -53,6 +44,14 @@ brew "gh"
 brew "git"
 # Syntax-highlighting pager for git and diff output
 brew "git-delta"
+# Audit git repos for secrets
+brew "gitleaks"
+# Post-modern modal text editor
+brew "helix"
+# Agent multiplexer that lives in your terminal
+brew "herdr"
+# CLI and Go API to Test Internet Speed using speedtest.net
+brew "speedtest-go"
 # Terminal multiplexer
 brew "tmux"
 # Git status in tmux status bar
@@ -111,8 +110,6 @@ brew "tlrc"
 brew "topgrade"
 # Parser generator tool
 brew "tree-sitter-cli"
-# Terminal UI OS (Terminal Multiplexer)
-brew "tuios"
 # Language Server Protocol implementation for TypeScript wrapping tsserver
 brew "typescript-language-server"
 # Extremely fast Python package installer and resolver, written in Rust
@@ -123,6 +120,8 @@ brew "worktrunk"
 brew "yazi"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
+# UNIX shell (command interpreter)
+brew "zsh"
 # Fish shell like syntax highlighting for zsh
 brew "zsh-syntax-highlighting"
 # See football match stats in real-time in your terminal
@@ -142,8 +141,6 @@ brew "hudochenkov/sshpass/sshpass", trusted: true
 brew "protonpass/tap/pass-cli"
 # Permanent memory for AI agents — MCP server with hybrid search
 brew "rtk-ai/tap/icm"
-# Traycer CLI - host supervisor, auth, and config surface
-brew "traycerai/traycer/traycer", trusted: true
 go "golang.org/x/tools/gopls"
 go "mvdan.cc/sh/v3/cmd/shfmt"
 go "github.com/wailsapp/wails/v2/cmd/wails"

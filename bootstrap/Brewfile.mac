@@ -1,12 +1,16 @@
 # macOS-only half of the Brewfile: casks, App Store apps, VS Code extensions, and
 # the formulae/taps with no Linux build. Run after Brewfile, on a Mac only.
 #   brew bundle --file bootstrap/Brewfile.mac
+tap "altimor/tap", trusted: true
+tap "darrylmorley/whatcable", trusted: true
 tap "devdotfast/tap", trusted: true
 tap "dopplerhq/doppler", trusted: true
 tap "felixkratz/formulae", "https://github.com/FelixKratz/homebrew-formulae", trusted: true
-tap "lab421/tap", trusted: true
-tap "largemodgames/spotatui", trusted: true
+tap "fif7y/tap", trusted: true
+tap "kamillobinski/thock", trusted: true
 tap "srimanachanta/tap", trusted: true
+tap "st0012/cctop", trusted: true
+tap "wunderlandmedia/tap", trusted: true
 # Mac App Store command-line interface
 brew "mas"
 # Polyglot runtime manager (asdf rust clone)
@@ -14,24 +18,24 @@ brew "mas"
 brew "mise"
 # Deep clean and optimize your Mac
 brew "mole"
+# Command-line USB-C cable diagnostics
+brew "darrylmorley/whatcable/whatcable-cli", trusted: true
 # Custom macOS statusbar with shell plugin, interaction and graph support
 brew "felixkratz/formulae/sketchybar"
-# Spotify client for the terminal written in Rust, powered by Ratatui
-brew "largemodgames/spotatui/spotatui", trusted: true
+# Menu bar tool to limit maximum charging percentage
+cask "aldente"
+# Coding agent and development environment
+cask "amp-app"
 # Android SDK component
 cask "android-platform-tools"
 # Agent orchestration platform
 cask "antigravity"
-# Dynamic Island for the MacBook notch
-cask "atoll"
 # Live wallpaper app
 cask "backdrop"
 # Tool to flash OS images to SD cards & USB drives
 cask "balenaetcher"
 # Screen capturing and editing tool
 cask "bettershot"
-# Use your phone as a high-quality webcam with image tuning controls
-cask "camo-studio"
 # Screen recording software
 cask "cap"
 # Native GUI for Homebrew casks
@@ -40,8 +44,8 @@ cask "caskhub"
 cask "chatgpt"
 # Anthropic's official Claude AI desktop app
 cask "claude"
-# Clipboard history app
-cask "clipbook"
+# Image, video and clipboard optimiser
+cask "clop"
 # OpenAI's coding agent that runs in your terminal
 cask "codex"
 # Brings the power of Copilot coding agent directly to your terminal
@@ -61,6 +65,8 @@ cask "figma-agent"
 cask "font-sketchybar-app-font"
 # Terminal emulator that uses platform-native UI and GPU acceleration
 cask "ghostty"
+# Finance terminal
+cask "gloomberb"
 # Web browser
 cask "google-chrome"
 # Client for the Google Drive storage service
@@ -71,36 +77,48 @@ cask "google-gemini"
 cask "grammarly-desktop"
 # Speech to text application
 cask "handy"
+# Reduce token usage for Claude Code and Codex
+cask "headroom"
 # Chromium-based web browser
 cask "helium-browser"
 # Testing client for REST, GraphQL, and HTTP APIs
 cask "httpie-desktop"
+# Convert your caps lock key or any of your modifier keys to the hyper key
+cask "hyperkey"
 # Terminal emulator as alternative to Apple's Terminal app
 cask "iterm2"
 # Terminal optimised for AI coding
 cask "kaku"
+# Mechanical keyboard sounds for every keystroke
+cask "keyecho"
 # Launchpad alternative
 cask "launchos"
+# Web browser
+cask "librewolf"
 # App to manage software development and track bugs
 cask "linear"
+# Menu bar app for running local LLMs
+cask "llama-app"
 # Open-source cross-platform alternative to AirDrop
 cask "localsend"
 # Open-source firewall to block unknown outgoing connections
 cask "lulu"
 # Clipboard manager
 cask "maccy"
-# Developer workspace for code snippets, notes and HTTP requests
-cask "masscode"
+# Deep clean, analyze, and optimize app
+cask "mole-app"
 # Reverse proxy, secure introspectable tunnels to localhost
 cask "ngrok"
 # VPN client for secure internet access and private browsing
 cask "nordvpn"
-# Knowledge base that works on top of a local folder of plain text Markdown files
-cask "obsidian"
+# Instant actions for selected text
+cask "openclip"
 # Open-source transport simulation game
 cask "openttd"
 # AI usage tracker for Cursor, Claude Code, Codex, Copilot and more
 cask "openusage"
+# Utility to uninstall apps and remove leftover files from old/uninstalled apps
+cask "pearcleaner"
 # Desktop client for Proton Pass
 cask "proton-pass"
 # VPN client focusing on security
@@ -115,6 +133,8 @@ cask "raycast"
 cask "rectangle"
 # Collection of apps available by subscription
 cask "setapp"
+# Graphical client for Git version control
+cask "sourcetree"
 # Dictation and transcription app with AI-powered editing
 cask "spokenly"
 # Music streaming service
@@ -123,12 +143,12 @@ cask "spotify"
 cask "steam"
 # Settings for SteelSeries peripherals and accessories
 cask "steelseries-gg"
+# Monitor token usage, costs, and limits across AI coding tools
+cask "token-monitor"
 # Charting and social-networking for investment traders
 cask "tradingview"
-# Cross-device clipboard syncing tool
-cask "uniclipboard"
-# Dynamic island AI agent utility
-cask "vibe-island"
+# Email client with collaborative notes
+cask "twobird"
 # Open-source code editor
 cask "visual-studio-code"
 # Multimedia player
@@ -139,23 +159,37 @@ cask "vorssaint"
 cask "warp"
 # GPU-accelerated cross-platform terminal emulator and multiplexer
 cask "wezterm@nightly"
+# Menu bar app for USB-C cable diagnostics
+cask "whatcable"
 # Native desktop client for WhatsApp
 cask "whatsapp"
-# Voice-to-text dictation with AI-powered auto-editing
-cask "wispr-flow"
+# Minimalist markdown editor
+cask "altimor/tap/flo-state", trusted: true
 # Review agent-written code changes
 cask "devdotfast/tap/whiteboard", trusted: true
 # The official Doppler CLI for managing your secrets
 cask "dopplerhq/doppler/doppler", trusted: true
-# File-automation app that watches folders and runs rules
-cask "lab421/tap/forel", trusted: true
+# Calm menu bar (formerly pelmet)
+cask "fif7y/tap/dimble", trusted: true
+# Thock your mac keyboard
+cask "kamillobinski/thock/thock", trusted: true
 # Battery management and dashboard for Apple Silicon
 cask "srimanachanta/tap/stasis", trusted: true
+# Monitor AI coding sessions from the macOS menu bar
+cask "st0012/cctop/cctop", trusted: true
+# Menu bar app that detects keyboard shortcut conflicts
+cask "wunderlandmedia/tap/hotkeyclash", trusted: true
 mas "Amphetamine", id: 937984704
 mas "Asphalt", id: 1491129197
 mas "CapCut", id: 1500855883
+mas "Clippy", id: 6450415529
+mas "Dove", id: 6749230975
 mas "FireWally", id: 6744357438
+mas "FocusFlight", id: 6648771147
+mas "Little Snitch Mini", id: 1629008763
+mas "Scaler", id: 1612708557
 mas "TestFlight", id: 899247664
+mas "Xcode", id: 497799835
 vscode "aaron-bond.better-comments"
 vscode "antfu.goto-alias"
 vscode "antfu.iconify"
