@@ -3,21 +3,13 @@
 # Set up a new Mac or Ubuntu machine from this repo.
 #
 # Install-only and re-runnable: every step checks first and only adds what is
-# missing. Nothing is upgraded (unless --upgrade) and nothing is ever deleted.
+# missing. Nothing is upgraded and nothing is ever deleted.
 #
 # usage: bootstrap/install.sh [options]
-#   --dry-run        show what would happen and change nothing
-#   --upgrade        let brew bundle upgrade outdated packages too
-#   --check-cleanup  list brew packages that are installed but not in the
-#                    Brewfiles, then exit (never removes anything)
-#   --skip STEP      skip a step; repeat for several. Steps:
-#                    preflight prerequisites brew toolchains agents globals omz
-#                    submodules stow linux inits finish
-#   --plain          no colour, spinners or bars. Chosen automatically when the
-#                    output is not a terminal or NO_COLOR is set.
-#   --demo           show the progress display with fake tasks; changes nothing
-#   --yes            skip the "move files out of the way?" prompt in the stow
-#                    step (already skipped automatically when stdin isn't a tty)
+#   --dry-run    show what would happen and change nothing
+#   --skip STEP  skip a step; repeat for several. Steps:
+#                preflight prerequisites brew toolchains agents globals omz
+#                submodules stow linux inits finish
 #   -h, --help
 #
 # Every real run is logged to ~/.cache/dotfiles-install/<timestamp>.log
@@ -29,11 +21,6 @@
 # shellcheck disable=SC2329
 
 DRY_RUN=0
-UPGRADE=0
-CHECK_CLEANUP=0
-PLAIN=0
-DEMO=0
-ASSUME_YES=0
 SKIP=" "
 # name|what it does (shown under the step's header). STEPS, in this order, comes from it.
 STEP_TABLE=(
@@ -47,7 +34,7 @@ STEP_TABLE=(
   'submodules|fill the plugin checkouts the repo tracks (fzf-git, tmux)'
   'stow|link the dotfiles into your home directory'
   'linux|Ubuntu-only shell fixes'
-  'inits|rtk, icm, Claude Code mods and plugins, worktrunk setup'
+  'inits|rtk, icm, Claude Code mods and plugins, yazi packages, worktrunk setup'
   'finish|login shell and a last check'
 )
 STEPS=()
@@ -70,105 +57,22 @@ OS=""
 STOW_IGNORES=()
 BACKED_UP=0
 SHELL_CHANGED=0
-
-# UI state. Everything is empty until init_ui decides between fancy and plain.
-UI_FANCY=0
-COLS=80
-ESC=""
-C_RESET="" C_BOLD="" C_TEAL="" C_GREEN="" C_RED="" C_YELLOW="" C_PINK="" C_GREY=""
-CLR="" CURSOR_HIDE="" CURSOR_SHOW=""
-FILL="#" EMPTY="-" OK="ok" FAIL="x" SKIPPED="-" ARROW=">" WARN="!" DOT="-" ELL="..."
-BOX_TL="+" BOX_BL="+" BOX_H="-" BOX_V="|"
-FRAMES=("|" "/" "-" "\\")
-BG_PID=""
 SUDO_KEEPALIVE_PID=""
-SPIN_TOTAL=""
-SPIN_REGEX=""
 RUN_START=$SECONDS
 SUMMARY=""
 
-# `brew bundle` prints one "Using <name>" or "Installing <name>" line per entry.
-BREW_PROGRESS_REGEX='^(Using|Installing|Upgrading|Tapping|Skipping) [^ ]+$'
-
-# ------------------------------------------------------------------- ui ---
-
-init_ui() {
-  local cs
-  UI_FANCY=0
-  if [ "$PLAIN" != 1 ] && [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-dumb}" != dumb ]; then
-    UI_FANCY=1
-  fi
-  [ "$UI_FANCY" = 1 ] || return 0
-
-  ESC=$'\033'
-  C_RESET="${ESC}[0m"
-  C_BOLD="${ESC}[1m"
-  CLR="${ESC}[2K"
-  CURSOR_HIDE="${ESC}[?25l"
-  CURSOR_SHOW="${ESC}[?25h"
-  case "${COLORTERM:-}" in
-    *truecolor*|*24bit*)
-      # Vira Deepforest: the palette the rest of these dotfiles use.
-      C_TEAL="${ESC}[38;2;128;203;196m"
-      C_GREEN="${ESC}[38;2;195;232;141m"
-      C_RED="${ESC}[38;2;240;113;120m"
-      C_YELLOW="${ESC}[38;2;255;203;107m"
-      C_PINK="${ESC}[38;2;203;127;163m"
-      C_GREY="${ESC}[38;2;100;116;107m"
-      ;;
-    *)
-      C_TEAL="${ESC}[38;5;115m"
-      C_GREEN="${ESC}[38;5;114m"
-      C_RED="${ESC}[38;5;211m"
-      C_YELLOW="${ESC}[38;5;223m"
-      C_PINK="${ESC}[38;5;175m"
-      C_GREY="${ESC}[38;5;244m"
-      ;;
-  esac
-
-  cs="${LC_ALL:-${LC_CTYPE:-${LANG:-}}}"
-  case "$cs" in
-    *[Uu][Tt][Ff]-8*|*[Uu][Tt][Ff]8*)
-      FILL="█" EMPTY="░" OK="✔" FAIL="✘" SKIPPED="○" ARROW="▸" WARN="⚠" DOT="·" ELL="…"
-      BOX_TL="┏" BOX_BL="┗" BOX_H="━" BOX_V="┃"
-      FRAMES=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
-      ;;
-  esac
-
-  # $COLUMNS is not exported to scripts, and tput can't see the terminal from
-  # inside $( ), so ask the tty directly.
-  COLS=${COLUMNS:-}
-  if [ -z "$COLS" ]; then
-    COLS=$(stty size 2>/dev/null </dev/tty | awk '{print $2}')
-  fi
-  case "$COLS" in ''|*[!0-9]*) COLS=80 ;; esac
-  [ "$COLS" -lt 60 ] && COLS=60
-  [ "$COLS" -gt 110 ] && COLS=110
-  return 0
-}
+# ------------------------------------------------------------------- output ---
 
 log_plain() { printf '%s\n' "$*" >> "$LOG_FILE"; }
 say()  { printf '%s\n' "$*"; log_plain "$*"; }
-info() { printf '    %s%s%s %s\n' "$C_GREY" "$DOT" "$C_RESET" "$*"; log_plain "    $*"; }
-warn() { printf '    %s%s %s%s\n' "$C_YELLOW" "$WARN" "$*" "$C_RESET" >&2; log_plain "    WARN: $*"; }
-dry()  { printf '    %s[dry-run]%s %s\n' "$C_TEAL" "$C_RESET" "$*"; }
-die()  { cleanup_ui; printf '\n  %s%s %s%s\n' "$C_RED" "$FAIL" "$*" "$C_RESET" >&2; log_plain "ERROR: $*"; exit 1; }
+info() { say "    - $*"; }
+warn() { printf '    ! %s\n' "$*" >&2; log_plain "    WARN: $*"; }
+dry()  { printf '    [dry-run] %s\n' "$*"; }
+die()  { release_sudo; printf '\n  x %s\n' "$*" >&2; log_plain "ERROR: $*"; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 usage() {
   awk 'NR >= 3 { if ($0 ~ /^# Must run under bash/) exit; print }' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
-}
-
-# Progress bar: bar PERCENT WIDTH
-bar() {
-  local pct=$1 w=$2 filled i f="" e=""
-  filled=$((pct * w / 100))
-  i=0
-  while [ "$i" -lt "$w" ]; do
-    if [ "$i" -lt "$filled" ]; then f="$f$FILL"; else e="$e$EMPTY"; fi
-    i=$((i + 1))
-  done
-  printf '%s%s%s%s%s' "$C_TEAL" "$f" "$C_GREY" "$e" "$C_RESET"
 }
 
 fmt_secs() {
@@ -182,146 +86,22 @@ fmt_secs() {
   fi
 }
 
-# Shorten TEXT to at most N columns.
-trunc() {
-  local s=$1 n=$2
-  if [ "$n" -lt 4 ]; then return 0; fi
-  if [ "${#s}" -gt "$n" ]; then
-    printf '%s%s' "${s:0:$((n - 1))}" "$ELL"
-  else
-    printf '%s' "$s"
-  fi
-}
-
 # Seconds since START (a $SECONDS reading), formatted.
 since() { fmt_secs $((SECONDS - $1)); }
 
-# Stdin with ANSI codes and carriage returns (curl progress meters) stripped and blank lines dropped.
-clean_output() {
-  tr '\r' '\n' | sed "s/${ESC}\[[0-9;?]*[A-Za-z]//g" | grep -v '^[[:space:]]*$'
-}
-
-# Last non-empty line of a growing log. Reads only the tail, so it stays cheap.
-last_line() {
-  tail -c 600 "$1" 2>/dev/null | clean_output | tail -n 1
-}
-
-kill_tree() {
-  local p=$1 c
-  for c in $(pgrep -P "$p" 2>/dev/null); do
-    kill_tree "$c"
-  done
-  kill "$p" 2>/dev/null
-  return 0
-}
-
-cleanup_ui() {
-  if [ -n "$BG_PID" ]; then
-    kill_tree "$BG_PID"
-    BG_PID=""
-  fi
-  [ -z "$SUDO_KEEPALIVE_PID" ] || release_sudo
-  if [ "$UI_FANCY" = 1 ]; then
-    printf '%s' "$CURSOR_SHOW"
-  fi
-  return 0
-}
-
-on_interrupt() {
-  cleanup_ui
-  printf '\n  %s%s interrupted%s\n' "$C_YELLOW" "$WARN" "$C_RESET"
-  exit 130
-}
-
-# Run a command with a spinner, its elapsed time and its latest output line. Output
-# is captured (and appended to the log); on failure the last lines are shown.
-# With SPIN_TOTAL and SPIN_REGEX set, also draws a bar of matching lines / total.
-# Plain mode just streams the output. Returns the command's exit status.
-spin() {
-  local label=$1 log start rc i=0 n=0 frame elapsed last line pct used avail label_t color icon
+# Run a command with its output streamed (indented) and appended to the log.
+# Returns the command's exit status.
+run_logged() {
+  local label=$1 start=$SECONDS rc
   shift
-  start=$SECONDS
-
-  if [ "$UI_FANCY" != 1 ]; then
-    printf '    %s ...\n' "$label"
-    ( "$@" ) 2>&1 | tee -a "$LOG_FILE" | sed 's/^/        /'
-    rc=${PIPESTATUS[0]}
-    if [ "$rc" = 0 ]; then
-      printf '    %s %s (%s)\n' "$OK" "$label" "$(since "$start")"
-    else
-      printf '    %s %s failed (exit %s)\n' "$FAIL" "$label" "$rc"
-    fi
-    return "$rc"
-  fi
-
-  log=$(mktemp) || return 1
-  label_t=$(trunc "$label" 44)
-  # stdin from /dev/null: nothing behind the spinner may wait for the keyboard.
-  ( "$@" ) >"$log" 2>&1 </dev/null &
-  BG_PID=$!
-  printf '%s' "$CURSOR_HIDE"
-
-  while kill -0 "$BG_PID" 2>/dev/null; do
-    frame=${FRAMES[$((i % ${#FRAMES[@]}))]}
-    elapsed=$(since "$start")
-    used=$((4 + 2 + ${#label_t} + 2 + ${#elapsed}))
-    line="    ${C_TEAL}${frame}${C_RESET} ${label_t}  ${C_GREY}${elapsed}${C_RESET}"
-    if [ -n "$SPIN_TOTAL" ] && [ "$SPIN_TOTAL" -gt 0 ] 2>/dev/null; then
-      n=$(grep -cE "$SPIN_REGEX" "$log" 2>/dev/null)
-      n=${n:-0}
-      if [ "$n" -gt "$SPIN_TOTAL" ]; then n=$SPIN_TOTAL; fi
-      pct=$((n * 100 / SPIN_TOTAL))
-      line="$line  $(bar "$pct" 20) ${C_GREY}${n}/${SPIN_TOTAL}${C_RESET}"
-      used=$((used + 2 + 20 + 1 + ${#n} + 1 + ${#SPIN_TOTAL}))
-    fi
-    avail=$((COLS - used - 4))
-    if [ "$avail" -ge 10 ]; then
-      last=$(last_line "$log")
-      if [ -n "$last" ]; then
-        line="$line  ${C_GREY}$(trunc "$last" "$avail")${C_RESET}"
-      fi
-    fi
-    printf '\r%s%s' "$CLR" "$line"
-    i=$((i + 1))
-    sleep 0.1
-  done
-
-  wait "$BG_PID"
-  rc=$?
-  BG_PID=""
-  elapsed=$(since "$start")
-  printf '\r%s' "$CLR"
+  say "    $label ..."
+  ( "$@" ) 2>&1 | tee -a "$LOG_FILE" | sed 's/^/        /'
+  rc=${PIPESTATUS[0]}
   if [ "$rc" = 0 ]; then
-    color=$C_GREEN icon=$OK
+    say "    ok $label ($(since "$start"))"
   else
-    color=$C_RED icon=$FAIL
+    say "    x $label failed (exit $rc)"
   fi
-  printf '    %s%s%s %s  %s%s%s\n' "$color" "$icon" "$C_RESET" "$label_t" "$C_GREY" "$elapsed" "$C_RESET"
-  if [ "$rc" != 0 ]; then
-    tail -n 40 "$log" | clean_output | tail -n 15 |
-      while IFS= read -r last; do
-        printf '        %s%s%s\n' "$C_GREY" "$(trunc "$last" $((COLS - 10)))" "$C_RESET"
-      done
-    if [ "$LOG_FILE" != /dev/null ]; then
-      printf '        %sfull output: %s%s\n' "$C_GREY" "$LOG_FILE" "$C_RESET"
-    fi
-  fi
-  { printf '=== %s (exit %s)\n' "$label" "$rc"; cat "$log"; } >> "$LOG_FILE"
-  rm -f "$log"
-  printf '%s' "$CURSOR_SHOW"
-  return "$rc"
-}
-
-# spin with a progress bar: spin_progress TOTAL REGEX LABEL CMD...
-spin_progress() {
-  local rc
-  SPIN_TOTAL=$1
-  SPIN_REGEX=$2
-  shift 2
-  spin "$@"
-  rc=$?
-  SPIN_TOTAL=""
-  SPIN_REGEX=""
   return "$rc"
 }
 
@@ -335,20 +115,7 @@ step_desc() {
   done
 }
 
-step_header() {
-  local name=$1 idx=$2 total=$3 pct
-  pct=$(((idx - 1) * 100 / total))
-  printf '\n  %s%s%s %s%-14s%s %s%2d/%d%s  ' "$C_PINK" "$ARROW" "$C_RESET" "$C_BOLD" "$name" "$C_RESET" "$C_GREY" "$idx" "$total" "$C_RESET"
-  bar "$pct" 24
-  printf ' %s%3d%%%s\n' "$C_GREY" "$pct" "$C_RESET"
-  printf '      %s%s%s\n' "$C_GREY" "$(step_desc "$name")" "$C_RESET"
-  log_plain ""
-  log_plain "== [$idx/$total] $name"
-}
-
-# The framed panels (banner and summary): a title line, then rows behind a left edge.
-box_top() { printf '\n  %s%s%s%s%s %s%s%s\n' "$C_PINK" "$BOX_TL" "$BOX_H" "$BOX_H" "$C_RESET" "$C_BOLD" "$1" "$C_RESET"; }
-box_row() { printf '  %s%s%s  %s\n' "$C_PINK" "$BOX_V" "$C_RESET" "$1"; }
+step_header() { say ""; say "== [$2/$3] $1: $(step_desc "$1")"; }
 
 print_banner() {
   local osname mode="live"
@@ -361,57 +128,41 @@ print_banner() {
     osname="${OS:-unknown}"
   fi
   [ "$DRY_RUN" = 1 ] && mode="dry run (changes nothing)"
-  box_top "dotfiles bootstrap"
-  box_row "$osname"
-  box_row "$C_GREY$DOTFILES_DIR$C_RESET"
-  box_row "$C_GREY$mode$C_RESET"
-  printf '  %s%s%s%s%s%s\n' "$C_PINK" "$BOX_BL" "$BOX_H" "$BOX_H" "$BOX_H" "$C_RESET"
-  log_plain "dotfiles bootstrap: $osname, $DOTFILES_DIR, $mode"
+  say "dotfiles bootstrap: $osname, $DOTFILES_DIR, $mode"
 }
 
 # SUMMARY holds one "status|name|seconds" line per step.
 record() { SUMMARY="$SUMMARY${SUMMARY:+$'\n'}$1|$2|$3"; }
 
 print_summary() {
-  local status name secs ndone=0 nfail=0 nskip=0 icon color note total pad
-  total=$((SECONDS - RUN_START))
-  box_top "summary"
+  local status name secs ndone=0 nfail=0 nskip=0
+  say ""
+  say "== summary"
   while IFS='|' read -r status name secs; do
     [ -n "$status" ] || continue
     case "$status" in
-      done)    icon=$OK;      color=$C_GREEN;  note=$(fmt_secs "$secs"); ndone=$((ndone + 1)) ;;
-      failed)  icon=$FAIL;    color=$C_RED;    note="failed after $(fmt_secs "$secs")"; nfail=$((nfail + 1)) ;;
-      *)       icon=$SKIPPED; color=$C_GREY;   note="skipped"; nskip=$((nskip + 1)) ;;
+      done)   say "    ok      $name ($(fmt_secs "$secs"))"; ndone=$((ndone + 1)) ;;
+      failed) say "    FAILED  $name (after $(fmt_secs "$secs"))"; nfail=$((nfail + 1)) ;;
+      *)      say "    skipped $name"; nskip=$((nskip + 1)) ;;
     esac
-    pad=""
-    if [ "${#icon}" -lt 2 ]; then pad=" "; fi
-    box_row "$(printf '%s%s%s%s %s%-14s%s %s%s%s' "$color" "$icon" "$C_RESET" "$pad" "$C_RESET" "$name" "$C_RESET" "$C_GREY" "$note" "$C_RESET")"
-  done <<EOF
+  done <<EOF2
 $SUMMARY
-EOF
-  printf '  %s%s%s%s%s ' "$C_PINK" "$BOX_BL" "$BOX_H" "$BOX_H" "$C_RESET"
-  bar 100 16
-  printf '  %s%d done, %d failed, %d skipped in %s%s\n' "$C_GREY" "$ndone" "$nfail" "$nskip" "$(fmt_secs "$total")" "$C_RESET"
-  log_plain "summary: $ndone done, $nfail failed, $nskip skipped in $(fmt_secs "$total")"
-  if [ "$LOG_FILE" != /dev/null ]; then
-    printf '  %s  log: %s%s\n' "$C_GREY" "$LOG_FILE" "$C_RESET"
-  fi
+EOF2
+  say "    $ndone done, $nfail failed, $nskip skipped in $(since "$RUN_START")"
+  [ "$LOG_FILE" = /dev/null ] || say "    log: $LOG_FILE"
 }
 
-bold() { printf '%s%s%s' "$C_BOLD" "$1" "$C_RESET"; }
-bullet() { printf '      %s%s%s %s\n' "$C_TEAL" "$DOT" "$C_RESET" "$*"; }
-
 print_next_steps() {
-  printf '\n  %s%s next steps%s  %s(none of these can be scripted)%s\n' "$C_PINK" "$ARROW" "$C_RESET" "$C_GREY" "$C_RESET"
+  say ""
+  say "== next steps (none of these can be scripted)"
   if [ "$SHELL_CHANGED" = 1 ]; then
-    bullet "your login shell is now zsh, but this terminal is still on the old one. Run $(bold 'exec zsh') or log in again; do not $(bold 'source ~/.zshrc') from bash"
+    say "    - your login shell is now zsh, but this terminal is still on the old one. Run 'exec zsh' or log in again; do not 'source ~/.zshrc' from bash"
   fi
-  bullet "log in to $(bold claude) and $(bold opencode)"
-  bullet "GitHub: $(bold 'gh auth login')"
-  bullet "SSH keys and the SSH agent"
-  bullet "macOS only: sign in to the App Store, then re-run for the mas apps"
-  bullet "open a new terminal (or run $(bold 'exec zsh')) so the new PATH and shell config load"
-  printf '\n'
+  say "    - log in to claude and opencode"
+  say "    - GitHub: gh auth login"
+  say "    - SSH keys and the SSH agent"
+  say "    - macOS only: sign in to the App Store, then re-run for the mas apps"
+  say "    - open a new terminal (or run 'exec zsh') so the new PATH and shell config load"
 }
 
 # ---------------------------------------------------------------- helpers ---
@@ -423,13 +174,13 @@ dry_skip() { [ "$DRY_RUN" = 1 ] || return 1; dry "$*"; }
 # installs it may not have run yet), a failure otherwise.
 tool_missing() { warn "$1"; [ "$DRY_RUN" = 1 ]; }
 
-# A long-running command: spinner in a real run, printed in a dry run.
+# A long-running command: run and logged in a real run, printed in a dry run.
 # run_as LABEL CMD...
 run_as() {
   local label=$1
   shift
   dry_skip "$*" && return 0
-  spin "$label" "$@"
+  run_logged "$label" "$@"
 }
 
 # A quick command that needs no spinner (mkdir, ln, touch).
@@ -461,7 +212,7 @@ fetch_run() {
   local label=$1 envs=$2 interp=$3 url=$4
   shift 4
   dry_skip "download $url and run: ${envs:+$envs }$interp $*" && return 0
-  spin "$label" _fetch_and_run "$envs" "$interp" "$url" "$@"
+  run_logged "$label" _fetch_and_run "$envs" "$interp" "$url" "$@"
 }
 
 # Is NAME installed? Some installers put it where PATH doesn't reach yet.
@@ -530,8 +281,6 @@ brewfiles() {
 
 # Non-comment, non-blank lines of a list file.
 list_items() { grep -v '^[[:space:]]*\(#\|$\)' "$1" 2>/dev/null; }
-
-count_entries() { grep -cE '^(tap|brew|cask|mas|vscode|go|uv|cargo|npm) ' "$1" 2>/dev/null; }
 
 detect_os() {
   case "$(uname -s)" in
@@ -681,11 +430,7 @@ step_prerequisites() {
 }
 
 step_brew() {
-  local f rc=0 out plan errors check_rc upflag="--no-upgrade" verb="install"
-  if [ "$UPGRADE" = 1 ]; then
-    upflag=""
-    verb="install or upgrade"
-  fi
+  local f rc=0 out plan errors check_rc
   if ! load_brew_env 2>/dev/null; then
     dry_skip "brew bundle (Homebrew is not installed yet)" && return 0
     warn "Homebrew not found"
@@ -694,8 +439,7 @@ step_brew() {
   for f in $(brewfiles); do
     if [ "$DRY_RUN" = 1 ]; then
       info "checking $f ..."
-      # shellcheck disable=SC2086  # $upflag is empty or one option
-      out=$(brew_quiet bundle check $upflag --verbose --file "$BOOT_DIR/$f" 2>&1)
+      out=$(brew_quiet bundle check --no-upgrade --verbose --file "$BOOT_DIR/$f" 2>&1)
       check_rc=$?
       plan=$(printf '%s\n' "$out" | sed -n 's/^→ /        /p')
       # Besides the "→ ..." plan lines, a check that finds missing entries also
@@ -713,14 +457,13 @@ step_brew() {
           warn "$f: brew also printed:"
           printf '%s\n' "$errors" | sed 's/^/        /' >&2
         fi
-        dry "$f: brew would $verb:"
+        dry "$f: brew would install:"
         printf '%s\n' "$plan"
       else
-        dry "$f: nothing to $verb"
+        dry "$f: nothing to install"
       fi
     else
-      # shellcheck disable=SC2086  # $upflag is empty or one option
-      spin_progress "$(count_entries "$BOOT_DIR/$f")" "$BREW_PROGRESS_REGEX" "brew bundle $f" brew bundle $upflag --file "$BOOT_DIR/$f" || rc=1
+      run_logged "brew bundle $f" brew bundle --no-upgrade --file "$BOOT_DIR/$f" || rc=1
     fi
   done
   if [ "$rc" != 0 ]; then
@@ -748,12 +491,12 @@ step_toolchains() {
     # shellcheck source=/dev/null
     . "$NVM_DIR/nvm.sh"
     if [ "$(nvm version 'lts/*' 2>/dev/null)" = "N/A" ]; then
-      spin "nvm install --lts (and npm.txt)" nvm install --lts || rc=1
+      run_logged "nvm install --lts (and npm.txt)" nvm install --lts || rc=1
     else
       info "an LTS node is already installed"
     fi
     nvm alias default 'lts/*' >/dev/null 2>&1 || true
-    # spin runs in a subshell, so nvm install's PATH change does not reach us.
+    # run_logged runs in a subshell, so nvm install's PATH change does not reach us.
     # Select nvm's Node here before globals/inits (brew may also provide Node).
     if nvm use --silent default; then
       # default-packages runs only during nvm install. Also fill gaps on existing
@@ -837,23 +580,18 @@ stow_run() {
 }
 
 # Ask before moving real files out of stow's way. Skipped for --dry-run (nothing
-# moves yet), --yes, and when stdin isn't a tty (a piped/CI run must never hang
-# on a prompt it can't show; today's default of "just move them" is preserved).
+# moves yet) and when stdin isn't a tty (a piped run must never hang on a prompt
+# it can't show, so it just moves them).
 confirm_backup() {
-  local n=$1
+  local n=$1 ans
   [ "$DRY_RUN" = 1 ] && return 0
-  [ "$ASSUME_YES" = 1 ] && return 0
   if [ ! -t 0 ]; then
-    warn "stdin is not a terminal, moving $n file(s) to $BACKUP_DIR without asking (use --yes to silence this)"
+    warn "stdin is not a terminal, moving $n file(s) to $BACKUP_DIR without asking"
     return 0
   fi
-  if have gum; then
-    gum confirm "Move $n file(s) into $BACKUP_DIR to continue?"
-  else
-    printf '    move %s file(s) into %s? [y/N] ' "$n" "$BACKUP_DIR"
-    read -r ans
-    case "$ans" in [Yy]*) return 0 ;; *) return 1 ;; esac
-  fi
+  printf '    move %s file(s) into %s? [y/N] ' "$n" "$BACKUP_DIR"
+  read -r ans
+  case "$ans" in [Yy]*) return 0 ;; *) return 1 ;; esac
 }
 
 # Move every real file that is in stow's way to $BACKUP_DIR (same relative path).
@@ -972,24 +710,6 @@ step_stow() {
   fi
 }
 
-step_linux() {
-  if [ "$OS" != linux ]; then
-    info "not Linux, nothing to do"
-    return 0
-  fi
-  # UNTESTED on a real VPS: .zshrc's awesome-lazy-zsh block is regenerated by that
-  # tool and hardcodes /opt/homebrew, so point that path at Linuxbrew.
-  if [ ! -e /opt/homebrew ]; then
-    need_sudo
-    quiet sudo ln -s /home/linuxbrew/.linuxbrew /opt/homebrew || { release_sudo; return 1; }
-  fi
-  # UNTESTED: the same block sources this iTerm file unguarded.
-  if [ ! -e "$HOME/.iterm2_shell_integration.zsh" ]; then
-    quiet touch "$HOME/.iterm2_shell_integration.zsh" || { release_sudo; return 1; }
-  fi
-  release_sudo
-}
-
 # Regenerated on every run and only replaced when the output changed, so a pass-cli
 # upgrade is picked up. Written through a temp file: a failed run must not leave an
 # empty _pass-cli behind.
@@ -1068,6 +788,24 @@ setup_claude_plugins() {
   return "$rc"
 }
 
+step_linux() {
+  if [ "$OS" != linux ]; then
+    info "not Linux, nothing to do"
+    return 0
+  fi
+  # UNTESTED on a real VPS: .zshrc's awesome-lazy-zsh block is regenerated by that
+  # tool and hardcodes /opt/homebrew, so point that path at Linuxbrew.
+  if [ ! -e /opt/homebrew ]; then
+    need_sudo
+    quiet sudo ln -s /home/linuxbrew/.linuxbrew /opt/homebrew || { release_sudo; return 1; }
+  fi
+  # UNTESTED: the same block sources this iTerm file unguarded.
+  if [ ! -e "$HOME/.iterm2_shell_integration.zsh" ]; then
+    quiet touch "$HOME/.iterm2_shell_integration.zsh" || { release_sudo; return 1; }
+  fi
+  release_sudo
+}
+
 step_inits() {
   local rc=0
   quiet mkdir -p "$HOME/.claude"    # rtk init exits 1 without it
@@ -1100,11 +838,18 @@ step_inits() {
   fi
 
   # bat and delta load custom themes from bat's cache, so rebuild it once the
-  # stowed Vira Deepforest theme is in place.
+  # stowed Catppuccin Mocha theme is in place.
   if have bat; then
     run_as "bat theme cache" bat cache --build || rc=1
   else
     tool_missing "bat is not installed" || rc=1
+  fi
+
+  # yazi's flavor is listed in the stowed package.toml, not tracked.
+  if have ya; then
+    run_as "yazi packages" ya pkg install || rc=1
+  else
+    tool_missing "ya (yazi) is not installed" || rc=1
   fi
 
   setup_claude_mods || rc=1
@@ -1129,20 +874,31 @@ step_inits() {
 }
 
 step_finish() {
-  local login_shell zsh_bin rc=0
-  zsh_bin=$(command -v zsh 2>/dev/null)
-  if [ "$OS" = linux ] && [ -n "$zsh_bin" ] && [ -x "$zsh_bin" ]; then
-    login_shell=$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f7)
-    if [ -z "$login_shell" ]; then
-      warn "could not determine the login shell"
-      rc=1
-    elif [ "$(basename "$login_shell")" != zsh ]; then
+  local login_shell zsh_bin="" rc=0
+  # The login shell is Homebrew's zsh, not the system one.
+  load_brew_env 2>/dev/null && zsh_bin="$(brew --prefix)/bin/zsh"
+  if [ -z "$zsh_bin" ] || [ ! -x "$zsh_bin" ]; then
+    warn "Homebrew's zsh is not installed; the login shell is left alone"
+    rc=1
+  else
+    if [ "$OS" = mac ]; then
+      login_shell=$(dscl . -read "$HOME" UserShell 2>/dev/null | awk '{print $2}')
+    else
+      login_shell=$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f7)
+    fi
+    if [ "$login_shell" = "$zsh_bin" ]; then
+      info "login shell is already $zsh_bin"
+    else
       need_sudo
-      if run_as "make zsh the login shell" sudo chsh -s "$zsh_bin" "$(id -un)"; then
+      # chsh only accepts shells listed in /etc/shells.
+      if ! grep -qx "$zsh_bin" /etc/shells 2>/dev/null; then
+        run_as "add $zsh_bin to /etc/shells" sudo sh -c "echo '$zsh_bin' >> /etc/shells" || rc=1
+      fi
+      if run_as "make $zsh_bin the login shell" sudo chsh -s "$zsh_bin" "$(id -un)"; then
         # chsh only applies to new logins: this terminal keeps its old shell.
         [ "$DRY_RUN" = 1 ] || SHELL_CHANGED=1
       else
-        warn "chsh failed; set your login shell to zsh by hand"
+        warn "chsh failed; set your login shell to $zsh_bin by hand"
         rc=1
       fi
       release_sudo
@@ -1154,83 +910,13 @@ step_finish() {
   return "$rc"
 }
 
-# ------------------------------------------------------------ check-cleanup ---
-
-check_cleanup() {
-  local tmp f
-  detect_os
-  load_brew_env || die "Homebrew is not installed"
-  tmp=$(mktemp)
-  for f in $(brewfiles); do
-    cat "$BOOT_DIR/$f"
-    echo
-  done > "$tmp"
-  say "Installed but not in the Brewfiles (nothing is removed):"
-  brew_quiet bundle cleanup --file "$tmp" || true
-  rm -f "$tmp"
-}
-
-# --------------------------------------------------------------------- demo ---
-
-demo_progress() {
-  local i=1
-  while [ "$i" -le 40 ]; do
-    printf 'Installing package-%02d\n' "$i"
-    i=$((i + 1))
-    sleep 0.07
-  done
-}
-
-demo_fail() {
-  printf 'resolving mirror...\n'
-  sleep 0.6
-  printf 'curl: (22) The requested URL returned error: 404\n' >&2
-  sleep 0.3
-  return 3
-}
-
-# The whole display with fake tasks, so it can be previewed without installing anything.
-run_demo() {
-  OS=mac
-  DRY_RUN=1
-  RUN_START=$SECONDS
-  print_banner
-  DRY_RUN=0
-  step_header prerequisites 2 "${#STEPS[@]}"
-  info "Homebrew already installed"
-  spin "apt-get update" sleep 1.2
-  spin "install Homebrew" sleep 1.5
-  step_header brew 3 "${#STEPS[@]}"
-  spin_progress 40 '^Installing ' "brew bundle Brewfile" demo_progress
-  step_header toolchains 4 "${#STEPS[@]}"
-  spin "install bun" sleep 1
-  warn "example warning: pnpm was skipped"
-  spin "install nvm $NVM_VERSION" demo_fail
-  step_header stow 9 "${#STEPS[@]}"
-  info "backed up ~/.zshrc"
-  info "stowed into $HOME"
-  record "done" preflight 0
-  record "done" prerequisites 3
-  record "done" brew 4
-  record failed toolchains 2
-  record skipped agents 0
-  record "done" stow 1
-  print_summary
-  print_next_steps
-}
-
 # ------------------------------------------------------------------- main ---
 
 main() {
   local s ok t0 skipped idx=0 total=${#STEPS[@]} failed=0 stow_failed=0
   while [ $# -gt 0 ]; do
     case "$1" in
-      --dry-run)       DRY_RUN=1 ;;
-      --upgrade)       UPGRADE=1 ;;
-      --check-cleanup) CHECK_CLEANUP=1 ;;
-      --plain)         PLAIN=1 ;;
-      --demo)          DEMO=1 ;;
-      --yes)           ASSUME_YES=1 ;;
+      --dry-run) DRY_RUN=1 ;;
       --skip)
         [ $# -ge 2 ] || die "--skip needs a step name"
         case " ${STEPS[*]} " in
@@ -1246,18 +932,8 @@ main() {
     shift
   done
 
-  init_ui
-  trap cleanup_ui EXIT
-  trap on_interrupt INT TERM
-
-  if [ "$CHECK_CLEANUP" = 1 ]; then
-    check_cleanup
-    exit 0
-  fi
-  if [ "$DEMO" = 1 ]; then
-    run_demo
-    exit 0
-  fi
+  trap release_sudo EXIT
+  trap 'release_sudo; printf "\n  ! interrupted\n"; exit 130' INT TERM
 
   if [ "$DRY_RUN" != 1 ] && mkdir -p "$LOG_DIR" 2>/dev/null; then
     LOG_FILE="$LOG_DIR/$(date +%Y%m%d-%H%M%S).log"
@@ -1298,7 +974,8 @@ main() {
 
   print_summary
   if [ "$failed" = 1 ]; then
-    printf '\n  %s%s some steps failed.%s Read the messages above, fix them and re-run: finished steps are skipped.\n' "$C_RED" "$FAIL" "$C_RESET"
+    say ""
+    say "  x some steps failed. Read the messages above, fix them and re-run: finished steps are skipped."
   fi
   print_next_steps
   exit "$failed"

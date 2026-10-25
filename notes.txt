@@ -127,15 +127,15 @@ install.sh as built (2026-09-20). Steps run in this order; --skip NAME skips one
   agents          Claude Code and opencode from the vendors' installers, skipped if present
   globals         bun.txt, pnpm.txt (npm.txt arrives through nvm default-packages)
   omz             oh-my-zsh clone + omz-plugins.txt
-  submodules      fill EMPTY submodule dirs (fzf-git.sh, tmux tpm/sensible/catppuccin) from
+  submodules      fill EMPTY submodule dirs (fzf-git.sh, tmux catppuccin) from
                   .gitmodules; a populated checkout is never touched
   stow            real ~/.config and ~/.config/opencode, back up conflicts, stow . AI
   linux           Ubuntu only, UNTESTED: /opt/homebrew symlink, iterm2 stub
-  inits           mkdir ~/.claude; rtk init (Claude Code, then opencode); icm init; pass-cli completions -> ~/.zfunc/_pass-cli (fpath set in .zshrc above the awesome-lazy-zsh block, before oh-my-zsh runs compinit); wt config shell install zsh
-  finish          chsh to zsh (Ubuntu; the checklist then says to exec zsh, chsh only affects new logins), repo-dirty warning, the manual checklist
+  inits           mkdir ~/.claude; rtk init (Claude Code, then opencode); icm init; bat cache --build; ya pkg install; pass-cli completions -> ~/.zfunc/_pass-cli (fpath set in .zshrc above the awesome-lazy-zsh block, before oh-my-zsh runs compinit); wt config shell install zsh
+  finish          chsh to Homebrew's zsh, adding it to /etc/shells first (Mac and Ubuntu; the checklist then says to exec zsh, chsh only affects new logins), repo-dirty warning, the manual checklist
 
-  Flags: --dry-run, --upgrade, --check-cleanup (prints, never removes), --skip NAME,
-  --plain, --demo. Every real run is logged to ~/.cache/dotfiles-install/<timestamp>.log.
+  Flags: --dry-run, --skip NAME (2026-10-25: --upgrade, --check-cleanup, --plain,
+  --demo and the spinner display were dropped). Every real run is logged to ~/.cache/dotfiles-install/<timestamp>.log.
   Re-runs only add what is missing. Claude Code's settings.json is not managed;
   opencode.json and tui.json are stowed from AI/.
 
