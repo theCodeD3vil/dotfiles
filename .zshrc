@@ -194,6 +194,10 @@ fi
 # runs compinit inside it.
 fpath=(~/.zfunc $fpath)
 
+export DING_SUCCESS_SOUND=Funk
+# Claude Code drops to 256 colours under tmux unless told tmux passes RGB through (it does).
+export CLAUDE_CODE_TMUX_TRUECOLOR=1
+
 # >>> awesome-lazy-zsh managed block >>>
 #      _                                               _                         _____    _
 #     / \__      _____  ___  ___  _ __ ___   ___      | |    __ _ _____   _     |__  /___| |__
