@@ -145,4 +145,6 @@ brew "protonpass/tap/pass-cli"
 brew "rtk-ai/tap/icm"
 go "golang.org/x/tools/gopls"
 go "mvdan.cc/sh/v3/cmd/shfmt"
+# Learns shell completions from --help output (no brew formula; release binaries are amd64 only)
+go "github.com/dim-an/cod"
 go "github.com/wailsapp/wails/v2/cmd/wails"

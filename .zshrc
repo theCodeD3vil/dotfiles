@@ -300,6 +300,9 @@ unalias pi 2>/dev/null  # frees `pi` for pi-coding-agent binary; plugin above al
 # bun completions (calls compdef, so it has to follow oh-my-zsh's compinit above)
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
+# cod learns completions from the --help output of commands you run (also needs compdef)
+(( $+commands[cod] )) && source <(cod init $$ zsh)
+
 # Overrides for the managed block above. They live outside it so that
 # awesome-lazy-zsh regenerating the block can't undo them.
 # - nvm's node has to beat the brew node that `brew shellenv` put first on PATH.
