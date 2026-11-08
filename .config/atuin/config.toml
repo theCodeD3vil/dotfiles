@@ -23,3 +23,6 @@ model = "balanced"
 
 [ai.opening]
 send_last_command = true
+
+[threads]
+capture = true

@@ -47,7 +47,7 @@ config.color_scheme = "Catppuccin Mocha"
 -- keep the bundled symbols font last for anything it does not cover. The non-Mono
 -- variant draws full-size icons, which spill into the space after them.
 config.font = wezterm.font_with_fallback({
-	"Cartograph CF",
+	-- "Cartograph CF",
 	"CaskaydiaCove Nerd Font",
 	"Symbols Nerd Font Mono",
 })

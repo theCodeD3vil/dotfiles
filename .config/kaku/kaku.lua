@@ -126,23 +126,23 @@ config.window_decorations = 'INTEGRATED_BUTTONS|RESIZE'
 -- Same font stack, size and cell width as ~/dotfiles/.wezterm.lua and the Ghostty config.
 -- Kaku skips its bundled JetBrains Mono rules once font/font_rules are set here, so every
 -- style needs the Nerd Font fallbacks itself.
-local function cartograph(weight, italic)
+local function terminal_font(weight, italic)
   return wezterm.font_with_fallback({
-    { family = 'Cartograph CF', weight = weight, italic = italic },
+    -- { family = 'Cartograph CF', weight = weight, italic = italic },
     -- Non-Mono variant: full-size icons that spill into the space after them.
-    'CaskaydiaCove Nerd Font',
+    { family = 'CaskaydiaCove Nerd Font', weight = weight, italic = italic },
     'Symbols Nerd Font Mono',
   })
 end
 
-config.font = cartograph('Regular', false)
+config.font = terminal_font('Regular', false)
 config.font_rules = {
   -- dim text stays Regular instead of dropping to Light
-  { intensity = 'Half', italic = false, font = cartograph('Regular', false) },
-  { intensity = 'Half', italic = true, font = cartograph('Regular', true) },
-  { intensity = 'Normal', italic = true, font = cartograph('Regular', true) },
-  { intensity = 'Bold', italic = false, font = cartograph('Bold', false) },
-  { intensity = 'Bold', italic = true, font = cartograph('Bold', true) },
+  { intensity = 'Half', italic = false, font = terminal_font('Regular', false) },
+  { intensity = 'Half', italic = true, font = terminal_font('Regular', true) },
+  { intensity = 'Normal', italic = true, font = terminal_font('Regular', true) },
+  { intensity = 'Bold', italic = false, font = terminal_font('Bold', false) },
+  { intensity = 'Bold', italic = true, font = terminal_font('Bold', true) },
 }
 config.font_size = 16
 config.cell_width = 1.0

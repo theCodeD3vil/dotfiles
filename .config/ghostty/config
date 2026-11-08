@@ -1,6 +1,7 @@
 # ~/.config/ghostty/config
 
-font-family = Cartograph CF
+# font-family = Cartograph CF
+font-family = CaskaydiaCove Nerd Font
 font-size = 16
 # Nerd Font icons come from CaskaydiaCove instead of Ghostty's built-in symbols.
 font-codepoint-map = U+E000-U+F8FF,U+F0000-U+FFFFF=CaskaydiaCove Nerd Font

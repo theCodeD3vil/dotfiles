@@ -224,9 +224,9 @@ export ZSH="$HOME/.oh-my-zsh"
 # ZSH_THEME="starship"
 
 # Plugins
-plugins=(git git-flow npm nvm docker docker-compose vscode extract dotenv ssh-agent node gitfast thefuck ding deja zsh-patina zsh-paste-guard)
+plugins=(git git-flow npm nvm docker docker-compose vscode extract ssh-agent node gitfast thefuck ding deja zsh-patina)
 # Complete selection for profiles (includes aliases/custom plugins)
-# awesome-lazy-zsh-plugins=["git","git-flow","npm","nvm","docker","docker-compose","vscode","extract","dotenv","ssh-agent","node","gitfast","thefuck","deja","zsh-patina","zsh-paste-guard","python","golang","rust","java","git-extras","ssh","directories","history-search","flutter"]
+# awesome-lazy-zsh-plugins=["git","git-flow","npm","nvm","docker","docker-compose","vscode","extract","ssh-agent","node","gitfast","thefuck","deja","zsh-patina","python","golang","rust","java","git-extras","ssh","directories","history-search","flutter"]
 
 # Load Oh My Zsh
 source $ZSH/oh-my-zsh.sh
@@ -281,7 +281,6 @@ source $HOME/.iterm2_shell_integration.zsh
 
 # Awesome-Lazy-Zsh Custom Aliases
 [ -f "/opt/homebrew/opt/awesome-lazy-zsh/libexec/src/aliases/extract.zsh" ] && source "/opt/homebrew/opt/awesome-lazy-zsh/libexec/src/aliases/extract.zsh"
-[ -f "/opt/homebrew/opt/awesome-lazy-zsh/libexec/src/aliases/dotenv.zsh" ] && source "/opt/homebrew/opt/awesome-lazy-zsh/libexec/src/aliases/dotenv.zsh"
 [ -f "/opt/homebrew/opt/awesome-lazy-zsh/libexec/src/aliases/node.zsh" ] && source "/opt/homebrew/opt/awesome-lazy-zsh/libexec/src/aliases/node.zsh"
 unalias pi 2>/dev/null  # frees `pi` for pi-coding-agent binary; plugin above aliases it to `pnpm install`
 [ -f "/opt/homebrew/opt/awesome-lazy-zsh/libexec/src/aliases/python.zsh" ] && source "/opt/homebrew/opt/awesome-lazy-zsh/libexec/src/aliases/python.zsh"
@@ -351,6 +350,15 @@ if [[ "$OSTYPE" == darwin* ]]; then
   #ProtonPass SSH-Agent
   export SSH_AUTH_SOCK=$HOME/.ssh/proton-pass-ssh-agent.sock
 fi
+
+# *****************************************************************************
+# 1PASSWORD CLI
+# *****************************************************************************
+
+# macOS won't let the terminal read 1Password's settings file, so `op` can't
+# see the "Integrate with 1Password CLI" toggle and asks for the master
+# password. This forces the desktop-app (Touch ID) sign-in instead.
+export OP_BIOMETRIC_UNLOCK_ENABLED=true
 
 # *****************************************************************************
 # FZF
@@ -477,20 +485,10 @@ PROTON_PASS_DISABLE_TELEMETRY=true
 [[ ":$PATH:" != *":$HOME/.config/kaku/zsh/bin:"* ]] && export PATH="$HOME/.config/kaku/zsh/bin:$PATH" # Kaku PATH Integration
 [[ -f "$HOME/.config/kaku/zsh/kaku.zsh" ]] && source "$HOME/.config/kaku/zsh/kaku.zsh" # Kaku Shell Integration
 
-# zsh-paste-guard and Kaku's "# query" hook both replace accept-line and both end in the
-# builtin .accept-line, so whichever registers last silently disables the other (Kaku
-# registers on the first prompt, after the guard). After that, send pastes to the guard
-# and every other Enter to Kaku.
-_pg_kaku_accept_line() {
-  if (( __paste_guard_pasted )); then zle paste-guard-accept-line; else zle kaku-accept-line; fi
-}
-_pg_kaku_register() {
-  zle -N paste-guard-accept-line __paste_guard_accept_line
-  zle -N kaku-accept-line _kaku_ai_query_accept_line
-  zle -N accept-line _pg_kaku_accept_line
-  precmd_functions=("${precmd_functions[@]:#_pg_kaku_register}")
-}
-(( $+functions[__paste_guard_accept_line] && $+functions[_kaku_ai_query_register_widget] )) && precmd_functions+=(_pg_kaku_register)
+# QODER_DISPATCHER_PATH v1
+path=("$HOME/.qoder/entry" ${path:#"$HOME/.qoder/entry"})
+export PATH
+# END QODER_DISPATCHER_PATH v1
 # >>> headroom:managed_rtk >>>
 _headroom_path=":$PATH:"
 while case "$_headroom_path" in *:"/Users/michaelnji/Library/Application Support/Headroom/headroom/bin":*) true ;; *) false ;; esac; do
