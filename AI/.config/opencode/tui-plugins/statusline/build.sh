@@ -27,13 +27,17 @@ if ! git -C "$pluginInstallDirectory" diff --cached --quiet; then
   git -C "$pluginInstallDirectory" -c user.name=statusline -c user.email=statusline@localhost commit -qm "build(statusline): install Ember Ribbon footer"
 fi
 
+# `plugin add` installs the plugin once. opencode then loads it from its own cache and never
+# re-resolves that (`plugin update` does not see this plugin), so every build refreshes the cache.
 # Run from HOME: the dotfiles opencode.json beside this package is a bootstrap
 # template and would shadow the live global configuration in this directory.
 (
   cd "$HOME"
-  if grep -q "opencode-statusline" "$HOME/.config/opencode/opencode.json"; then
-    opencode plugin update "$pluginSpec"
-  else
-    opencode plugin add "$pluginSpec"
-  fi
+  grep -q "opencode-statusline" "$HOME/.config/opencode/opencode.json" || opencode plugin add "$pluginSpec"
 )
+for cachedDist in "${XDG_CACHE_HOME:-$HOME/.cache}"/opencode/npm/git-opencode-statusline-*/*/node_modules/statusline/dist; do
+  if [ -d "$cachedDist" ]; then
+    cp dist/*.js "$cachedDist/"
+  fi
+done
+echo "Installed. Restart opencode to load the new build."
