@@ -173,7 +173,7 @@ config) are kept but no longer selected.
 | zsh | fzf colors from catppuccin/fzf in `.zshrc`; zsh-patina's built-in `catppuccin-mocha` theme, set in `.config/zsh-patina/config.toml` |
 | gitmux | hex copied by hand into `.gitmux.conf` (gitmux output can't read tmux options) |
 | Claude Code | `AI/.claude/themes/catppuccin-mocha.json`, linked into `~/.claude/themes`; selected with `/theme` (`custom:catppuccin-mocha`) |
-| Claude Code mods, OpenCode statusline | hex in `ember-ribbon/hooks/colors.ts`, `desk-pet/hooks/wick.ts` (flame and props; Wick's body keeps its own orange), `session-panes/hooks/register.tsx` and the statusline's `src/footer.ts`. Ember Ribbon's palette must match the statusline's; run `bash build.sh` in the statusline after a change |
+| Claude Code mods, OpenCode statusline | hex in `ember-ribbon/hooks/colors.ts`, `desk-pet/hooks/wick.ts` (flame and props; Wick's body keeps its own orange), `session-panes/hooks/register.tsx`, `update-nudge/hooks/register.tsx` and the statusline's `src/footer.ts`. Ember Ribbon's palette must match the statusline's; run `bash build.sh` in the statusline after a change |
 | Warp | not managed here (still Vira) |
 
 `prefix + s` opens `tv sesh` in a translucent tmux popup. It deliberately uses

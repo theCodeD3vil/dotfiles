@@ -1,0 +1,1 @@
+{ "name": "update-nudge", "version": "0.1.0", "description": "Updates Claude Code in the background and shows a closable nudge when a new version is installed" }

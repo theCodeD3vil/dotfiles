@@ -745,8 +745,10 @@ setup_tmux_terminfo() {
   info "tmux RGB terminfo installed"
 }
 
-# Point CLAUDE_CODE_PLUGIN_DIRS in ~/.claude/settings.json at every mod in AI/.claude/mods.
-# settings.json stays out of git (Claude Code and other apps rewrite it), so only this key is set.
+# Point CLAUDE_CODE_PLUGIN_DIRS in ~/.claude/settings.json at every mod in AI/.claude/mods, and turn
+# off Claude Code's own updater (DISABLE_AUTOUPDATER): the update-nudge mod updates instead, with a
+# closable notice. settings.json stays out of git (Claude Code and other apps rewrite it), so only
+# these keys are set.
 setup_claude_mods() {
   local settings="$HOME/.claude/settings.json" dirs="" mod
   for mod in "$DOTFILES_DIR"/AI/.claude/mods/*/; do
@@ -760,7 +762,9 @@ setup_claude_mods() {
 import json, os, sys
 path, dirs = sys.argv[1], sys.argv[2]
 data = json.load(open(path)) if os.path.exists(path) else {}
-data.setdefault("env", {})["CLAUDE_CODE_PLUGIN_DIRS"] = dirs
+env = data.setdefault("env", {})
+env["CLAUDE_CODE_PLUGIN_DIRS"] = dirs
+env["DISABLE_AUTOUPDATER"] = "1"
 open(path, "w").write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 PY
   info "Claude Code mods enabled: $dirs"
