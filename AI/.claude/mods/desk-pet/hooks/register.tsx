@@ -6,7 +6,9 @@ import type { PetState } from './wick'
 // Wick, 12 × 4 cells of octants, stands at the far right of the Ember ribbon's context row, his
 // feet on the row with the context count and the token stream, facing left, and follows the main loop: waiting, thinking, a tool, writing, an approval, compacting, done.
 // Listed before ember-ribbon in CLAUDE_CODE_PLUGIN_DIRS (as install.sh's alphabetical order has
-// it), it wraps the band: the band is drawn in what Wick leaves of the width, Wick beside it.
+// it), it wraps ember-ribbon's row of the band: the row is drawn in what Wick leaves of the width,
+// Wick beside it. The host asks each plugin for its own row, so the hook names ember-ribbon's;
+// left to its own, it would draw Wick alone in a row above the context row.
 // The pet animates itself on the drawing thread (./pet.tsx); this module only tells it the
 // state, redrawing the band when the state changes.
 
@@ -14,9 +16,8 @@ export { COLUMNS, FACING, ROWS } from './pet'
 export const KEY = 'pet'
 
 // The context row needs this much width: the enhance button 2, the chart 9, the count 13, a gap
-// 3, the token stream 8 + 1 and "9999 tok/s" 10, a gap 3 and Headroom's life ring 1 + 1, graph
-// 6 + 1 and count 6. Narrower than that plus Wick, he stays away.
-export const BAND_COLUMNS = 64
+// 3, the token stream 8 + 1 and "9999 tok/s" 10. Narrower than that plus Wick, he stays away.
+export const BAND_COLUMNS = 46
 // Clear columns between the band and Wick, whose props reach his leftmost cells.
 export const GAP = 2
 
@@ -91,7 +92,7 @@ export const register: Register = on => {
     return next(event)
   })
 
-  on('ui.render', { component: 'AbovePrompt' }, async (engine, event, next) => {
+  on('ui.render', { component: 'AbovePrompt', plugin: 'ember-ribbon' }, async (engine, event, next) => {
     const { bodyColumns, hasSurvey } = event.props
     const room = bodyColumns - COLUMNS - GAP
     if (event.surface !== 'terminal' || hasSurvey || room < BAND_COLUMNS) return next(event)
