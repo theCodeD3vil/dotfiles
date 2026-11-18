@@ -1,16 +1,15 @@
 /** @jsxImportSource @opentui/solid */
 /**
  * OpenTUI view for the row above the prompt, after Ember Ribbon's AbovePrompt:
- *   ⣿⣿⣿⣷⣿⣷⣿⣿  134.4k / 200k   ⣀⣤⣶⣿⣦⣀⣀⣀   412 tok/s   ⣀⣤⣶⣿⣀⣀ 15.3k
- * The context sparkline, the used / window readout coloured by heat, the token stream and
- * Headroom's saved tokens (its icon, a graph of each turn's, the total), with Wick, the desk pet, at the far right of the row, his feet on it, as Claude Code has him.
+ *   ⣿⣿⣿⣷⣿⣷⣿⣿  134.4k / 200k   ⣀⣤⣶⣿⣦⣀⣀⣀   412 tok/s
+ * The context sparkline, the used / window readout coloured by heat and the token stream,
+ * with Wick, the desk pet, at the far right of the row, his feet on it, as Claude Code has him.
  * All cells use the terminal-default background so transparent themes remain transparent.
  */
 import { TextAttributes } from '@opentui/core'
 import { Index, Show } from 'solid-js'
-import { FILL_CELLS, FILL_ROWS, STREAM_CELLS, contextSparklineCells, heatColor, rowFit, short, sparklineCells, streamCells, tokensPerSecond, type ContextReading } from './context'
-import { COLORS, ORANGE } from './footer'
-import { HEADROOM_CELLS, HEADROOM_COLOR, HEADROOM_COUNT_COLUMNS, HEADROOM_ICON, HEADROOM_WIDTH, savedPerTurn } from './headroom'
+import { FILL_CELLS, FILL_ROWS, STREAM_CELLS, contextSparklineCells, heatColor, rowFit, short, streamCells, tokensPerSecond, type ContextReading } from './context'
+import { COLORS } from './footer'
 import { COLS } from './pet'
 import { Cells, DEFAULT_BG, Pet, rasterCells } from './view'
 
@@ -28,8 +27,6 @@ export type ContextFrame = {
   stream: number[]
   /** Columns the row has to draw in. */
   columns: number
-  /** Headroom's total for OpenCode at the end of each recent turn, then now, oldest first. */
-  headroom: number[]
 }
 
 function FillChart(props: { history: number[] }) {
@@ -45,12 +42,9 @@ export function readoutWidth(now: ContextReading | undefined) {
   return now ? `${short(now.tokens)} / ${short(now.window)}`.length : '– / –'.length
 }
 
-// Headroom's item is always drawn, so what is left for the rest, and for Wick, is counted without it.
-const fitRow = (columns: number, now: ContextReading | undefined) => rowFit(columns - HEADROOM_WIDTH, readoutWidth(now))
-
 // The token stream is always drawn: flat while idle, moving while the model works.
 export function ContextRow(props: { frame: ContextFrame }) {
-  const fit = () => fitRow(props.frame.columns, props.frame.now)
+  const fit = () => rowFit(props.frame.columns, readoutWidth(props.frame.now))
   return (
     <box flexDirection="row" alignItems="flex-end" justifyContent="flex-end" flexGrow={1} flexShrink={1} minWidth={0} backgroundColor={DEFAULT_BG}>
       <Show when={fit().chart}>
@@ -73,13 +67,6 @@ export function ContextRow(props: { frame: ContextFrame }) {
           <text bg={DEFAULT_BG} fg={COLORS.dim}>{`${String(Math.min(9999, tokensPerSecond(props.frame.stream))).padStart(4, ' ')} tok/s`}</text>
         </box>
       </Show>
-      <box marginLeft={3} gap={1} flexDirection="row" flexShrink={0}>
-        <text bg={DEFAULT_BG} fg={ORANGE}>{HEADROOM_ICON}</text>
-        <Cells cells={rasterCells(sparklineCells(savedPerTurn(props.frame.headroom), HEADROOM_CELLS, HEADROOM_COLOR))} />
-        <box width={HEADROOM_COUNT_COLUMNS} flexShrink={0}>
-          <text bg={DEFAULT_BG} fg={COLORS.dim}>{short(props.frame.headroom[props.frame.headroom.length - 1] ?? 0)}</text>
-        </box>
-      </box>
     </box>
   )
 }
@@ -89,7 +76,7 @@ export function ContextRow(props: { frame: ContextFrame }) {
 // row, stream included, still fits beside him: a narrower terminal gets the row alone.
 export function AboveView(props: { strip: Uint32Array; frame: ContextFrame }) {
   const room = () => props.frame.columns - COLS - PET_GAP
-  const beside = () => fitRow(room(), props.frame.now).stream
+  const beside = () => rowFit(room(), readoutWidth(props.frame.now)).stream
   return (
     <box flexDirection="row" alignItems="flex-end" gap={PET_GAP} flexGrow={1} flexShrink={1} minWidth={0} paddingTop={ROW_PAD} backgroundColor={DEFAULT_BG}>
       <ContextRow frame={beside() ? { ...props.frame, columns: room() } : props.frame} />

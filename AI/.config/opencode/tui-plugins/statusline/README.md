@@ -1,6 +1,7 @@
 # Ember Ribbon footer for OpenCode
 
-Ports Ember Ribbon's five-hour animated braille bar and weekly Nerd Font ring
+Ports Ember Ribbon's five-hour and weekly animated braille bars (each becomes a Nerd Font
+ring where the row is too narrow for it, the weekly one first)
 from the `AI/.claude/mods/ember-ribbon/hooks/` modules into OpenCode 2.0.22.
 The plugin replaces `prompt.footer`, so none of OpenCode's native footer (working
 spinner, location label) renders; only the quota stats, at the right, remain. Wick,
@@ -26,8 +27,6 @@ plugin appends Ember Ribbon's row there (`src/context.ts`, `src/above.tsx`):
   `session.tool.input.delta`) are counted per 100 ms tick, about four to a token;
   each dot column is the mean of five ticks. Only the session on screen counts, and
   the chart restarts when a run starts or another session opens.
-- **Headroom savings**: the life ring, an orange one-row sparkline of tokens saved per completed turn, and the saved-token total.
-
 
 The arithmetic is the Claude source's, compared cell for cell with it in
 `tests/context.test.ts`. What differs is where the numbers come from. A turn is a

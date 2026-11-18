@@ -17,6 +17,8 @@ export const COLORS = {
 
 export const RINGS = ['\u{F0766}', '\u{F0A9E}', '\u{F0A9F}', '\u{F0AA0}', '\u{F0AA1}', '\u{F0AA2}', '\u{F0AA3}', '\u{F0AA4}', '\u{F1807}']
 const FIVE_HOURS = 5 * 3600_000
+const SEVEN_DAYS = 7 * 24 * 3600_000
+export const USAGE_BAR_WIDTH = 12
 export const DEFAULT_COLOR = 0x01000000 // a Raster cell's "terminal default" colour
 const PULSE_SPEED = 10
 const PULSE_TAIL = 3
@@ -97,7 +99,8 @@ export type Raster = { kind: 'raster'; columns: number; pct: number; timePct: nu
 export type FooterStat = { pct: number; time?: string; gauge: Ring | Raster }
 export type FooterLayout = {
   room: number
-  narrow: boolean
+  // How many gauges are bars: 2, then 1 (the 5h one), then 0, where both are rings.
+  bars: 0 | 1 | 2
   noTime: boolean
   five: FooterStat
   week: FooterStat
@@ -118,23 +121,31 @@ export function footerLayout(input: {
   const weekTime = timeLeft(weekLimit, now)
   const statWidth = (label: string, gauge: number, pct: number, time: string) =>
     label.length + 1 + gauge + 1 + `${pct}%`.length + (time ? 1 + time.length : 0)
-  const layoutWidth = (full: boolean, showTime: boolean) =>
-    statWidth('5h', full ? 22 : 1, five, showTime ? fiveTime : '') + 3 +
-    statWidth('wk', 1, week, showTime ? weekTime : '')
+  const layoutWidth = (bars: number, showTime: boolean) =>
+    statWidth('5h', bars >= 1 ? USAGE_BAR_WIDTH : 1, five, showTime ? fiveTime : '') + 3 +
+    statWidth('wk', bars >= 2 ? USAGE_BAR_WIDTH : 1, week, showTime ? weekTime : '')
   const room = Math.max(0, input.columns ?? 200)
-  const narrow = layoutWidth(true, true) > room
-  const noTime = narrow && layoutWidth(false, true) > room
+  // The fullest layout that fits: the weekly bar becomes a ring first, then the 5h bar, then time left goes.
+  const bars = ([2, 1] as const).find(count => layoutWidth(count, true) <= room) ?? 0
+  const noTime = bars === 0 && layoutWidth(0, true) > room
   const ring = (pct: number): Ring => {
     const step = pct >= 100 ? 8 : Math.min(7, Math.ceil((pct * 7) / 100))
     return { kind: 'ring', glyph: RINGS[step], color: step === 0 ? COLORS.track : sevColor(pct) }
   }
-  const resetsIn = fiveLimit?.resetsAt ? Date.parse(fiveLimit.resetsAt) - now : FIVE_HOURS
-  const timePct = 100 * (1 - resetsIn / FIVE_HOURS)
-  const stat = (pct: number, time: string, gauge: Ring | Raster): FooterStat => ({ pct, time: noTime ? undefined : time, gauge })
+  // How much of a rate-limit window has passed, 0-100; a limit without a reset time counts as just begun.
+  const elapsedPercent = (limit: RateLimit | undefined, windowMs: number) =>
+    100 * (1 - (limit?.resetsAt ? Date.parse(limit.resetsAt) - now : windowMs) / windowMs)
+  const stat = (pct: number, time: string, isBar: boolean, limit: RateLimit | undefined, windowMs: number): FooterStat => {
+    const timePct = elapsedPercent(limit, windowMs)
+    const gauge: Ring | Raster = isBar
+      ? { kind: 'raster', columns: USAGE_BAR_WIDTH, pct, timePct, words: usageCells(pct, timePct, USAGE_BAR_WIDTH, tick * 100) }
+      : ring(pct)
+    return { pct, time: noTime ? undefined : time, gauge }
+  }
 
   return {
-    room, narrow, noTime,
-    five: stat(five, fiveTime, narrow ? ring(five) : { kind: 'raster', columns: 22, pct: five, timePct, words: usageCells(five, timePct, 22, tick * 100) }),
-    week: stat(week, weekTime, ring(week)),
+    room, bars, noTime,
+    five: stat(five, fiveTime, bars >= 1, fiveLimit, FIVE_HOURS),
+    week: stat(week, weekTime, bars >= 2, weekLimit, SEVEN_DAYS),
   }
 }
