@@ -1,8 +1,8 @@
 import type { EngineInterface, Register } from 'claude-code'
 
-// Turn insights: "✻ Baked for 12s · done 11:57 AM · 6 tools · 1.2k out · $0.08" closes each turn.
+// Turn insights: "✻ Baked for 12s · Sonnet 5.5 · done 11:57 AM · 6 tools · 1.2k out · $0.08" closes each turn.
 
-type Receipt = { durationMs: number; finishedAt: number; summary: string }
+type Receipt = { durationMs: number; finishedAt: number; model: string; summary: string }
 
 const MAX_RECEIPTS = 50
 // The "Baked for" line shows a rounded duration, so it matches a receipt within this much.
@@ -14,6 +14,14 @@ function formatDuration(ms: number) {
   if (seconds < 60) return `${seconds}s`
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
   return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
+}
+
+// "claude-opus-5-5[1m]" -> "Opus 5.5"; anything else is shown as given
+function modelName(id: string) {
+  const parts = id.replace(/\[.*\]$/, '').match(/^claude-([a-z]+)-(\d+)-(\d+)/)
+  if (!parts) return id
+  const [, family = '', major, minor] = parts
+  return `${family.charAt(0).toUpperCase()}${family.slice(1)} ${major}.${minor}`
 }
 
 // "11:57 AM" in local time
@@ -47,7 +55,8 @@ export const register: Register = on => {
     if (!event.agentId) {
       const costUsd = (await readCostUsd(engine)) - costAtStart
       const outputTokens = event.usage?.output_tokens ?? 0
-      receipts.push({ durationMs: event.durationMs, finishedAt: await engine.clock.now(), summary: summarize(toolCount, outputTokens, costUsd) })
+      const model = modelName(await engine.session.model())
+      receipts.push({ durationMs: event.durationMs, finishedAt: await engine.clock.now(), model, summary: summarize(toolCount, outputTokens, costUsd) })
       if (receipts.length > MAX_RECEIPTS) receipts.shift()
       engine.ui.invalidate('ui.render')
     }
@@ -62,7 +71,7 @@ export const register: Register = on => {
     return (
       <Box flexShrink={1}>
         <Text dimColor wrap="truncate-end">
-          ✻ {event.props.word} for {formatDuration(event.props.durationMs)} · done {formatClock(receipt.finishedAt)} · {receipt.summary}
+          ✻ {event.props.word} for {formatDuration(event.props.durationMs)} · {receipt.model} · done {formatClock(receipt.finishedAt)} · {receipt.summary}
         </Text>
       </Box>
     )
