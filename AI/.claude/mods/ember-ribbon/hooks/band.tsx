@@ -2,17 +2,15 @@ import type { RenderChildren } from 'claude-code'
 
 import type { ContextReading } from '../types'
 import { RAINBOW, SPIN } from './animation'
-import { BLUE, GREEN, ORANGE, heatColor } from './colors'
+import { BLUE, GREEN, heatColor } from './colors'
 import type { TerminalUi } from './components'
 import { formatTokens } from './format'
-import { HEADROOM_CELLS, HEADROOM_COUNT_COLUMNS, HEADROOM_ICON, savedPerTurn } from './headroom'
-import { contextSparklineCells, sparklineCells, streamCells } from './rasters'
+import { contextSparklineCells, streamCells } from './rasters'
 import { STREAM_CELLS, streamPoints, tokensPerSecond } from './stream'
 
 // One row above the prompt, with the context and the token stream:
-//   ✦                                    ⣿⣿⣷⣿ 134.4k / 200k   ⣀⣤⣶⣿   42 tok/s   ⣀⣤⣶⣿ 26.9k
-// The enhance button at the left, the context's sparkline and heat, the token stream, and
-// Headroom's saved tokens (its icon, a graph of each turn's, the session's total) at the right.
+//   ✦                                    ⣿⣿⣷⣿ 134.4k / 200k   ⣀⣤⣶⣿   42 tok/s
+// The enhance button at the left, the context's sparkline and heat, and the token stream at the right.
 
 // The context chart: one ▁▂▃▄▅▆▇█ glyph per turn, newest at the right.
 export const FILL_CELLS = 8
@@ -41,9 +39,6 @@ export type BandView = {
   isEnhancing: boolean
   doneTicks: number
   streamTicks: number[]
-  // Headroom's session total: now, and at the end of each turn then now, oldest first.
-  headroomSaved: number
-  headroomTotals: number[]
 }
 
 // The icon is blue sparkles while ready, a RAINBOW spinner while Haiku works, then a green check
@@ -88,14 +83,6 @@ export function renderBand(components: TerminalUi, view: BandView) {
           <Raster key="stream" columns={STREAM_CELLS} rows={1} cells={streamCells(streamPoints(view.streamTicks, STREAM_CELLS), STREAM_CELLS)} />
           {/* Padded to four digits (figure spaces are digit-wide) so the row stops shifting as it counts. */}
           <Text dimColor>{rate.padStart(4, ' ')} tok/s</Text>
-        </Box>
-        {/* Always drawn, between the token stream and Wick: the count keeps its width so the row never shifts. */}
-        <Box marginLeft={3} gap={1}>
-          <Text color={ORANGE}>{HEADROOM_ICON}</Text>
-          <Raster key="headroom" columns={HEADROOM_CELLS} rows={1} cells={sparklineCells(savedPerTurn(view.headroomTotals), HEADROOM_CELLS, ORANGE)} />
-          <Box width={HEADROOM_COUNT_COLUMNS}>
-            <Text dimColor>{formatTokens(view.headroomSaved)}</Text>
-          </Box>
         </Box>
       </Box>
     </Box>

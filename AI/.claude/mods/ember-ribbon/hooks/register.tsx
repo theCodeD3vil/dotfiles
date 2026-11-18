@@ -15,9 +15,8 @@ import {
   isTooShort,
   stripCodeFence,
 } from './enhance'
-import { DEFAULT_COLUMNS, FIVE_HOURS, USAGE_BAR_WIDTH, footerLayout, renderFooter } from './footer'
-import { modelName, timeLeft, windowElapsedPercent } from './format'
-import { HEADROOM_POINTS, HEADROOM_REFRESH_MS, READ_HEADROOM_STATE, savedTokens } from './headroom'
+import { DEFAULT_COLUMNS, FIVE_HOURS, SEVEN_DAYS, USAGE_BAR_WIDTH, footerLayout, renderFooter } from './footer'
+import { timeLeft, windowElapsedPercent } from './format'
 import { usageCells } from './rasters'
 import { state } from './state'
 import { nextStreamHistory } from './stream'
@@ -25,11 +24,11 @@ import { nextStreamHistory } from './stream'
 // Ember Pills: Claude Code's footer, replaced, plus one row above the prompt with the prompt
 // enhance button and the context's heat.
 //   above:     134.4k / 200k
-//   below:  ✻ Opus 5.5   5h ⣿⣿⣿⣷⣿⣷⣿⣿│      41% 2h14m   wk 󰪟 18% 3d05h
+//   below:  5h ⣿⣿⣷⣿▐⣿⣿ 41% 2h14m   wk ⣿⣷⣿▐⣿⣿ 18% 3d05h
 //
 // The loader follows the engine only into functions of this file, so everything that touches `$`
 // lives here: the hooks, the timer and the calls to the engine. The pure parts are beside it:
-//   footer.tsx, band.tsx   the two drawings         format.ts      model, time and token text
+//   footer.tsx, band.tsx   the two drawings         format.ts      time and token text
 //   rasters.ts, colors.ts  braille cells and color  enhance.ts     the enhance prompt and its text
 //   stream.ts              token stream numbers     animation.ts   ticks, spinner frames
 //   state.ts               what the hooks and timer share
@@ -40,9 +39,6 @@ import { nextStreamHistory } from './stream'
 const readingsState = { plugin: 'ember-ribbon', key: 'readings' } as const
 const previousDraftState = { plugin: 'ember-ribbon', key: 'previous' } as const
 const readHistory = async (engine: EngineInterface) => (await engine.state.get(readingsState)).value ?? []
-// `savedState` is Headroom's session total at the end of each turn, for the band's savings graph.
-const savedState = { plugin: 'ember-ribbon', key: 'saved' } as const
-const readSavedTotals = async (engine: EngineInterface) => (await engine.state.get(savedState)).value ?? []
 
 const redraw = (engine: EngineInterface) => engine.ui.invalidate('ui.render')
 
@@ -52,26 +48,6 @@ async function readContext(engine: EngineInterface): Promise<ContextReading | un
   const tokens = context.tokens ?? 0
   const percent = context.percent ?? Math.round((tokens / context.window) * 100)
   return { tokens, window: context.window, percent }
-}
-
-// The band's Headroom item: what Headroom saved this session, read from its state file at most
-// every HEADROOM_REFRESH_MS (the band redraws each tick while Claude works). A read that fails, as
-// one catching the file mid-rewrite does, keeps the last count: the item is always drawn.
-async function refreshHeadroomSaved(engine: EngineInterface) {
-  const now = await engine.clock.now()
-  if (now - state.headroomReadAt < HEADROOM_REFRESH_MS) return
-  state.headroomReadAt = now
-  try {
-    const { stdout } = await engine.process.run(READ_HEADROOM_STATE)
-    state.headroomSaved = savedTokens(stdout, await engine.session.id())
-  } catch {}
-}
-
-// Called as a main-loop turn ends: adds Headroom's total for the session, which the graph turns into what each turn saved.
-async function takeSavedTotal(engine: EngineInterface) {
-  state.headroomReadAt = 0
-  await refreshHeadroomSaved(engine)
-  await engine.state.set(savedState, [...(await readSavedTotals(engine)), state.headroomSaved].slice(-(HEADROOM_POINTS + 1)))
 }
 
 // Called as a main-loop turn ends: adds that turn's reading, oldest first, keeping what the chart shows.
@@ -159,11 +135,11 @@ function recordStreamTick() {
   state.streamedChars = 0
 }
 
-// The 5h bar's dots move all the time: repaint its cells alone, without a redraw.
-function repaintUsageBar(engine: EngineInterface) {
-  if (!state.mountedBar) return
-  const { requestId, percent, timePercent, width } = state.mountedBar
-  void engine.ui.blit({ requestId, key: 'usage', cells: usageCells(percent, timePercent, width, elapsedMs(state.tick)) }).catch(() => {})
+// The usage bars' dots move all the time: repaint their cells alone, without a redraw.
+function repaintUsageBars(engine: EngineInterface) {
+  for (const { requestId, key, percent, timePercent, width } of state.mountedBars) {
+    void engine.ui.blit({ requestId, key, cells: usageCells(percent, timePercent, width, elapsedMs(state.tick)) }).catch(() => {})
+  }
 }
 
 function onTick(engine: EngineInterface) {
@@ -178,7 +154,7 @@ function onTick(engine: EngineInterface) {
     state.doneTicks--
     if (state.doneTicks === 0) redraw(engine)
   }
-  repaintUsageBar(engine)
+  repaintUsageBars(engine)
 }
 
 let isTicking = false
@@ -222,10 +198,7 @@ export const register: Register = on => {
   // One context reading per main-loop turn (not subagents).
   on('turn.complete', async (engine, event, next) => {
     const result = await next(event)
-    if (!event.agentId) {
-      await takeReading(engine)
-      await takeSavedTotal(engine)
-    }
+    if (!event.agentId) await takeReading(engine)
     return result
   })
 
@@ -268,7 +241,6 @@ export const register: Register = on => {
     const latest = history[history.length - 1] ?? (await readContext(engine))
     const canUndo = (await engine.state.get(previousDraftState)).value != null
     state.isWorking = event.props.isWorking
-    await refreshHeadroomSaved(engine)
 
     return renderBand(engine.ui.resolve(event), {
       below,
@@ -281,8 +253,6 @@ export const register: Register = on => {
       isEnhancing: state.isEnhancing,
       doneTicks: state.doneTicks,
       streamTicks: state.streamTicks,
-      headroomSaved: state.headroomSaved,
-      headroomTotals: [...(await readSavedTotals(engine)), state.headroomSaved],
     })
   })
 
@@ -294,20 +264,20 @@ export const register: Register = on => {
 
     const components = engine.ui.resolve(event)
     const usage = await engine.session.usage()
-    const model = modelName(await engine.session.model())
     const now = await engine.clock.now()
 
     const fiveLimit = usage.rateLimits.find(limit => limit.kind === 'five_hour')
     const weekLimit = usage.rateLimits.find(limit => limit.kind === 'seven_day')
     const five = { percent: Math.round(fiveLimit?.percentUsed ?? 0), time: timeLeft(fiveLimit, now) }
     const week = { percent: Math.round(weekLimit?.percentUsed ?? 0), time: timeLeft(weekLimit, now) }
-    const layout = footerLayout(event.viewport?.columns ?? DEFAULT_COLUMNS, model, five, week)
+    const layout = footerLayout(event.viewport?.columns ?? DEFAULT_COLUMNS, five, week)
 
-    // The bar is only mounted (and repainted by the timer) while the layout is wide enough for it.
-    state.mountedBar = layout.hasRing
-      ? undefined
-      : { requestId: event.requestId, percent: five.percent, timePercent: windowElapsedPercent(fiveLimit, FIVE_HOURS, now), width: USAGE_BAR_WIDTH }
+    // A bar is only mounted (and repainted by the timer) while the layout is wide enough for it.
+    state.mountedBars = [
+      { key: 'usage', percent: five.percent, timePercent: windowElapsedPercent(fiveLimit, FIVE_HOURS, now) },
+      { key: 'usage-week', percent: week.percent, timePercent: windowElapsedPercent(weekLimit, SEVEN_DAYS, now) },
+    ].slice(0, layout.bars).map(bar => ({ ...bar, requestId: event.requestId, width: USAGE_BAR_WIDTH }))
 
-    return renderFooter(components, { model, isWorking: state.isWorking, tick: state.tick, five, week, layout, bar: state.mountedBar })
+    return renderFooter(components, { tick: state.tick, five, week, layout, bars: state.mountedBars })
   })
 }

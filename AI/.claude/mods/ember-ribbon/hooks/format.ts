@@ -5,14 +5,6 @@ const MINUTES_PER_DAY = 1440
 
 const padTwo = (value: number) => String(value).padStart(2, '0')
 
-// "claude-opus-5-5[1m]" -> "Opus 5.5"; anything else is shown as given
-export function modelName(id: string) {
-  const parts = id.replace(/\[.*\]$/, '').match(/^claude-([a-z]+)-(\d+)-(\d+)/)
-  if (!parts) return id
-  const [, family = '', major, minor] = parts
-  return `${family.charAt(0).toUpperCase()}${family.slice(1)} ${major}.${minor}`
-}
-
 // "2h14m", or "3d05h" from a day out; empty without a reset time
 export function timeLeft(limit: SessionRateLimit | undefined, now: number) {
   if (!limit?.resetsAt) return ''
