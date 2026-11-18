@@ -2,6 +2,9 @@
 
 **/**/.DS_Store
 
+# A backup of ~/.zshrc left in the repo root; not part of the dotfiles
+/.zshrc.bak.1794858925
+
 # atuin's installer receipt: it bakes in this machine's home path
 .config/atuin/atuin-receipt.json
 

@@ -35,6 +35,9 @@ _darcs
 # .claude/ here is this repo's own project config (skills), not a mirror of ~/.claude.
 ^/\.claude$
 
+# A backup of ~/.zshrc left in the repo root; `stow .` would link it into ~.
+^/\.zshrc\.bak\.1794858925$
+
 # Untracked local notes (task lists, Claude local instructions). Stow matches a
 # pattern with no slash against the whole file name, so it needs the leading .+
 .+\.local\.md
